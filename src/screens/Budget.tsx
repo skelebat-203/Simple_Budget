@@ -18,9 +18,10 @@ export function Budget() {
         <button onClick={() => setView('day')} disabled={view === 'day'}>Day</button>
         <button onClick={() => setView('week')} disabled={view === 'week'}>Week</button>
       </div>
-      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse' }} aria-labelledby="budget-heading">
+      <caption id="budget-heading" className="sr-only">Budget items</caption>
         <thead>
-          <tr><th>Name</th><th>Type</th><th>Amount</th><th>Date</th></tr>
+          <tr><th scope="col">Name</th><th scope="col">Type</th><th scope="col">Amount</th><th scope="col">Date</th></tr>
         </thead>
         <tbody>
           {items.map(i => (

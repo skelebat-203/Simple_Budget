@@ -11,29 +11,44 @@ export function AddBudget() {
   const [amount, setAmount] = useState('')
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
   const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   async function save() {
-    if (!name || !amount) return
+    setError(null)
+    if (!name.trim()) { setError('Invalid: name cannot be empty'); return }
+    if (!amount || !Number.isFinite(Number(amount)) || Number(amount) < 0) { setError('Invalid: amount use number format'); return }
     setSaving(true)
-    await budgetItemRepo.add({ name, category: '', type, amount: Number(amount), date })
-    setSaving(false)
-    setName('')
-    setAmount('')
+    try {
+      await budgetItemRepo.add({ name, category: '', type, amount: Number(amount), date })
+      setName('')
+      setAmount('')
+    } catch (e) {
+      console.error(e)
+      setError('Error: failed to save item. Please try again.')
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
     <div style={{ padding: 'var(--space-md)', display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)', maxWidth: 400 }}>
       <h2>Add Budget Item</h2>
+      <label htmlFor="item-name">Item name <span aria-hidden="true">*</span></label>
+      <Input id="item-name" value={name} onChange={e => setName(e.target.value)} aria-required="true" aria-invalid={!!error && !name.trim()} />
       <DropdownWithSearch options={KNOWN_ITEMS} onSelect={setName} />
-      <Input value={name} onChange={e => setName(e.target.value)} placeholder="Item name" />
-      <select value={type} onChange={e => setType(e.target.value as BudgetType)} style={{ padding: 'var(--space-sm)' }}>
+      <label htmlFor="item-type">Type</label>
+      <select id="item-type" value={type} onChange={e => setType(e.target.value as BudgetType)} style={{ padding: 'var(--space-sm)', minHeight: 44 }}>
         <option value="income">Income</option>
         <option value="savings">Savings</option>
         <option value="expense">Expense</option>
       </select>
-      <DatePicker value={date} onChange={e => setDate(e.target.value)} />
-      <AmountInput value={amount} onChange={e => setAmount(e.target.value)} placeholder="Amount" />
-      <Button onClick={save} disabled={saving || !name || !amount}>{saving ? 'Saving...' : 'Save'}</Button>
+      <label htmlFor="item-date">Date</label>
+      <DatePicker id="item-date" value={date} onChange={e => setDate(e.target.value)} />
+      <label htmlFor="item-amount">Amount <span aria-hidden="true">*</span></label>
+      <AmountInput id="item-amount" value={amount} onChange={e => setAmount(e.target.value)} aria-required="true" aria-invalid={!!error && (!amount || !Number.isFinite(Number(amount)))} aria-describedby="amount-help" />
+      <small id="amount-help">Enter a non-negative number.</small>
+      {error && <div role="alert" aria-live="polite" style={{ color: 'var(--color-danger)' }}>{error}</div>}
+      <Button onClick={save} disabled={saving}>{saving ? 'Saving...' : 'Save'}</Button>
     </div>
   )
 }
