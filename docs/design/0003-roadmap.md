@@ -34,6 +34,7 @@
 ## v0.5 — Graphs and charts
 - Chart view (Table/Chart switch)
 - Chart types for Budget screen
+- Accessibility pass for charts (alt text, keyboard nav, screen reader)
 - Security review
 
 ## v0.6 — Sync
