@@ -8,6 +8,7 @@ Status legend: ✅ complete · ⏳ in progress · ⏸️ blocked · (blank) pend
 - Version: v0.1.1
 - v0.1 in progress. Phase 0 (Scaffold) complete.
 - Phase 1 ready to start (parallel: CSS tokens, IndexedDB storage, PWA manifest/SW).
+- Accessibility refactor of UI components complete (labels, ARIA, focus, touch targets).
 
 ## v0.1 workflow (parallelized)
 
