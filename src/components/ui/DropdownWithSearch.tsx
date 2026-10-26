@@ -16,7 +16,7 @@ export function DropdownWithSearch({ options, value, onChange }: { options: stri
         role="combobox"
       />
       {open && filtered.length > 0 && (
-        <ul style={{ listStyle: 'none', padding: 0, margin: 0, maxHeight: 200, overflow: 'auto', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)', position: 'absolute', width: '100%', background: 'var(--color-bg)', zIndex: 10 }}>
+        <ul style={{ listStyle: 'none', padding: 0, margin: 0, maxHeight: 200, overflow: 'auto', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)', position: 'absolute', width: '100%', background: 'var(--color-background-page)', zIndex: 10 }}>
           {filtered.map(o => <li key={o} onClick={() => { onChange(o); setOpen(false) }} style={{ padding: 'var(--space-xs)', cursor: 'pointer', minHeight: 44 }}>{o}</li>)}
         </ul>
       )}

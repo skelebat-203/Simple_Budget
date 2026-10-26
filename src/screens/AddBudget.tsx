@@ -33,7 +33,7 @@ export function AddBudget({ onSaved }: { onSaved: () => void }) {
 
   return (
     <div style={{ padding: 'var(--space-md)', display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)', maxWidth: 400, margin: '0 auto' }}>
-      <h2 style={{ color: 'var(--color-fg)' }}>Add Budget Item</h2>
+      <h2 style={{ color: 'var(--color-foreground-page)' }}>Add Budget Item</h2>
       <label htmlFor="item-name">Item name <span aria-hidden="true">*</span></label>
       <DropdownWithSearch options={KNOWN_ITEMS} value={name} onChange={setName} />
       <label htmlFor="item-type">Type</label>
@@ -47,7 +47,7 @@ export function AddBudget({ onSaved }: { onSaved: () => void }) {
       <label htmlFor="item-amount">Amount <span aria-hidden="true">*</span></label>
       <small id="amount-help">Enter a non-negative number.</small>
       <AmountInput id="item-amount" value={amount} onChange={e => setAmount(e.target.value)} aria-required="true" aria-invalid={!!error && (!amount || !Number.isFinite(Number(amount)))} aria-describedby="amount-help" />
-      {error && <div role="alert" aria-live="polite" style={{ color: 'var(--color-danger)' }}>{error}</div>}
+      {error && <div role="alert" aria-live="polite" style={{ color: 'var(--color-alert)' }}>{error}</div>}
       <Button onClick={save} disabled={saving}>{saving ? 'Saving...' : 'Save'}</Button>
     </div>
   )

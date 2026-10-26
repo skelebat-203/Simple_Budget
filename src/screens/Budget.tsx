@@ -12,7 +12,7 @@ export function Budget({ refreshKey }: { refreshKey: number }) {
 
   return (
     <div style={{ padding: 'var(--space-md)', maxWidth: 800, margin: '0 auto' }}>
-      <h2 id="budget-heading" style={{ color: 'var(--color-fg)' }}>Budget</h2>
+      <h2 id="budget-heading" style={{ color: 'var(--color-foreground-page)' }}>Budget</h2>
       <div style={{ display: 'flex', gap: 'var(--space-sm)', marginBottom: 'var(--space-md)' }}>
         <button onClick={() => setView('day')} disabled={view === 'day'} style={{ minHeight: 44 }}>Day</button>
         <button onClick={() => setView('week')} disabled={view === 'week'} style={{ minHeight: 44 }}>Week</button>

@@ -1,13 +1,16 @@
 /* Design tokens — named variables for colors, spacing, typography. */
 :root {
   /* Colors */
-  --color-bg: #ffffff;
-  --color-fg: #1a1a1a;
-  --color-muted: #6b7280;
-  --color-primary: brown;
-  --color-primary-fg: #ffffff;
+  --color-background-page: #ffffff;
+  --color-foreground-page: #1a1a1a;
+  --color-secondary-background: #6b7280;
+  --color-primary-background: brown;
+  --color-primary-foreground: #ffffff;
+  --color-secondary-foreground: #ffffff;
+  --color-info: #0284c7;
+  --color-text: #000000;
   --color-border: #e5e7eb;
-  --color-danger: #dc2626;
+  --color-alert: #dc2626;
   --color-success: #16a34a;
 
   /* Spacing */
