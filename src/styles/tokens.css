@@ -1,17 +1,17 @@
 /* Design tokens — named variables for colors, spacing, typography. */
 :root {
   /* Colors */
-  --color-background-page: #ffffff;
-  --color-foreground-page: #1a1a1a;
-  --color-secondary-background: #6b7280;
-  --color-primary-background: brown;
-  --color-primary-foreground: #ffffff;
-  --color-secondary-foreground: #ffffff;
-  --color-info: #0284c7;
-  --color-text: #000000;
-  --color-border: #e5e7eb;
-  --color-alert: #dc2626;
-  --color-success: #16a34a;
+  --color-background-page: #ffffff; /* page background */
+  --color-foreground-page: #1a1a1a; /* page foreground text */
+  --color-secondary-background: #6b7280; /* secondary button background */
+  --color-primary-background: brown; /* primary button background / side bars */
+  --color-primary-foreground: #ffffff; /* text on primary buttons */
+  --color-secondary-foreground: #ffffff; /* text on secondary buttons */
+  --color-border: #e5e7eb; /* borders, dividers, input outlines */
+  --color-alert: #dc2626; /* high-priority alerts, error text (popups/banners/tooltips) */
+  --color-success: #16a34a; /* success messages (popups/banners/tooltips) */
+  --color-info: #0284c7; /* info messages (popups/banners/tooltips) */
+  --color-text: #000000; /* standard text color */
 
   /* Spacing */
   --space-xs: 4px;
