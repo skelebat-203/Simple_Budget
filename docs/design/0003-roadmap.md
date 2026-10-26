@@ -5,28 +5,38 @@
 - Plain CSS design tokens (colors, spacing, typography)
 - In-house UI components: button, input, dropdown-with-search, date picker, amount input, checkbox group
 - IndexedDB storage via Dexie + repository layer
-- Add flow (dropdown search, date picker default today, amount required, save, reward animation)
+- Add flow (dropdown search, date picker default today, amount required, save)
 - Budget screen skeleton (table view, Day/Week toggles)
 - PWA manifest + service worker (offline cache)
 - Security review
 
-## v0.2 — Edit/Delete + Categories
+## v0.2 — Finalize UI/UX
+- Finalize color tokens and theme (primary brown placeholder → brand colors)
+- Finalize category model and seed data
+- Table design and structure (columns, sorting, grouping)
+- Form validation (required fields, amount parsing)
+- Accessibility pass (keyboard nav, ARIA, contrast)
+- Security review
+
+## v0.3 — Edit/Delete + Categories
 - Edit flow (matching items checkbox group, "New value" inputs, save)
 - Delete flow (matching items checkbox group, save)
 - Categories CRUD (create/rename/delete/list)
 - Search/filter dropdown shared component reuse
-- Form validation (required fields, amount parsing)
 - Security review
 
-## v0.3 — Budget views + rewards/settings
+## v0.4 — Budget views + rewards/settings
 - Budget screen: Month/Year/Historic toggles
-- Chart view (Table/Chart switch)
 - Rewards animation + settings toggle (rewardsEnabled)
 - Notifications toggle (notificationsEnabled)
-- Accessibility pass (keyboard nav, ARIA, contrast)
 - Security review
 
-## v0.4 — Sync
+## v0.5 — Graphs and charts
+- Chart view (Table/Chart switch)
+- Chart types for Budget screen
+- Security review
+
+## v0.6 — Sync
 - StorageAdapter interface + OnlyOffice adapter
 - JSON-doc storage shape (version + updatedAt per record)
 - Sync-on-open: pull then push, last-write-wins, tombstones
@@ -34,7 +44,7 @@
 - Seed categories/table layout from OnlyOffice sheet
 - Security review
 
-## v0.5 — Distribution + polish
+## v0.7 — Distribution + polish
 - Per-OS install instructions (web, Android, GrapheneOS)
 - Offline robustness + cache eviction handling
 - Final accessibility audit
