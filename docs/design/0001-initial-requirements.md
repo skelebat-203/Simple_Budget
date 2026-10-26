@@ -9,7 +9,7 @@ Design doc: initial requirements for the Simple Budget app. To be fleshed out in
 - **Reward**: A cute animation/reward every time the user enters a budget item. Must be toggleable off (user dislikes it).
 - **Platforms**: GrapheneOS, Android, Web — single codebase.
 - **Distribution**: PWA for v1 (no cert); per-OS install instructions in docs. APK/Capacitor deferred (needed later for reliable local notifications).
-- **Sync**: Multi-device sync on launch via shared account (vendor-agnostic adapter); OnlyOffice for testing + seed categories/table layout. Dropped device-stored sync-on-open.
+- **Sync**: Multi-device sync on launch via shared account (vendor-agnostic adapter). Storage shape: one JSON doc per dataset with per-record `updatedAt`; sync = pull-then-push, last-write-wins; soft-delete tombstones; optional passphrase client-side encryption. OnlyOffice for testing + seed data. Dropped device-stored sync-on-open.
 - **UI**: Built in-house (no component kit) for full accessibility control.
 
 ## Screen 1: Update Budget

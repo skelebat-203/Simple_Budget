@@ -18,7 +18,7 @@ Companion to `0001-initial-requirements.md`. High-level architecture and stack r
 - `Category`: id, name, color (CRUD: create/rename/delete/list).
 - `Settings`: rewardsEnabled (bool), notificationsEnabled (bool), theme, etc.
 - Storage behind a repository interface; backend swappable (IndexedDB vs SQLite) without touching UI.
-- Sync: shared-account adapter (vendor-agnostic); OnlyOffice for testing + seed data. Timestamped records, sync-on-open (pull then push), last-write-wins per item. Dropped device-stored sync-on-open.
+- Sync: shared-account adapter (vendor-agnostic); OnlyOffice for testing + seed data. Adapter interface `{ read, write, list, delete }`. Storage shape: one JSON doc per dataset with top-level `version` and per-record `updatedAt`. Sync-on-open = pull then push, last-write-wins per record. Soft-delete tombstones. Optional passphrase client-side encryption before upload. Dropped device-stored sync-on-open.
 
 ## Architecture
 
