@@ -1,25 +1,24 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { budgetItemRepo } from '../storage/repository'
-import { useEffect } from 'react'
 import type { BudgetItem } from '../storage/db'
 
-export function Budget() {
+export function Budget({ refreshKey }: { refreshKey: number }) {
   const [view, setView] = useState<'day' | 'week'>('day')
   const [items, setItems] = useState<BudgetItem[]>([])
 
   useEffect(() => {
     budgetItemRepo.list().then(setItems)
-  }, [])
+  }, [refreshKey])
 
   return (
-    <div style={{ padding: 'var(--space-md)' }}>
-      <h2>Budget</h2>
+    <div style={{ padding: 'var(--space-md)', maxWidth: 800, margin: '0 auto' }}>
+      <h2 id="budget-heading" style={{ color: 'var(--color-fg)' }}>Budget</h2>
       <div style={{ display: 'flex', gap: 'var(--space-sm)', marginBottom: 'var(--space-md)' }}>
-        <button onClick={() => setView('day')} disabled={view === 'day'}>Day</button>
-        <button onClick={() => setView('week')} disabled={view === 'week'}>Week</button>
+        <button onClick={() => setView('day')} disabled={view === 'day'} style={{ minHeight: 44 }}>Day</button>
+        <button onClick={() => setView('week')} disabled={view === 'week'} style={{ minHeight: 44 }}>Week</button>
       </div>
       <table style={{ width: '100%', borderCollapse: 'collapse' }} aria-labelledby="budget-heading">
-      <caption id="budget-heading" className="sr-only">Budget items</caption>
+        <caption style={{ textAlign: 'left', marginBottom: 'var(--space-sm)' }}>Budget items</caption>
         <thead>
           <tr><th scope="col">Name</th><th scope="col">Type</th><th scope="col">Amount</th><th scope="col">Date</th></tr>
         </thead>
