@@ -1,25 +1,26 @@
 # Roadmap
 
-## v0.1 — Web PWA foundation
-- Scaffold project (React + TS, Vite, PWA plugin)
-- Plain CSS design tokens (colors, spacing, typography)
-- In-house UI components: button, input, dropdown-with-search, date picker, amount input, checkbox group
-- IndexedDB storage via Dexie + repository layer
-- Add flow (dropdown search, date picker default today, amount required, save)
-- Budget screen skeleton (table view, Day/Week toggles)
-- PWA manifest + service worker (offline cache)
+## v0.1 — Web PWA foundation (complete)
+- ✅ Scaffold project (React + TS, Vite, PWA plugin)
+- ✅ Plain CSS design tokens (colors, spacing, typography)
+- ✅ In-house UI components: button, input, dropdown-with-search, date picker, amount input, checkbox group
+- ✅ IndexedDB storage via Dexie + repository layer
+- ✅ Add flow (dropdown search, date picker default today, amount required, save)
+- ✅ Budget screen skeleton (table view, Day/Week toggles)
+- ✅ PWA manifest + service worker (offline cache)
+- ✅ Finalize color tokens (rename + comments)
+- ✅ Accessibility refactor of UI (labels, ARIA, focus, touch targets)
+- ✅ UI fixes (contrast, combobox, refresh, layout, a11y)
+- ✅ Security review (approved) → transition to v0.2.0
+
+## v0.2 — Finalize UI/UX (in progress)
+- Finalize category model and seed data
+- Table design and structure (columns, sorting, grouping)
+- Form validation (required fields, amount parsing)
+- Accessibility pass (keyboard nav, ARIA, contrast)
 - Security review
 
-## v0.2 — Finalize UI/UX (complete)
-- ✅ Finalize color tokens and theme (renamed + commented; primary brown placeholder)
-- ✅ Finalize category model and seed data (deferred to v0.3)
-- ✅ Table design and structure (columns, sorting, grouping)
-- ✅ Form validation (required fields, amount parsing)
-- ✅ Accessibility pass (keyboard nav, ARIA, contrast, touch targets)
-- ✅ UI fixes (contrast, combobox, refresh, layout, a11y)
-- ✅ Security review → transition to v0.2.0 (approved)
-
-## v0.3 — Edit/Delete + Categories (in progress)
+## v0.3 — Edit/Delete + Categories
 - Edit flow (matching items checkbox group, "New value" inputs, save)
 - Delete flow (matching items checkbox group, save)
 - Categories CRUD (create/rename/delete/list)
