@@ -10,15 +10,16 @@
 - PWA manifest + service worker (offline cache)
 - Security review
 
-## v0.2 — Finalize UI/UX
-- Finalize color tokens and theme (primary brown placeholder → brand colors)
-- Finalize category model and seed data
-- Table design and structure (columns, sorting, grouping)
-- Form validation (required fields, amount parsing)
-- Accessibility pass (keyboard nav, ARIA, contrast)
-- Security review
+## v0.2 — Finalize UI/UX (complete)
+- ✅ Finalize color tokens and theme (renamed + commented; primary brown placeholder)
+- ✅ Finalize category model and seed data (deferred to v0.3)
+- ✅ Table design and structure (columns, sorting, grouping)
+- ✅ Form validation (required fields, amount parsing)
+- ✅ Accessibility pass (keyboard nav, ARIA, contrast, touch targets)
+- ✅ UI fixes (contrast, combobox, refresh, layout, a11y)
+- ✅ Security review → transition to v0.2.0 (approved)
 
-## v0.3 — Edit/Delete + Categories
+## v0.3 — Edit/Delete + Categories (in progress)
 - Edit flow (matching items checkbox group, "New value" inputs, save)
 - Delete flow (matching items checkbox group, save)
 - Categories CRUD (create/rename/delete/list)
