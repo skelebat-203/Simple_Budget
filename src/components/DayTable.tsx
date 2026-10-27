@@ -3,16 +3,24 @@ import { Fragment } from 'react'
 
 const today = () => new Date().toISOString().slice(0, 10)
 
-function getColorForCategory(cat: string) {
-  if (cat === 'Pay' || cat === 'Incidental Income') return 'clr-blue'
-  if (cat === 'Taxes') return 'clr-red'
-  if (cat === 'Net Income') return 'clr-highlight-blue'
-  if (cat === 'Savings') return 'clr-green'
-  if (cat === 'Expenses') return 'clr-orange'
-  if (cat === 'Debt' || cat === 'Utilities' || cat === 'Subscriptions') return 'clr-lighter-orange'
-  if (cat === 'Charity') return 'clr-lighter-orange'
-  if (cat === 'Groceries' || cat === 'Gas' || cat === 'Gifts' || cat === 'Incidentals' || cat === 'Medical' || cat === 'Insurance' || cat === 'Maintenance') return 'clr-lighter-orange'
-  return ''
+const TOP_LEVEL = new Set(['Pay', 'Incidental Income', 'Taxes', 'Net Income', 'Savings', 'Expenses'])
+
+function categoryRowClass(cat: string): string {
+  if (cat === 'Pay' || cat === 'Incidental Income') return 'indent-0 clr-blue'
+  if (cat === 'Taxes') return 'indent-0 clr-red'
+  if (cat === 'Net Income') return 'indent-0 clr-highlight-blue'
+  if (cat === 'Savings') return 'indent-0 clr-green'
+  if (cat === 'Expenses') return 'indent-0 clr-orange'
+  // subexpense categories
+  return 'indent-1 clr-lighter-orange'
+}
+
+function itemRowClass(cat: string, type: string): string {
+  if (type === 'savings' || cat === 'Savings') return 'indent-1 clr-lighter-green'
+  if (cat === 'Pay' || cat === 'Incidental Income') return 'indent-1 clr-blue'
+  if (cat === 'Taxes') return 'indent-1 clr-red'
+  // expense items
+  return 'indent-2 clr-even-lighter-orange'
 }
 
 export function DayTable({ items }: { items: BudgetItem[] }) {
@@ -40,6 +48,9 @@ export function DayTable({ items }: { items: BudgetItem[] }) {
     sumField(i => i.category === 'Incidental Income', 'estimate') -
     sumField(i => i.category === 'Taxes', 'estimate')
 
+  const estSavings = sumField(i => i.type === 'savings', 'estimate')
+  const estExpenses = sumField(i => i.type === 'expense', 'estimate')
+
   return (
     <table className="table day-table" aria-label="Day budget">
       <thead>
@@ -52,23 +63,29 @@ export function DayTable({ items }: { items: BudgetItem[] }) {
       <tbody>
         {[...groups.entries()].map(([cat, its]) => (
           <Fragment key={cat}>
-            <tr className="row-category">
-              <td className={`indent-0 ${getColorForCategory(cat)}`}>{cat}</td>
+            <tr className={TOP_LEVEL.has(cat) ? 'row-category' : 'row-subcategory'}>
+              <td className={categoryRowClass(cat)}>{cat}</td>
               <td>{sumField(i => (i.category || i.name) === cat, 'estimate')}</td>
               <td>{sumField(i => (i.category || i.name) === cat, 'amount')}</td>
             </tr>
             {its.filter(i => (i.amount ?? 0) !== 0 || (i.estimate ?? 0) !== 0).map(i => (
               <tr key={i.id} className="row-item">
-                <td className={`indent-2 ${getColorForCategory(i.category || cat)}`}>{i.name}</td>
+                <td className={itemRowClass(cat, i.type)}>{i.name}</td>
                 <td>{i.estimate ?? ''}</td>
                 <td>{i.amount || ''}</td>
               </tr>
             ))}
           </Fragment>
         ))}
-        <tr className="row-computed"><td className={`indent-0 clr-highlight-blue`}>Net Income</td><td>{estNet}</td><td>{netIncome}</td></tr>
-        <tr className="row-computed"><td className={`indent-0 clr-green`}>Savings</td><td>{sumField(i => i.type === 'savings', 'estimate')}</td><td>{savings}</td></tr>
-        <tr className="row-computed"><td className={`indent-0 clr-orange`}>Expenses</td><td>{sumField(i => i.type === 'expense', 'estimate')}</td><td>{expenses}</td></tr>
+        {(estNet !== 0 || netIncome !== 0) && (
+          <tr className="row-computed"><td className={`indent-0 clr-highlight-blue`}>Net Income</td><td>{estNet}</td><td>{netIncome}</td></tr>
+        )}
+        {(estSavings !== 0 || savings !== 0) && (
+          <tr className="row-computed"><td className={`indent-0 clr-green`}>Savings</td><td>{estSavings}</td><td>{savings}</td></tr>
+        )}
+        {(estExpenses !== 0 || expenses !== 0) && (
+          <tr className="row-computed"><td className={`indent-0 clr-orange`}>Expenses</td><td>{estExpenses}</td><td>{expenses}</td></tr>
+        )}
       </tbody>
     </table>
   )

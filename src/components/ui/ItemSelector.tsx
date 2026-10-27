@@ -9,6 +9,7 @@ export interface ItemOption {
   level: 'category' | 'subcategory' | 'item'
   color: string
   parent?: string
+  root?: string
 }
 
 const TOP_LEVEL_TYPE: Record<string, BudgetType> = {
@@ -52,33 +53,33 @@ export function buildOptions(cats: Category[]): ItemOption[] {
     return inferType((parent as any).name, (parent as any).parentId == null ? null : (parent as any).parentId)
   }
   const options: ItemOption[] = []
-  const roots = (cats as any[]).filter((c: any) => c.parentId === null).sort((a: any, b: any) => a.name.localeCompare(b.name))
+  const roots = (cats as any[]).filter((c: any) => c.parentId === null).sort((a: any, b: any) => (a.id ?? 0) - (b.id ?? 0))
   for (let r = 0; r < roots.length; r++) {
     const root: any = roots[r]
-    options.push({ name: root.name, category: root.name, type: inferType(root.name, null), level: 'category', color: root.color })
+    options.push({ name: root.name, category: root.name, type: inferType(root.name, null), level: 'category', color: root.color, root: root.name })
     const direct = kids.get(-1) ?? []
-    const subs = direct.filter((c: any) => c.parentId === root.id && hasChildren(c.id)).sort((a: any, b: any) => a.name.localeCompare(b.name))
+    const subs = direct.filter((c: any) => c.parentId === root.id && hasChildren(c.id)).sort((a: any, b: any) => (a.id ?? 0) - (b.id ?? 0))
     for (let s = 0; s < subs.length; s++) {
       const sub: any = subs[s]
-      options.push({ name: sub.name, category: root.name, type: inferType(sub.name, sub.parentId == null ? null : sub.parentId), level: 'subcategory', color: sub.color, parent: root.name })
+      options.push({ name: sub.name, category: root.name, type: inferType(sub.name, sub.parentId == null ? null : sub.parentId), level: 'subcategory', color: sub.color, parent: root.name, root: root.name })
       if (typeof sub.id === 'number') {
-        const subLeaves = (kids.get(sub.id) ?? []).filter((c: any) => c.parentId === sub.id && !hasChildren(c.id)).sort((a: any, b: any) => a.name.localeCompare(b.name))
+        const subLeaves = (kids.get(sub.id) ?? []).filter((c: any) => c.parentId === sub.id && !hasChildren(c.id)).sort((a: any, b: any) => (a.id ?? 0) - (b.id ?? 0))
         for (let i = 0; i < subLeaves.length; i++) {
           const leaf: any = subLeaves[i]
-          options.push({ name: leaf.name, category: sub.name, type: inferType(leaf.name, leaf.parentId == null ? null : leaf.parentId), level: 'item', color: leaf.color, parent: sub.name })
+          options.push({ name: leaf.name, category: sub.name, type: inferType(leaf.name, leaf.parentId == null ? null : leaf.parentId), level: 'item', color: leaf.color, parent: sub.name, root: root.name })
         }
       }
     }
-    const leaves = direct.filter((c: any) => c.parentId === root.id && !hasChildren(c.id)).sort((a: any, b: any) => a.name.localeCompare(b.name))
+    const leaves = direct.filter((c: any) => c.parentId === root.id && !hasChildren(c.id)).sort((a: any, b: any) => (a.id ?? 0) - (b.id ?? 0))
     for (let i = 0; i < leaves.length; i++) {
       const leaf: any = leaves[i]
-      options.push({ name: leaf.name, category: root.name, type: inferType(leaf.name, leaf.parentId == null ? null : leaf.parentId), level: 'item', color: leaf.color, parent: root.name })
+      options.push({ name: leaf.name, category: root.name, type: inferType(leaf.name, leaf.parentId == null ? null : leaf.parentId), level: 'item', color: leaf.color, parent: root.name, root: root.name })
     }
   }
   return options
 }
 
-export function ItemSelector({ value, onChange, id, 'aria-required': ariaRequired, 'aria-describedby': ariaDescribedby, placeholder = 'Search items...' }: { value: string; onChange: (option: ItemOption | null) => void; id?: string; 'aria-required'?: boolean; 'aria-describedby'?: string; placeholder?: string }) {
+export function ItemSelector({ value, onChange, onTextChange, id, 'aria-required': ariaRequired, 'aria-describedby': ariaDescribedby, placeholder = 'Search items...' }: { value: string; onChange: (option: ItemOption | null) => void; onTextChange?: (text: string) => void; id?: string; 'aria-required'?: boolean; 'aria-describedby'?: string; placeholder?: string }) {
   const [options, setOptions] = useState<ItemOption[]>([])
   const [query, setQuery] = useState(value)
   const [open, setOpen] = useState(false)
@@ -106,6 +107,7 @@ export function ItemSelector({ value, onChange, id, 'aria-required': ariaRequire
     setOpen(false)
     setActiveIndex(-1)
     onChange(opt)
+    onTextChange?.(opt.name)
   }
 
   return (
@@ -115,7 +117,7 @@ export function ItemSelector({ value, onChange, id, 'aria-required': ariaRequire
         id={id}
         className="dropdown-input item-selector-input"
         value={query}
-        onChange={e => { setQuery(e.target.value); setOpen(true); setActiveIndex(-1); setSelected(null); onChange(null) }}
+        onChange={e => { setQuery(e.target.value); setOpen(true); setActiveIndex(-1); setSelected(null); onChange(null); onTextChange?.(e.target.value) }}
         onFocus={() => setOpen(true)}
         onBlur={() => setTimeout(() => setOpen(false), 150)}
         onKeyDown={(e) => {

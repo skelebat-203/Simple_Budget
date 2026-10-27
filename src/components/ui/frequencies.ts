@@ -5,7 +5,7 @@ export const FREQUENCIES: { value: Frequency; label: string }[] = [
   { value: 'week', label: 'Weekly' },
   { value: 'month', label: 'Monthly' },
   // Bi-monthly means twice a month, not every 2 months.
-  { value: 'bimonthly', label: 'Twice a month' },
+  { value: 'bimonthly', label: 'Bi-monthly' },
   { value: 'biweek', label: 'Every 2 weeks' },
 ]
 

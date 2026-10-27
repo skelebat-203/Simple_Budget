@@ -54,7 +54,7 @@ export function Budget({ refreshKey, defaultRange }: { refreshKey?: number; defa
         <BudgetSetup
           onClose={() => setShowSetup(false)}
           defaultRange={range}
-          onDefaultRangeChange={(v) => setRange(v)}
+          onDefaultRangeChange={(v) => { setRange(v); setView(v) }}
           onSaved={reload}
         />
       )}

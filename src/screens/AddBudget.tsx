@@ -104,7 +104,7 @@ export function AddBudget({ onSaved }: { onSaved: () => void }) {
         <div role="alert" aria-live="polite" className="error">{error}</div>
       ) : null}
       <label className="label" htmlFor="item-name">Item <span aria-hidden="true">*</span></label>
-      <ItemSelector id="item-name" value={name} onChange={handleItemChange} aria-required={true} aria-describedby={fieldErrors.name ? 'err-name' : undefined} />
+      <ItemSelector id="item-name" value={name} onChange={handleItemChange} onTextChange={setName} aria-required={true} aria-describedby={fieldErrors.name ? 'err-name' : undefined} />
       {fieldErrors.name && <div id="err-name" className="error">Error: Item {fieldErrors.name}</div>}
       <label className="label" htmlFor="item-amount">Amount <span aria-hidden="true">*</span></label>
       <small id="amount-help" className="help">Enter a number (negative amounts allowed for credits).</small>
