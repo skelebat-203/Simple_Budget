@@ -2,6 +2,9 @@ import Dexie, { type Table } from 'dexie'
 
 export type BudgetType = 'income' | 'savings' | 'expense'
 
+/** Recurrence of a budget item's estimated spend. */
+export type Frequency = 'day' | 'week' | 'month' | 'bimonthly' | 'biweek'
+
 export interface BudgetItem {
   id?: number
   name: string
@@ -9,6 +12,10 @@ export interface BudgetItem {
   type: BudgetType
   amount: number
   date: string
+  estimate?: number
+  frequency?: Frequency
+  dueDate?: string
+  autopay?: boolean
   createdAt: number
   updatedAt: number
 }
@@ -17,6 +24,8 @@ export interface Category {
   id?: number
   name: string
   color: string
+  /** True for computed rows (sums), not user-entered. */
+  computed?: boolean
 }
 
 export interface Settings {
@@ -35,6 +44,13 @@ class SimpleBudgetDB extends Dexie {
     this.version(1).stores({
       budgetItems: '++id, name, category, type, date',
       categories: '++id, name',
+      settings: '++id',
+    })
+    // v2 (categories + color, computed flag) is owned by the category-model
+    // step; keep this file's schema additive so the two compose cleanly.
+    this.version(3).stores({
+      budgetItems: '++id, name, category, type, date, dueDate',
+      categories: '++id, name, color, computed',
       settings: '++id',
     })
   }

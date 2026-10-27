@@ -4,7 +4,7 @@ Tracking file for current work status. Roadmap authority: `docs/design/0003-road
 Table design: `docs/design/0004-table-design.md`.
 
 ## Current state
-- Version: v0.2.1
+- Version: v0.2.2
 - v0.1 complete (security review approved; findings fixed).
 - v0.2 in progress: category hierarchy model + seed data, estimates/frequency/dueDate/autopay on BudgetItem, Day table (Est./Act.), validation, accessibility, security review.
 
@@ -18,7 +18,7 @@ Steps are ordered by version target. Within a subversion, each completed step bu
    - Verify: app runs, no console errors, icon still resolves.
    - Deps: none. Can run in parallel with nothing else; gate for steps 2 and 3.
 
-2. **Category model + seed data** (v0.2.2) — Dexie schema bump to v2 with a `categories` tree (parent/child, color, `computed` flag); seed the full hierarchy from `0004-table-design.md` via a seed helper.
+2. **Category model + seed data** (v0.2.2) ✅ — Dexie schema bump to v2 with a `categories` tree (parent/child, color, `computed` flag); seed the full hierarchy from `0004-table-design.md` via a seed helper.
    - Files: `src/storage/db.ts`, `src/storage/repository.ts`, new seed module (e.g. `src/storage/seed.ts`).
    - Deliverable: `categories` table populated on first run; computed rows flagged.
    - Verify: DB inspection shows full tree with colors and computed flags.
