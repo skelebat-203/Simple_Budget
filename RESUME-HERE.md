@@ -4,7 +4,7 @@ Tracking file for current work status. Roadmap authority: `docs/design/0003-road
 Table design: `docs/design/0004-table-design.md`.
 
 ## Current state
-- Version: v0.2.3
+- Version: v0.2.4
 - v0.1 complete (security review approved; findings fixed).
 - v0.2 in progress: category hierarchy model + seed data, estimates/frequency/dueDate/autopay on BudgetItem, Day table (Est./Act.), validation, accessibility, security review.
 
@@ -30,7 +30,7 @@ Steps are ordered by version target. Within a subversion, each completed step bu
    - Verify: add an item, reload, fields round-trip.
    - Deps: step 1. Parallelizable with step 2.
 
-4. **Day table** (v0.2.4) — Est./Act. columns; only rows with amounts; category grouping; computed rows rendered.
+4. **Day table** (v0.2.4) ✅ — Est./Act. columns; only rows with amounts; category grouping; computed rows rendered.
    - Files: `src/screens/Budget.tsx`, table components under `src/components/`.
    - Deliverable: Day view matches `0004-table-design.md` (structure + style rules).
    - Verify: manual check against table design; computed rows show sums.

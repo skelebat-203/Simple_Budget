@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { budgetItemRepo } from '../storage/repository'
 import type { BudgetItem } from '../storage/db'
+import { DayTable } from '../components/DayTable'
 
 export function Budget({ refreshKey }: { refreshKey: number }) {
   const [view, setView] = useState<'day' | 'week'>('day')
@@ -17,17 +18,21 @@ export function Budget({ refreshKey }: { refreshKey: number }) {
         <button onClick={() => setView('day')} disabled={view === 'day'} style={{ minHeight: 44 }}>Day</button>
         <button onClick={() => setView('week')} disabled={view === 'week'} style={{ minHeight: 44 }}>Week</button>
       </div>
-      <table style={{ width: '100%', borderCollapse: 'collapse' }} aria-labelledby="budget-heading">
-        <caption style={{ textAlign: 'left', marginBottom: 'var(--space-sm)' }}>Budget items</caption>
-        <thead>
-          <tr><th scope="col">Name</th><th scope="col">Type</th><th scope="col">Amount</th><th scope="col">Date</th></tr>
-        </thead>
-        <tbody>
-          {items.map(i => (
-            <tr key={i.id}><td>{i.name}</td><td>{i.type}</td><td>{i.amount}</td><td>{i.date}</td></tr>
-          ))}
-        </tbody>
-      </table>
+      {view === 'day' ? (
+        <DayTable items={items} />
+      ) : (
+        <table style={{ width: '100%', borderCollapse: 'collapse' }} aria-labelledby="budget-heading">
+          <caption style={{ textAlign: 'left', marginBottom: 'var(--space-sm)' }}>Budget items</caption>
+          <thead>
+            <tr><th scope="col">Name</th><th scope="col">Type</th><th scope="col">Amount</th><th scope="col">Date</th></tr>
+          </thead>
+          <tbody>
+            {items.map(i => (
+              <tr key={i.id}><td>{i.name}</td><td>{i.type}</td><td>{i.amount}</td><td>{i.date}</td></tr>
+            ))}
+          </tbody>
+        </table>
+      )}
     </div>
   )
 }
