@@ -4,7 +4,7 @@ Tracking file for current work status. Roadmap authority: `docs/design/0003-road
 Table design: `docs/design/0004-table-design.md`.
 
 ## Current state
-- Version: v0.2.4
+- Version: v0.2.5
 - v0.1 complete (security review approved; findings fixed).
 - v0.2 in progress: category hierarchy model + seed data, estimates/frequency/dueDate/autopay on BudgetItem, Day table (Est./Act.), validation, accessibility, security review.
 
@@ -36,7 +36,7 @@ Steps are ordered by version target. Within a subversion, each completed step bu
    - Verify: manual check against table design; computed rows show sums.
    - Deps: steps 2 and 3.
 
-5. **Validation + accessibility** (v0.2.5) — tighten validation (required fields, amount parsing); keyboard nav, ARIA, contrast. Fix `--color-primary-background: brown` in `src/styles/tokens.css` (fails 4.5:1 contrast).
+5. **Validation + accessibility** (v0.2.5) ✅ — tighten validation (required fields, amount parsing); keyboard nav, ARIA, contrast. Fix `--color-primary-background: brown` in `src/styles/tokens.css` (fails 4.5:1 contrast).
    - Files: `src/styles/tokens.css`, form components under `src/components/ui/*`, `src/screens/AddBudget.tsx`, `src/screens/Budget.tsx`.
    - Deliverable: forms reject bad input with clear errors; a11y pass (Lighthouse ≥ 90).
    - Verify: Lighthouse audit + manual keyboard/screen-reader walkthrough.

@@ -14,6 +14,14 @@ export function Input(props: InputHTMLAttributes<HTMLInputElement>) {
         outlineOffset: 2,
         ...props.style,
       }}
+      onFocus={(e) => {
+        e.currentTarget.style.outline = '2px solid var(--color-info)'
+        if (props.onFocus) props.onFocus(e)
+      }}
+      onBlur={(e) => {
+        e.currentTarget.style.outline = '2px solid transparent'
+        if (props.onBlur) props.onBlur(e)
+      }}
     />
   )
 }
