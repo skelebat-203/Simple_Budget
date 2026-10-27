@@ -1,4 +1,4 @@
-import { db, type Category } from './db'
+import { db } from './db'
 
 // Color tokens from docs/design/0004-table-design.md
 const C = {
@@ -13,7 +13,7 @@ const C = {
 }
 
 async function add(name: string, parentId: number | null, color: string, computed: boolean): Promise<number> {
-  return db.categories.add({ name, parentId, color, computed } as Omit<Category, 'id'>)
+  return db.categories.add({ name, parentId, color, computed })
 }
 
 export async function seedCategories(): Promise<void> {

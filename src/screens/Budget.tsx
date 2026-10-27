@@ -3,36 +3,60 @@ import { budgetItemRepo } from '../storage/repository'
 import type { BudgetItem } from '../storage/db'
 import { DayTable } from '../components/DayTable'
 import { Button } from '../components/ui'
+import { BudgetSetup } from './BudgetSetup'
 
-export function Budget({ refreshKey }: { refreshKey: number }) {
-  const [view, setView] = useState<'day' | 'week'>('day')
+export type BudgetView = 'day' | 'week' | 'month'
+
+export function Budget({ refreshKey, defaultRange }: { refreshKey?: number; defaultRange: BudgetView }) {
+  const [view, setView] = useState<BudgetView>(defaultRange)
   const [items, setItems] = useState<BudgetItem[]>([])
+  const [showSetup, setShowSetup] = useState(false)
+  const [range, setRange] = useState<BudgetView>(defaultRange)
 
   useEffect(() => {
     budgetItemRepo.list().then(setItems)
   }, [refreshKey])
+  useEffect(() => {
+    setView(defaultRange)
+  }, [defaultRange])
+
+  function reload() {
+    budgetItemRepo.list().then(setItems)
+  }
 
   return (
-    <div style={{ padding: 'var(--space-md)', maxWidth: 800, margin: '0 auto' }}>
-      <h2 id="budget-heading" style={{ color: 'var(--color-foreground-page)' }}>Budget</h2>
-      <div style={{ display: 'flex', gap: 'var(--space-sm)', marginBottom: 'var(--space-md)' }}>
-        <Button onClick={() => setView('day')} disabled={view === 'day'} aria-pressed={view === 'day'}>Day</Button>
-        <Button onClick={() => setView('week')} disabled={view === 'week'} aria-pressed={view === 'week'}>Week</Button>
+    <div className="form wide">
+      <h2 id="budget-heading" className="section-title">Budget</h2>
+      <div className="button-row">
+        <Button type="button" onClick={() => setShowSetup(true)}>Set estimates</Button>
+      </div>
+      <div className="button-row">
+        <Button type="button" onClick={() => setView('day')} disabled={view === 'day'} aria-pressed={view === 'day'}>Day</Button>
+        <Button type="button" onClick={() => setView('week')} disabled={view === 'week'} aria-pressed={view === 'week'}>Week</Button>
+        <Button type="button" onClick={() => setView('month')} disabled={view === 'month'} aria-pressed={view === 'month'}>Month</Button>
       </div>
       {view === 'day' ? (
         <DayTable items={items} />
       ) : (
-        <table style={{ width: '100%', borderCollapse: 'collapse' }} aria-labelledby="budget-heading">
-          <caption style={{ textAlign: 'left', marginBottom: 'var(--space-sm)' }}>Budget items</caption>
+        <table className="table" aria-labelledby="budget-heading">
+          <caption>{view === 'week' ? 'Week' : 'Month'} view</caption>
           <thead>
             <tr><th scope="col">Name</th><th scope="col">Type</th><th scope="col">Amount</th><th scope="col">Date</th></tr>
           </thead>
           <tbody>
             {items.map(i => (
-              <tr key={i.id}><td>{i.name}</td><td>{i.type}</td><td>{i.amount}</td><td>{i.date}</td></tr>
+              <tr key={i.id} className="row-item"><td>{i.name}</td><td>{i.type}</td><td>{i.amount}</td><td>{i.date}</td></tr>
             ))}
           </tbody>
         </table>
+      )}
+      {showSetup && (
+        <BudgetSetup
+          onClose={() => setShowSetup(false)}
+          defaultRange={range}
+          onDefaultRangeChange={(v) => setRange(v)}
+          onSaved={reload}
+        />
       )}
     </div>
   )

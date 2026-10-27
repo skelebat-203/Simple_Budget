@@ -1,6 +1,8 @@
 # Roadmap
 
 Table design and category hierarchy: `docs/design/0004-table-design.md`.
+
+Note: UI/UX must be approved by human before the accessibility pass. Agent rule: "Implementation agents must not mark a UI-touching item complete until the UI/UX has been approved by human; a11y pass starts only after sign-off." See `docs/design/0005-ui-ux-review-checklist.md`.
 Computed rows: see `0004-table-design.md` (each is marked `*` in the hierarchy
 with its formula).
 
@@ -27,15 +29,16 @@ tracked as a later-version item.
 - `BudgetItem` gains `estimate`, `frequency`, `dueDate`, `autopay`; add flow asks for estimated spend + frequency
 - Day table view (Est./Act. columns, only rows with amounts, category grouping)
 - Form validation (required fields, amount parsing)
+- UI/UX review (human approval)
 - Accessibility pass
 - Security review
-
 ## v0.3 — Edit/Delete + Categories CRUD
 - Edit flow (matching items checkbox group, "New value" inputs, save)
 - Delete flow (matching items checkbox group, save)
 - Categories CRUD on the hierarchy (create/rename/delete/list, add subcategories)
 - `dueDate`/`autopay` display + editing on items
 - Search/filter dropdown shared component reuse
+- UI/UX review (human approval)
 - Accessibility pass
 - Security review
 
@@ -44,6 +47,7 @@ tracked as a later-version item.
 - Historical navigation (prev/next date range)
 - Estimate toggle (default on)
 - Expand/collapse category/subcategory rows + persisted state
+- UI/UX review (human approval)
 - Accessibility pass
 - Security review
 
@@ -51,6 +55,7 @@ tracked as a later-version item.
 - Rewards animation + `rewardsEnabled` toggle
 - `notificationsEnabled` toggle
 - Onboarding questionnaire (pay frequency, category opt-in multi-select with autocomplete)
+- UI/UX review (human approval)
 - Accessibility pass
 - Security review
 
@@ -59,12 +64,14 @@ tracked as a later-version item.
 - UI/UX for the upload flow
 - Deep subcategory nesting (subcategories containing subitems)
 - Add upload step to onboarding once it works
+- UI/UX review (human approval)
 - Accessibility pass
 - Security review
 
 ## v0.7 — Graphs and charts
 - Chart view (Table/Chart switch)
 - Chart types for Budget screen
+- UI/UX review (human approval)
 - Accessibility pass for charts (alt text, keyboard nav, screen reader)
 - Security review
 
@@ -79,6 +86,7 @@ tracked as a later-version item.
 ## v0.9 — Distribution + polish
 - Per-OS install instructions (web, Android, GrapheneOS)
 - Offline robustness + cache eviction handling
+- UI/UX review (human approval)
 - Final accessibility audit
 - Security review
 

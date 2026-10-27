@@ -4,7 +4,7 @@
   --color-background-page: #ffffff; /* page background */
   --color-foreground-page: #1a1a1a; /* page foreground text */
   --color-secondary-background: #6b7280; /* secondary button background */
-  --color-primary-background: #8b4513; /* primary button background / side bars */
+  --color-primary-background: #5c2e0a; /* primary button background / side bars */
   --color-primary-foreground: #ffffff; /* text on primary buttons */
   --color-secondary-foreground: #ffffff; /* text on secondary buttons */
   --color-border: #e5e7eb; /* borders, dividers, input outlines */
@@ -12,6 +12,18 @@
   --color-success: #16a34a; /* success messages (popups/banners/tooltips) */
   --color-info: #0284c7; /* info messages (popups/banners/tooltips) */
   --color-text: #000000; /* standard text color */
+
+  /* Category colors (docs/design/0004-table-design.md). Applied as text on
+     category/subcategory rows (large/bold, 3:1 vs background) and as borders
+     on item rows (3:1 graphical-object contrast). */
+  --color-cat-blue: #1d4ed8; /* Pay, Incidental Income */
+  --color-cat-red: #b91c1c; /* Taxes */
+  --color-cat-highlight-blue: #2563eb; /* Net Income */
+  --color-cat-green: #15803d; /* Savings */
+  --color-cat-lighter-green: #16a34a; /* savings items */
+  --color-cat-orange: #c2410c; /* Expenses */
+  --color-cat-lighter-orange: #e87a2d; /* subexpense categories */
+  --color-cat-even-lighter-orange: #f59e42; /* expense category items */
 
   /* Spacing */
   --space-xs: 4px;

@@ -24,6 +24,8 @@ export interface Category {
   id?: number
   name: string
   color: string
+  /** Id of the parent category, null for top-level categories. */
+  parentId: number | null
   /** True for computed rows (sums), not user-entered. */
   computed?: boolean
 }
@@ -55,6 +57,12 @@ class SimpleBudgetDB extends Dexie {
     this.version(3).stores({
       budgetItems: '++id, name, category, type, date, dueDate',
       categories: '++id, name, color, computed',
+      settings: '++id',
+    })
+    // v4 (category parentId for hierarchy traversal)
+    this.version(4).stores({
+      budgetItems: '++id, name, category, type, date, dueDate',
+      categories: '++id, name, color, computed, parentId',
       settings: '++id',
     })
   }

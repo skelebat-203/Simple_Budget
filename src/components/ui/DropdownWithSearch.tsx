@@ -6,10 +6,11 @@ export function DropdownWithSearch({ options, value, onChange, id, 'aria-require
   const inputRef = useRef<HTMLInputElement>(null)
   const filtered = options.filter(o => o.toLowerCase().includes(value.toLowerCase()))
   return (
-    <div style={{ position: 'relative' }}>
+    <div className="dropdown">
       <input
         ref={inputRef}
         id={id}
+        className="dropdown-input"
         value={value}
         onChange={e => { onChange(e.target.value); setOpen(true); setActiveIndex(-1) }}
         onFocus={() => setOpen(true)}
@@ -36,7 +37,6 @@ export function DropdownWithSearch({ options, value, onChange, id, 'aria-require
           }
         }}
         placeholder="Search items..."
-        style={{ padding: 'var(--space-sm)', width: '100%', minHeight: 44, border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)' }}
         aria-expanded={open}
         aria-autocomplete="list"
         aria-controls={id ? `${id}-listbox` : undefined}
@@ -49,7 +49,7 @@ export function DropdownWithSearch({ options, value, onChange, id, 'aria-require
         <ul
           id={id ? `${id}-listbox` : undefined}
           role="listbox"
-          style={{ listStyle: 'none', padding: 0, margin: 0, maxHeight: 200, overflow: 'auto', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)', position: 'absolute', width: '100%', background: 'var(--color-background-page)', zIndex: 10 }}
+          className="dropdown-list"
         >
           {filtered.map((o, idx) => (
             <li
@@ -57,9 +57,10 @@ export function DropdownWithSearch({ options, value, onChange, id, 'aria-require
               id={id ? `${id}-option-${idx}` : undefined}
               role="option"
               aria-selected={idx === activeIndex}
+              data-active={idx === activeIndex}
               onMouseDown={(e) => { e.preventDefault(); onChange(o); setOpen(false); setActiveIndex(-1) }}
               onMouseEnter={() => setActiveIndex(idx)}
-              style={{ padding: 'var(--space-xs)', cursor: 'pointer', minHeight: 44, background: idx === activeIndex ? 'var(--color-border)' : undefined }}
+              className="dropdown-option"
             >{o}</li>
           ))}
         </ul>
