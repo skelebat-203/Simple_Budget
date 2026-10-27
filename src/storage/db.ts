@@ -46,8 +46,12 @@ class SimpleBudgetDB extends Dexie {
       categories: '++id, name',
       settings: '++id',
     })
-    // v2 (categories + color, computed flag) is owned by the category-model
-    // step; keep this file's schema additive so the two compose cleanly.
+    // v2 (categories + color, computed flag)
+    this.version(2).stores({
+      budgetItems: '++id, name, category, type, date',
+      categories: '++id, name, color, computed',
+      settings: '++id',
+    })
     this.version(3).stores({
       budgetItems: '++id, name, category, type, date, dueDate',
       categories: '++id, name, color, computed',

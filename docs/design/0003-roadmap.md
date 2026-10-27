@@ -1,5 +1,14 @@
 # Roadmap
 
+Table design and category hierarchy: `docs/design/0004-table-design.md`.
+Computed rows: see `0004-table-design.md` (each is marked `*` in the hierarchy
+with its formula).
+
+Deferred exploration: whether Savings should be computed as (income − spending)
+rather than summed from savings items. Difficult because the user can add custom
+items and categories. Worth revisiting once basic functionality is built —
+tracked as a later-version item.
+
 ## v0.1 — Web PWA foundation (complete)
 - ✅ Scaffold project (React + TS, Vite, PWA plugin)
 - ✅ Plain CSS design tokens (colors, spacing, typography)
@@ -13,33 +22,53 @@
 - ✅ UI fixes (contrast, combobox, refresh, layout, a11y)
 - ✅ Security review (approved) → transition to v0.2.0
 
-## v0.2 — Finalize UI/UX (in progress)
-- Finalize category model and seed data
-- Table design and structure (columns, sorting, grouping)
+## v0.2 — Category model, estimates, Day table (in progress)
+- Category hierarchy model + seed data (full tree from `0004-table-design.md`, each with a color)
+- `BudgetItem` gains `estimate`, `frequency`, `dueDate`, `autopay`; add flow asks for estimated spend + frequency
+- Day table view (Est./Act. columns, only rows with amounts, category grouping)
 - Form validation (required fields, amount parsing)
-- Accessibility pass (keyboard nav, ARIA, contrast)
+- Accessibility pass
 - Security review
 
-## v0.3 — Edit/Delete + Categories
+## v0.3 — Edit/Delete + Categories CRUD
 - Edit flow (matching items checkbox group, "New value" inputs, save)
 - Delete flow (matching items checkbox group, save)
-- Categories CRUD (create/rename/delete/list)
+- Categories CRUD on the hierarchy (create/rename/delete/list, add subcategories)
+- `dueDate`/`autopay` display + editing on items
 - Search/filter dropdown shared component reuse
+- Accessibility pass
 - Security review
 
-## v0.4 — Budget views + rewards/settings
-- Budget screen: Month/Year/Historic toggles
-- Rewards animation + settings toggle (rewardsEnabled)
-- Notifications toggle (notificationsEnabled)
+## v0.4 — Week/Month/Year + navigation
+- Week/Month/Year table views (date-spanning columns, per-period Est./Act.)
+- Historical navigation (prev/next date range)
+- Estimate toggle (default on)
+- Expand/collapse category/subcategory rows + persisted state
+- Accessibility pass
 - Security review
 
-## v0.5 — Graphs and charts
+## v0.5 — Rewards, settings, onboarding
+- Rewards animation + `rewardsEnabled` toggle
+- `notificationsEnabled` toggle
+- Onboarding questionnaire (pay frequency, category opt-in multi-select with autocomplete)
+- Accessibility pass
+- Security review
+
+## v0.6 — Data import + deep nesting
+- CSV/HTML upload + auto-categorization parsing
+- UI/UX for the upload flow
+- Deep subcategory nesting (subcategories containing subitems)
+- Add upload step to onboarding once it works
+- Accessibility pass
+- Security review
+
+## v0.7 — Graphs and charts
 - Chart view (Table/Chart switch)
 - Chart types for Budget screen
 - Accessibility pass for charts (alt text, keyboard nav, screen reader)
 - Security review
 
-## v0.6 — Sync
+## v0.8 — Sync
 - StorageAdapter interface + OnlyOffice adapter
 - JSON-doc storage shape (version + updatedAt per record)
 - Sync-on-open: pull then push, last-write-wins, tombstones
@@ -47,7 +76,7 @@
 - Seed categories/table layout from OnlyOffice sheet
 - Security review
 
-## v0.7 — Distribution + polish
+## v0.9 — Distribution + polish
 - Per-OS install instructions (web, Android, GrapheneOS)
 - Offline robustness + cache eviction handling
 - Final accessibility audit

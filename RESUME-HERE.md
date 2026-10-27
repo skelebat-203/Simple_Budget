@@ -4,7 +4,7 @@ Tracking file for current work status. Roadmap authority: `docs/design/0003-road
 Table design: `docs/design/0004-table-design.md`.
 
 ## Current state
-- Version: v0.2.2
+- Version: v0.2.3
 - v0.1 complete (security review approved; findings fixed).
 - v0.2 in progress: category hierarchy model + seed data, estimates/frequency/dueDate/autopay on BudgetItem, Day table (Est./Act.), validation, accessibility, security review.
 
@@ -24,7 +24,7 @@ Steps are ordered by version target. Within a subversion, each completed step bu
    - Verify: DB inspection shows full tree with colors and computed flags.
    - Deps: step 1. Parallelizable with step 3.
 
-3. **BudgetItem fields + add flow** (v0.2.3) — add `estimate`, `frequency`, `dueDate`, `autopay` to `BudgetItem`; DB bump to v3; repository update; AddBudget asks for estimated spend + recurrence dropdown (day/week/month/bimonthly/biweekly).
+3. **BudgetItem fields + add flow** (v0.2.3) ✅ — add `estimate`, `frequency`, `dueDate`, `autopay` to `BudgetItem`; DB bump to v3; repository update; AddBudget asks for estimated spend + recurrence dropdown (day/week/month/bimonthly/biweek).
    - Files: `src/storage/db.ts`, `src/storage/repository.ts`, `src/screens/AddBudget.tsx`.
    - Deliverable: item persists new fields; add flow captures estimate + frequency.
    - Verify: add an item, reload, fields round-trip.
