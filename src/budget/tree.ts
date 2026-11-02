@@ -53,11 +53,9 @@ const BILL_GROUPS = new Set(['Debt', 'Utilities', 'Subscriptions'])
 const rootOf = (n: CatNode): CatNode => (n.parent ? rootOf(n.parent) : n)
 const inBillGroup = (n: CatNode) => ancestors(n).some(a => BILL_GROUPS.has(a.cat.name))
 
-/** Recurrence applies to income, debt, utilities and subscriptions. */
-export const recurrenceApplies = (n: CatNode) => rootOf(n).cat.name === 'Income' || inBillGroup(n)
-
-/** Autopay applies to debt, utilities and subscriptions. */
-export const autopayApplies = inBillGroup
+/** Recurrence and autopay belong to every row that holds a manual estimate: any non-total row (0007 §3). */
+export const recurrenceApplies = (n: CatNode) => !isTotal(n)
+export const autopayApplies = recurrenceApplies
 
 export const FREQUENCIES: { value: Frequency; label: string }[] = [
   { value: 'day', label: 'Daily' },
@@ -67,7 +65,13 @@ export const FREQUENCIES: { value: Frequency; label: string }[] = [
   { value: 'month', label: 'Monthly' },
 ]
 
-const PER_MONTH: Record<Frequency, number> = { day: 30.44, week: 52 / 12, biweek: 26 / 12, bimonthly: 2, month: 1 }
+/** Debt, Utilities and Subscriptions items also get Quarterly and Annual (0007 §3). */
+export const frequenciesFor = (n: CatNode) => inBillGroup(n)
+  ? [...FREQUENCIES, { value: 'quarter' as const, label: 'Quarterly' }, { value: 'year' as const, label: 'Annual' }]
+  : FREQUENCIES
+
+/** Occurrences per month. Day-based scaling below stays until v0.4 (security-v0.2 3.4). */
+export const PER_MONTH: Record<Frequency, number> = { day: 30.44, week: 52 / 12, biweek: 26 / 12, bimonthly: 2, month: 1, quarter: 1 / 3, year: 1 / 12 }
 
 /** Estimate for one node over `days` days. No recurrence = monthly. */
 export function estimateFor(c: Category, days: number): number {

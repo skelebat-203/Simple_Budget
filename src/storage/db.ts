@@ -3,8 +3,8 @@ import { isPreselected } from './preselected'
 import { cleanName } from '../budget/validate'
 import { toV7Structure } from './structure'
 
-/** Recurrence of an item's estimate. Bi-monthly means twice a month. */
-export type Frequency = 'day' | 'week' | 'biweek' | 'bimonthly' | 'month'
+/** Recurrence of an estimate. Bi-monthly means twice a month. Quarter/year: bill groups only (0007 §3). */
+export type Frequency = 'day' | 'week' | 'biweek' | 'bimonthly' | 'month' | 'quarter' | 'year'
 
 /** Budget table display range. */
 export type Range = 'day' | 'week' | 'month'

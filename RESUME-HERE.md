@@ -4,9 +4,9 @@ Tracking file for current work status. Roadmap authority: `docs/design/0003-road
 Design: `0004-table-design.md` (table), `0006-prototype.html` (v0.2 UI), `0007-v0.3-design-updates.md` (v0.3 changes; wins on conflict).
 
 ## Current state
-- Version: v0.3.2. v0.2 complete (security review approved, `docs/audits/security/security-v0.2.md`).
+- Version: v0.3.3. v0.2 complete (security review approved, `docs/audits/security/security-v0.2.md`).
 - Data: Dexie v7 (Income group, stored sibling `order`, `computed` only on top-level rows; see `src/storage/structure.ts`). Amounts link to categories by `categoryId`; estimate fields live on `Category`. `needsReview` removed (0007 §8.4).
-- Next: step 3 below. UI sign-off for each UI step is collected at step 14 (commits say "UI review pending").
+- Next: step 4 below. UI sign-off for each UI step is collected at step 14 (commits say "UI review pending").
 - Testing: headless Chromium via host flatpak + puppeteer-core; scripts in the session scratchpad.
 
 ## v0.3 plan of action
@@ -25,7 +25,7 @@ Covers every v0.3 roadmap item. Each completed step bumps the last version segme
    - Verify: upgrade keeps every amount and estimate; table shows the new top level; totals match before and after.
    - Deps: step 1.
 
-3. **Recurrence + estimate scaling** (v0.3.3) — Recurrence and Autopay on every item and on subcategories with a manual estimate; Quarterly and Annual for Debt, Utilities and Subscriptions; Week and Month tables scale estimates from each recurrence (day-based math stays until v0.4).
+3. ✅ **Recurrence + estimate scaling** (v0.3.3) — UI review pending (step 14) — Recurrence and Autopay on every item and on subcategories with a manual estimate; Quarterly and Annual for Debt, Utilities and Subscriptions; Week and Month tables scale estimates from each recurrence (day-based math stays until v0.4).
    - Source: 0007 §3.
    - Files: `src/budget/tree.ts`, `src/storage/db.ts` (`Frequency`), `repository.ts` (frequency check).
    - Verify: scaling checks for each recurrence; $120 quarterly shows about $40 in a month view.

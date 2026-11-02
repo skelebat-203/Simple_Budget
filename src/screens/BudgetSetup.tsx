@@ -4,7 +4,7 @@ import { categoryRepo, saveSetup } from '../storage/repository'
 import { cleanName, moneyError, NAME_MAX, parseMoney } from '../budget/validate'
 import type { Frequency, Range } from '../storage/db'
 import {
-  autopayApplies, childColor, flatten, FREQUENCIES, isTotal, recurrenceApplies, subtree, type CatNode,
+  autopayApplies, childColor, flatten, frequenciesFor, isTotal, recurrenceApplies, subtree, type CatNode,
 } from '../budget/tree'
 
 type Draft = { selected: boolean; estimate: string; frequency: Frequency; autopay: boolean }
@@ -115,7 +115,7 @@ export function BudgetSetup({ roots, defaultRange, onClose, onChanged }: {
         return { id: n.cat.id, patch: {
           selected: x.selected,
           estimate: values.get(n.cat.id),
-          frequency: recurrenceApplies(n) ? x.frequency : undefined,
+          frequency: recurrenceApplies(n) && frequenciesFor(n).some(f => f.value === x.frequency) ? x.frequency : undefined,
           autopay: autopayApplies(n) ? x.autopay : undefined,
         } }
       }), range)
@@ -212,7 +212,7 @@ export function BudgetSetup({ roots, defaultRange, onClose, onChanged }: {
                             <span aria-hidden="true">per</span>
                             <select className="input" aria-label={`Recurrence for ${n.cat.name}`} value={x.frequency}
                               onChange={e => patch(n, { frequency: e.target.value as Frequency })}>
-                              {FREQUENCIES.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
+                              {frequenciesFor(n).map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
                             </select>
                           </span>
                         )}

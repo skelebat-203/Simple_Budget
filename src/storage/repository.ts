@@ -2,7 +2,7 @@ import { db, type BudgetItem, type Category, type Frequency, type Range, type Se
 import { cleanName, MONEY_MAX } from '../budget/validate'
 import { toV7Structure } from './structure'
 
-const FREQS = new Set<Frequency>(['day', 'week', 'biweek', 'bimonthly', 'month'])
+const FREQS = new Set<Frequency>(['day', 'week', 'biweek', 'bimonthly', 'month', 'quarter', 'year'])
 const RANGES = new Set<Range>(['day', 'week', 'month'])
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 const isMoney = (n: unknown): n is number => typeof n === 'number' && Number.isFinite(n) && Math.abs(n) <= MONEY_MAX
