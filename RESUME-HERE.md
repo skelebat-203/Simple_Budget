@@ -6,7 +6,7 @@ Design: `0004-table-design.md` (table), `0006-prototype.html` (v0.2 UI), `0007-v
 ## Current state
 - Version: v0.3.9. v0.2 complete (security review approved, `docs/audits/security/security-v0.2.md`).
 - Data: Dexie v7 (Income group, stored sibling `order`, `computed` only on top-level rows; see `src/storage/structure.ts`). Amounts link to categories by `categoryId`; estimate fields live on `Category`. `needsReview` removed (0007 §8.4).
-- Next: step 10 below. UI sign-off for each UI step is collected at step 14 (commits say "UI review pending").
+- Next: step 10 below. Steps 10–12 replanned 2026-11-02 (0007 §9): edit/delete live in the tables. UI sign-off for each UI step is collected at step 14 (commits say "UI review pending").
 - Testing: headless Chromium via host flatpak + puppeteer-core; scripts in the session scratchpad.
 
 ## v0.3 plan of action
@@ -67,23 +67,23 @@ Covers every v0.3 roadmap item. Each completed step bumps the last version segme
    - Verify: used unchanged in steps 8 and 10–12.
    - Deps: step 8.
 
-10. **Edit flow** (v0.3.10) — search items or filter by category, optional date and amount filters, matching amounts as a checkbox group (at least one required), a required "New value" per selected amount; moving an amount to another item.
-    - Source: `0001-initial-requirements.md` Edit; roadmap v0.3.
-    - Files: new `src/screens/EditBudget.tsx`, `repository.ts`.
-    - Verify: edit and move amounts.
-    - Deps: step 9.
+10. **Day purchase rows + delete** (v0.3.10) — Day lists each purchase under its item; Delete with in-row confirmation; tab renamed "Add purchase".
+    - Source: 0007 §9.1, §6.
+    - Files: `src/components/BudgetTable.tsx`, `src/App.tsx`, `src/screens/AddBudget.tsx`, `repository.ts`.
+    - Verify: deleted purchases leave every table and total; keyboard + focus after delete.
+    - Deps: step 6.
 
-11. **Delete flow** (v0.3.11) — same search and filters, matching amounts as a checkbox group (at least one required), delete with confirmation.
-    - Source: `0001-initial-requirements.md` Delete; roadmap v0.3.
-    - Files: new `src/screens/DeleteBudget.tsx`, `repository.ts`.
-    - Verify: deleted amounts leave every table and total.
-    - Deps: step 9.
+11. **Week/Month add value + delete rows** (v0.3.11) — Add value (+/−) on item rows; delete subcategories/items with no purchases and no items; top-level never deletable.
+    - Source: 0007 §9.2.
+    - Files: `src/components/BudgetTable.tsx`, `repository.ts`.
+    - Verify: added value shows in totals with the right date; blocked deletes explain why.
+    - Deps: step 10.
 
-12. **Categories CRUD** (v0.3.12) — rename and delete categories and subcategories (create and reorder are in step 7); deleting a node that has amounts needs a human decision on where they go; computed rows are protected.
-    - Source: roadmap v0.3.
-    - Files: `src/screens/BudgetSetup.tsx` or a new screen (decide at step 7 review), `repository.ts`.
-    - Verify: a rename shows everywhere; a delete never orphans amounts.
-    - Deps: steps 2, 7, 9.
+12. **Annual rename** (v0.3.12) — rename subcategories and items in the Annual table.
+    - Source: 0007 §9.3.
+    - Files: `src/components/BudgetTable.tsx`, `repository.ts`.
+    - Verify: a rename shows everywhere; duplicate names rejected.
+    - Deps: step 6.
 
 13. **Due date + autopay display and editing** (v0.3.13) — show and edit `dueDate` and `autopay` on items.
     - Source: roadmap v0.3.

@@ -37,12 +37,14 @@ tracked as a later-version item.
 - ✅ Accessibility pass (Lighthouse 100 on six app states; keyboard and screen reader tests passed)
 - ✅ Security review (`docs/audits/security/security-v0.2.md`, approved): storage persistence + JSON backup export/restore, non-guessing migration + review flags (Dexie v6), shared money/date/name rules, clear error handling, production CSP → transition to v0.3.0
 
-## v0.3 — Edit/Delete + Categories CRUD
-- Edit flow (matching items checkbox group, "New value" inputs, save)
-- Delete flow (matching items checkbox group, save)
-- Categories CRUD on the hierarchy (create/rename/delete/list, add subcategories)
+## v0.3 — Edit/Delete in the tables + Categories CRUD
+- Editing in the tables (0007 §9; replaces the 0001 Edit and Delete flows):
+  - Day: each purchase on its own row; delete purchases
+  - Week/Month: add a value (+/−) to an item; delete subcategories and items with no purchases
+  - Annual: rename subcategories and items
+- Categories CRUD: create and reorder in Budget setup (0007 §5), rename in Annual, delete in Week/Month; top-level categories are never deleted
 - `dueDate`/`autopay` display + editing on items
-- Search/filter dropdown shared component reuse
+- ✅ Search/filter dropdown shared component (item and category pickers, 0007 §8.3)
 - ✅ Audit categories and items for repeated or ambiguous names (0007 §8); remove the `needsReview` flags (pre-alpha, no legacy data)
 - Design updates per `0007-v0.3-design-updates.md` (plan of action made when v0.3 starts):
   - Calendar settings: week start, month boundaries (0007 §1)
@@ -58,7 +60,7 @@ tracked as a later-version item.
 
 ## v0.4 — Week/Month/Year + navigation
 - Week/Month/Year table views (date-spanning columns, per-period Est./Act.)
-- Historical navigation (prev/next date range)
+- Historical navigation (prev/next date range): a date `nav` above the tables (0007 §9.5)
 - Estimate scaling math: replace day-based scaling (monthly ÷ 30.44 × days) so monthly-style estimates show the typed amount per month (`docs/audits/security/security-v0.2.md` 3.4)
 - Estimate toggle (default on)
 - Expand/collapse category/subcategory rows + persisted state
@@ -107,5 +109,6 @@ tracked as a later-version item.
 - Security review
 
 ## Post v1.0
+- Correct a single purchase's amount or date (today: delete it and add it again)
 - Receipt photo capture (camera API / Capacitor if needed)
 - Capacitor APK build (if native notifications required)
