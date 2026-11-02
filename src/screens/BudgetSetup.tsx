@@ -186,10 +186,12 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, onClose, onSa
       <tr key={n.cat.id} className={`row depth-${n.depth}${n.children.length ? ' group' : ''}`}>
         <td>
           {(n.parent || !n.cat.computed) && (
+<label className="hit">
             <input type="checkbox" className="checkbox" id={domId('select', n)}
               aria-label={n.children.length ? `Select all ${say(n)} items` : `Select ${say(n)}`}
               checked={isChecked(n)} ref={el => { if (el) el.indeterminate = isMixed(n) }}
               onChange={e => setWork(edit.setSelected(work, n.cat.id, e.target.checked))} />
+            </label>
           )}
         </td>
         <th scope="row" id={nameId} className={`name clr-${n.cat.color}`}>{label}</th>
@@ -218,8 +220,10 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, onClose, onSa
         </td>
         <td>
           {!total && (
+<label className="hit">
             <input type="checkbox" className="checkbox" id={domId('autopay', n)} aria-label={`Autopay for ${say(n)}`}
               checked={!!n.cat.autopay} onChange={e => setWork(edit.patch(work, n.cat.id, { autopay: e.target.checked }))} />
+            </label>
           )}
         </td>
         <td>
