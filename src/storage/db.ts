@@ -1,6 +1,7 @@
 import Dexie, { type Table } from 'dexie'
 import { isPreselected } from './preselected'
 import { cleanName } from '../budget/validate'
+import { toV7Structure } from './structure'
 
 /** Recurrence of an item's estimate. Bi-monthly means twice a month. */
 export type Frequency = 'day' | 'week' | 'biweek' | 'bimonthly' | 'month'
@@ -18,7 +19,6 @@ export interface BudgetItem {
   date: string
   createdAt: number
   updatedAt: number
-  /** Set when an upgrade couldn't be sure which category this amount belongs to. */
 }
 
 /**
@@ -33,8 +33,13 @@ export interface Category {
   color: string
   /** Parent node id, null for top-level categories. */
   parentId: number | null
-  /** Computed rows (sums) can't take amounts directly. */
+  /**
+   * Top-level total rows (Income, Net Income, Savings, Expenses). A subcategory
+   * is a total exactly when it has items (`isTotal` in tree.ts), so it isn't stored.
+   */
   computed?: boolean
+  /** Position among siblings, 0 first (0007 §5.3). */
+  order?: number
   /** Picked in Budget setup as a regularly used item. */
   selected?: boolean
   estimate?: number
@@ -116,6 +121,15 @@ class SimpleBudgetDB extends Dexie {
       })
     // v6: formerly flagged legacy amounts for review; removed (pre-alpha, no legacy data).
     this.version(6).stores({})
+    // v7: Income group over Pay and Incidental Income, stored sibling order,
+    // computed only on top-level rows (0007 §2); drop old review flags.
+    this.version(7).stores({}).upgrade(async tx => {
+      const cats = tx.table<Category, number>('categories')
+      const next = toV7Structure(await cats.toArray())
+      await cats.clear()
+      await cats.bulkAdd(next)
+      await tx.table('budgetItems').toCollection().modify((i: Record<string, unknown>) => { delete i.needsReview })
+    })
   }
 }
 

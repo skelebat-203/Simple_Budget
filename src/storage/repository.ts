@@ -1,5 +1,6 @@
 import { db, type BudgetItem, type Category, type Frequency, type Range, type Settings } from './db'
 import { cleanName, MONEY_MAX } from '../budget/validate'
+import { toV7Structure } from './structure'
 
 const FREQS = new Set<Frequency>(['day', 'week', 'biweek', 'bimonthly', 'month'])
 const RANGES = new Set<Range>(['day', 'week', 'month'])
@@ -19,6 +20,7 @@ function validCategory(r: unknown): r is Category {
     && (x.parentId === null || Number.isInteger(x.parentId))
     && (x.estimate === undefined || isMoney(x.estimate))
     && (x.frequency === undefined || FREQS.has(x.frequency))
+    && (x.order === undefined || Number.isInteger(x.order))
 }
 
 /** Rows that failed a shape check on the last read; the app tells the user. */
@@ -42,7 +44,29 @@ export const budgetItemRepo = {
 }
 
 export const categoryRepo = {
-  async add(cat: Omit<Category, 'id'>) { return db.categories.add({ ...cat, name: cleanName(cat.name) }) },
+  /**
+   * Add a row at the end of its siblings. When it is the first item of a
+   * subcategory that holds a manual estimate, that estimate (with recurrence
+   * and autopay) moves to a Miscellaneous item (0007 §2.1); the result names
+   * the subcategory so the UI can say so.
+   */
+  async add(cat: Omit<Category, 'id' | 'order'>): Promise<{ id: number; movedFrom?: string }> {
+    return db.transaction('rw', db.categories, async () => {
+      const siblings = cat.parentId == null
+        ? await db.categories.filter(c => c.parentId == null).toArray()
+        : await db.categories.where('parentId').equals(cat.parentId).toArray()
+      const order = siblings.reduce((m, c) => Math.max(m, (c.order ?? -1) + 1), 0)
+      const name = cleanName(cat.name)
+      const parent = cat.parentId == null ? undefined : await db.categories.get(cat.parentId)
+      const moves = !!parent && parent.parentId != null && siblings.length === 0 && parent.estimate != null
+      if (!moves) return { id: await db.categories.add({ ...cat, name, order }) }
+      const held = { estimate: parent.estimate, frequency: parent.frequency, autopay: parent.autopay, selected: parent.selected || undefined }
+      await db.categories.update(parent.id!, { estimate: undefined, frequency: undefined, autopay: undefined })
+      if (name === 'Miscellaneous') return { id: await db.categories.add({ ...cat, ...held, name, order }), movedFrom: parent.name }
+      await db.categories.add({ name: 'Miscellaneous', color: cat.color, parentId: parent.id!, order, ...held })
+      return { id: await db.categories.add({ ...cat, name, order: order + 1 }), movedFrom: parent.name }
+    })
+  },
   async list() {
     const rows = await db.categories.toArray()
     const ok = rows.filter(validCategory)
@@ -114,9 +138,12 @@ export function checkBackup(data: unknown): Backup {
   if (!b.categories.every(c => validCategory(c) && Number.isInteger(c.id))) throw new BackupError('has a damaged category list. Export a new backup and try again.')
   const ids = new Set(b.categories.map(c => c.id))
   if (!b.budgetItems.every(i => validItem(i) && ids.has(i.categoryId))) throw new BackupError('has damaged amounts. Export a new backup and try again.')
+  // Backups made before the v7 structure (no stored order) get the same upgrade the database got.
+  const cats = b.categories.some(c => c.order === undefined) ? toV7Structure(b.categories) : b.categories
   return {
     ...b,
-    categories: b.categories.map(c => ({ ...c, name: cleanName(c.name) })),
+    budgetItems: b.budgetItems.map(({ id, categoryId, amount, date, createdAt, updatedAt }) => ({ id, categoryId, amount, date, createdAt, updatedAt })),
+    categories: cats.map(c => ({ ...c, name: cleanName(c.name) })),
     settings: b.settings.slice(0, 1).map(s => ({
       id: s.id, rewardsEnabled: !!s.rewardsEnabled, notificationsEnabled: !!s.notificationsEnabled,
       defaultRange: RANGES.has(s.defaultRange as Range) ? s.defaultRange : 'day',

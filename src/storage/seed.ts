@@ -1,16 +1,15 @@
 import { db } from './db'
 import { isPreselected } from './preselected'
 
-/** Seed tree from docs/design/0004-table-design.md. `*` rows are computed. */
+/** Seed tree from 0004-table-design.md with the 0007 §2 Income group. `computed` marks top-level totals. */
 interface SeedNode { name: string; color: string; computed?: boolean; children?: SeedNode[] }
 
 const items = (color: string, names: string[]): SeedNode[] => names.map(name => ({ name, color }))
 const sub = (name: string, names: string[]): SeedNode =>
-  ({ name, color: 'lighter-orange', computed: true, children: items('even-lighter-orange', names) })
+  ({ name, color: 'lighter-orange', children: items('even-lighter-orange', names) })
 
 const TREE: SeedNode[] = [
-  { name: 'Pay', color: 'blue' },
-  { name: 'Incidental Income', color: 'blue' },
+  { name: 'Income', color: 'blue', computed: true, children: items('blue', ['Pay', 'Incidental Income']) },
   { name: 'Taxes', color: 'red' },
   { name: 'Net Income', color: 'highlight-blue', computed: true },
   {
@@ -39,9 +38,12 @@ export async function seedCategories(): Promise<void> {
   if ((await db.categories.count()) > 0) return
   await db.transaction('rw', db.categories, async () => {
     const insert = async (nodes: SeedNode[], parentId: number | null, parentName: string | null) => {
-      for (const n of nodes) {
+      // A list made only of items starts alphabetical (Income keeps Pay first).
+      const sorted = parentName !== 'Income' && nodes.every(n => !n.children)
+        ? [...nodes].sort((a, b) => a.name.localeCompare(b.name)) : nodes
+      for (const [order, n] of sorted.entries()) {
         const id = await db.categories.add({
-          name: n.name, color: n.color, parentId, computed: !!n.computed,
+          name: n.name, color: n.color, parentId, order, computed: n.computed || undefined,
           selected: isPreselected(n.name, parentName) || undefined,
         })
         if (n.children) await insert(n.children, id, n.name)

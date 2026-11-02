@@ -3,7 +3,7 @@
  * Charity, and a few other items"). Each entry is [name, parent name or null].
  */
 export const PRESELECTED: [string, string | null][] = [
-  ['Pay', null],
+  ['Pay', 'Income'],
   ['Taxes', null],
   ['Emergency', 'Savings'],
   ['Charity', 'Expenses'],

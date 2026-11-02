@@ -1,6 +1,6 @@
 import { Fragment, useState, type ReactNode } from 'react'
 import type { BudgetItem, Range } from '../storage/db'
-import { actualFor, estimateTotal, formatAmount, periodsFor, type CatNode, type Period } from '../budget/tree'
+import { actualFor, estimateTotal, formatAmount, isTotal, periodsFor, type CatNode, type Period } from '../budget/tree'
 
 const COLLAPSED_KEY = 'simple-budget:collapsed'
 
@@ -48,8 +48,8 @@ export function BudgetTable({ roots, items, range, showEstimates }: {
   const byName = (name: string) => roots.find(r => r.cat.name === name)
   const netIncome = (p: Period) => {
     const sum = (name: string) => { const n = byName(name); return n ? values(n, p) : { est: 0, act: 0 } }
-    const [pay, inc, tax] = [sum('Pay'), sum('Incidental Income'), sum('Taxes')]
-    return { est: pay.est + inc.est - tax.est, act: pay.act + inc.act - tax.act }
+    const [income, tax] = [sum('Income'), sum('Taxes')]
+    return { est: income.est - tax.est, act: income.act - tax.act }
   }
 
   const rows: ReactNode[] = []
@@ -57,7 +57,7 @@ export function BudgetTable({ roots, items, range, showEstimates }: {
     if (!hasAmount(n)) return
     const kids = n.children.filter(hasAmount)
     const open = !collapsed.has(n.cat.id)
-    const label = n.cat.computed ? `${n.cat.name} *` : n.cat.name
+    const label = isTotal(n) ? `${n.cat.name} *` : n.cat.name
     rows.push(
       <tr key={n.cat.id} className={`row depth-${n.depth}${n.children.length ? ' group' : ''}`}>
         <th scope="row" className={`name clr-${n.cat.color}`}>

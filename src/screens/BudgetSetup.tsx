@@ -4,23 +4,23 @@ import { categoryRepo, saveSetup } from '../storage/repository'
 import { cleanName, moneyError, NAME_MAX, parseMoney } from '../budget/validate'
 import type { Frequency, Range } from '../storage/db'
 import {
-  autopayApplies, childColor, flatten, FREQUENCIES, recurrenceApplies, subtree, type CatNode,
+  autopayApplies, childColor, flatten, FREQUENCIES, isTotal, recurrenceApplies, subtree, type CatNode,
 } from '../budget/tree'
 
 type Draft = { selected: boolean; estimate: string; frequency: Frequency; autopay: boolean }
 
 interface Group { id: string; title: string; color: string; parent: CatNode | null; options: { node: CatNode; label: string }[] }
 
-/** Checkbox groups: income and taxes, savings items, then one group per expense subcategory. */
+/** Checkbox groups: taxes, then each top-level group of items, then one group per subcategory. */
 function buildGroups(roots: CatNode[]): Group[] {
   const groups: Group[] = []
   const plain = roots.filter(r => !r.cat.computed)
-  if (plain.length) groups.push({ id: 'income', title: 'Income and taxes', color: 'blue', parent: null, options: plain.map(node => ({ node, label: node.cat.name })) })
+  if (plain.length) groups.push({ id: 'plain', title: plain.map(r => r.cat.name).join(', '), color: 'blue', parent: null, options: plain.map(node => ({ node, label: node.cat.name })) })
   for (const r of roots.filter(r => r.cat.computed && r.children.length)) {
-    const allItems = r.children.every(c => !c.children.length && !c.cat.computed)
+    const allItems = r.children.every(c => !c.children.length)
     const parents = allItems ? [r] : r.children
     for (const g of parents) {
-      const self = !g.cat.computed && g !== r ? [{ node: g, label: g.cat.name }]
+      const self = !isTotal(g) && g !== r ? [{ node: g, label: g.cat.name }]
         : g.cat.name === 'Charity' ? [{ node: g, label: 'Charity (general)' }] : []
       groups.push({ id: String(g.cat.id), title: g.cat.name, color: g.cat.color, parent: g, options: [...self, ...g.children.map(node => ({ node, label: node.cat.name }))] })
     }
@@ -79,7 +79,8 @@ export function BudgetSetup({ roots, defaultRange, onClose, onChanged }: {
       return
     }
     try {
-      await categoryRepo.add({ name, parentId: g.parent.cat.id, color: childColor(g.parent), computed: false, selected: true })
+      const r = await categoryRepo.add({ name, parentId: g.parent.cat.id, color: childColor(g.parent), selected: true })
+      if (r.movedFrom) setStatus(`Your ${r.movedFrom} estimate moved to ${r.movedFrom} › Miscellaneous. ${r.movedFrom} now totals its items.`)
     } catch {
       setErrors(e => ({ ...e, [key]: `Error: Create item in ${g.title} wasn’t saved. Try again.` }))
       return
@@ -91,7 +92,7 @@ export function BudgetSetup({ roots, defaultRange, onClose, onChanged }: {
 
   // Charity shows its own controls only when it's the only Charity choice selected.
   const charityAlone = (n: CatNode) => isSelected(n) && !n.children.some(isSelected)
-  const hasControls = (n: CatNode) => isSelected(n) && (n.cat.name === 'Charity' && n.cat.computed ? charityAlone(n) : !n.cat.computed)
+  const hasControls = (n: CatNode) => isSelected(n) && (n.cat.name === 'Charity' && isTotal(n) ? charityAlone(n) : !isTotal(n))
   const estimateRows = flatten(roots).filter(n => n.cat.name !== 'Net Income' && subtree(n).some(isSelected))
 
   async function save() {

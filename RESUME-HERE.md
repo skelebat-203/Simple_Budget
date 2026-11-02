@@ -4,9 +4,10 @@ Tracking file for current work status. Roadmap authority: `docs/design/0003-road
 Design: `0004-table-design.md` (table), `0006-prototype.html` (v0.2 UI), `0007-v0.3-design-updates.md` (v0.3 changes; wins on conflict).
 
 ## Current state
-- Version: v0.3.1. v0.2 complete (security review approved, `docs/audits/security/security-v0.2.md`).
-- Data: Dexie v6. Amounts link to categories by `categoryId`; estimate fields live on `Category`. `needsReview` removed (0007 §8.4).
-- Next: step 2 below.
+- Version: v0.3.2. v0.2 complete (security review approved, `docs/audits/security/security-v0.2.md`).
+- Data: Dexie v7 (Income group, stored sibling `order`, `computed` only on top-level rows; see `src/storage/structure.ts`). Amounts link to categories by `categoryId`; estimate fields live on `Category`. `needsReview` removed (0007 §8.4).
+- Next: step 3 below. UI sign-off for each UI step is collected at step 14 (commits say "UI review pending").
+- Testing: headless Chromium via host flatpak + puppeteer-core; scripts in the session scratchpad.
 
 ## v0.3 plan of action
 
@@ -18,7 +19,7 @@ Covers every v0.3 roadmap item. Each completed step bumps the last version segme
    - Verify: human approves the proposal.
    - Deps: none. Its decision feeds step 9 (0007 §8.3).
 
-2. **Category structure + data model** (v0.3.2) — Income group over Pay, Incidental Income and custom subcategories; Taxes stays its own row; Net Income = Income − Taxes; subcategories allowed under Income, Savings and Expenses; a stored sort order; calculated subcategory estimates, with a manual estimate moved to a new Miscellaneous item (plus info banner) when the first child is created. Dexie v7 (also strips any leftover `needsReview` field) upgrade, tested on a seeded v6 database.
+2. ✅ **Category structure + data model** (v0.3.2) — UI review pending (step 14) — Income group over Pay, Incidental Income and custom subcategories; Taxes stays its own row; Net Income = Income − Taxes; subcategories allowed under Income, Savings and Expenses; a stored sort order; calculated subcategory estimates, with a manual estimate moved to a new Miscellaneous item (plus info banner) when the first child is created. Dexie v7 (also strips any leftover `needsReview` field) upgrade, tested on a seeded v6 database.
    - Source: 0007 §2.
    - Files: `src/storage/db.ts`, `seed.ts`, `repository.ts`, `src/budget/tree.ts`, `src/components/BudgetTable.tsx`.
    - Verify: upgrade keeps every amount and estimate; table shows the new top level; totals match before and after.
