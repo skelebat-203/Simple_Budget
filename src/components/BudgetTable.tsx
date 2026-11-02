@@ -263,6 +263,11 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
           {kids.length > 0 && !preview
             ? <button type="button" className="expander" aria-expanded={open} onClick={() => toggle(n.cat.id)}>{label}</button>
             : label}
+          {(range === 'week' || range === 'month') && !isTotal(n) && (n.cat.dueDate || n.cat.autopay) && (
+            <span className="row-meta">
+              {[n.cat.dueDate && `Due ${new Date(n.cat.dueDate + 'T00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`, n.cat.autopay && 'autopay'].filter(Boolean).join(', ')}
+            </span>
+          )}
         </th>
         {cells(p => values(n, p))}
         {rowActions(n)}

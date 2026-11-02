@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Button, ErrorSummary, focusFirstError, type FieldError } from '../components/ui'
 import { BudgetTable } from '../components/BudgetTable'
 import { saveSetup } from '../storage/repository'
-import { cleanName, moneyError, NAME_MAX, parseMoney, slug } from '../budget/validate'
+import { cleanName, dateBounds, moneyError, NAME_MAX, parseMoney, slug } from '../budget/validate'
 import type { BudgetItem, Category, DefaultRange, Frequency, MonthBoundary } from '../storage/db'
 import {
   buildTree, domId, estimateTotal, flatten, formatAmount, frequenciesFor, isTotal, repeatedNames, spokenName,
@@ -45,6 +45,7 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, onClose, onSa
   const [status, setStatus] = useState('')
   const [saveError, setSaveError] = useState('')
   const [saving, setSaving] = useState(false)
+  const [bounds] = useState(() => dateBounds(new Date()))
   const focusAfter = useRef<string | null>(null)
   const setFocusId = (id: string) => { focusAfter.current = id }
 
@@ -132,7 +133,11 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, onClose, onSa
     const errs: Record<string, string> = {}
     let final = work
     for (const n of flatten(roots)) {
-      if (isTotal(n)) { final = edit.patch(final, n.cat.id, { estimate: undefined, frequency: undefined, autopay: undefined }); continue }
+      if (isTotal(n)) { final = edit.patch(final, n.cat.id, { estimate: undefined, frequency: undefined, autopay: undefined, dueDate: undefined }); continue }
+      const due = n.cat.dueDate
+      if (due && (!/^\d{4}-\d{2}-\d{2}$/.test(due) || due < bounds.min || due > bounds.max)) {
+        errs[domId('due_date', n)] = `Invalid: Due date for ${say(n)} use a date from ${bounds.min} to ${bounds.max}`
+      }
       const text = estText(n.cat).trim()
       if (text === '') { final = edit.patch(final, n.cat.id, { estimate: undefined }); continue }
       const r = parseMoney(text, { allowNegative: false })
@@ -218,6 +223,18 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, onClose, onSa
           )}
         </td>
         <td>
+          {!total && (() => {
+            const dueId = domId('due_date', n)
+            return <>
+              <input type="date" className="input" id={dueId} min={bounds.min} max={bounds.max} value={n.cat.dueDate ?? ''}
+                aria-label={`Due date for ${say(n)}`} aria-invalid={!!errors[dueId] || undefined}
+                aria-describedby={errors[dueId] ? `${dueId}-error_msg` : undefined}
+                onChange={e => setWork(edit.patch(work, n.cat.id, { dueDate: e.target.value || undefined }))} />
+              {errors[dueId] && <p id={`${dueId}-error_msg`} className="error">{errors[dueId]}</p>}
+            </>
+          })()}
+        </td>
+        <td>
           {n.parent && (
             <span className="reorder">
               <Button type="button" className="secondary small" id={domId('move_up', n)} aria-label={`Move ${say(n)} up`}
@@ -247,7 +264,7 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, onClose, onSa
     const set = (p: Partial<typeof c>) => setCreate(x => ({ ...x, [root.cat.id]: { ...c, ...p } }))
     return (
       <tr key={`create-${root.cat.id}`} className="row create">
-        <td colSpan={6}>
+        <td colSpan={7}>
           <div className="create-row">
             <label className="label" htmlFor={base}>Create in {root.cat.name}</label>
             <input id={base} className="input" maxLength={NAME_MAX} value={c.name}
@@ -267,7 +284,7 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, onClose, onSa
     )
   }
 
-  const errorList = Object.entries(errors).filter(([k]) => k.startsWith('estimate-')).map(([fieldId, message]) => ({ fieldId, message }))
+  const errorList = Object.entries(errors).filter(([k]) => k.startsWith('estimate-') || k.startsWith('due_date-')).map(([fieldId, message]) => ({ fieldId, message }))
 
   return (
     <dialog ref={ref} className="dialog setup" aria-labelledby="setup-heading" onClose={onClose}>
@@ -286,6 +303,7 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, onClose, onSa
                 <th scope="col" id="setup-est-col">Estimated spending</th>
                 <th scope="col">Recurrence</th>
                 <th scope="col">Autopay</th>
+                <th scope="col">Due date</th>
                 <th scope="col">Order</th>
               </tr>
             </thead>
