@@ -104,6 +104,9 @@ Top-level categories, with computed rows marked `*` (calculated, not user-addabl
 
 #### Subcategories (used to calculate "Expenses")
 
+Groceries, Gas and Gifts have no items; amounts are entered on the subcategory
+itself. The same applies to Pay, Incidental Income and Taxes.
+
 - Groceries
 - Gas
 - Gifts
@@ -113,6 +116,7 @@ Top-level categories, with computed rows marked `*` (calculated, not user-addabl
 - Medical  `*` (sum of Medical items)
   - user amounts route to the Medical subcategory "Miscellaneous"
 - Insurance  `*` (sum of Insurance items)
+- Maintenance  `*` (sum of Maintenance items)
 - Debt  `*` (sum of Debt items)
 - Utilities  `*` (sum of Utilities items)
 - Subscriptions  `*` (sum of Subscriptions items)
@@ -141,6 +145,10 @@ Top-level categories, with computed rows marked `*` (calculated, not user-addabl
 - Hair Cuts
 - Decorations
 - Crafting
+- Miscellaneous
+
+#### Medical items
+
 - Miscellaneous
 
 #### Insurance items

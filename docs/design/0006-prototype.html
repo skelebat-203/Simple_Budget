@@ -1,0 +1,359 @@
+<title>Simple Budget Mockup</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: mobile-first single column (per 0002), app shell with a sticky top bar; table scrolls in its own box. */
+:root{
+  --bg:#ffffff; --surface:#f7f5f3; --fg:#1a1a1a; --muted:#5b5550; --border:#e3ded9;
+  --primary:#5c2e0a; --on-primary:#ffffff; --alert:#b91c1c; --focus:#0369a1;
+  --c-blue:#1d4ed8; --c-red:#b91c1c; --c-hblue:#2563eb; --c-hblue-bg:#dbeafe;
+  --c-green:#15803d; --c-lgreen:#16a34a; --c-orange:#c2410c; --c-lorange:#d9661c; --c-elorange:#b8650f;
+  --font: system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono: ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  color-scheme:dark; --bg:#17130f; --surface:#221d18; --fg:#f2ede8; --muted:#b5aca3; --border:#3a322b;
+  --primary:#e0a36e; --on-primary:#1a0f05; --alert:#f87171; --focus:#7dd3fc;
+  --c-blue:#93b4ff; --c-red:#fca5a5; --c-hblue:#93c5fd; --c-hblue-bg:#1e3a5f;
+  --c-green:#4ade80; --c-lgreen:#86efac; --c-orange:#fb923c; --c-lorange:#fdba74; --c-elorange:#fcd3a5;
+}}
+:root[data-theme="dark"]{
+  color-scheme:dark; --bg:#17130f; --surface:#221d18; --fg:#f2ede8; --muted:#b5aca3; --border:#3a322b;
+  --primary:#e0a36e; --on-primary:#1a0f05; --alert:#f87171; --focus:#7dd3fc;
+  --c-blue:#93b4ff; --c-red:#fca5a5; --c-hblue:#93c5fd; --c-hblue-bg:#1e3a5f;
+  --c-green:#4ade80; --c-lgreen:#86efac; --c-orange:#fb923c; --c-lorange:#fdba74; --c-elorange:#fcd3a5;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.5 var(--font);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 48px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.wrap{max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:28px}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--border);
+  padding-block:12px;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+h1{font-size:22px;margin:0;color:var(--primary)}
+h2{font-size:20px;margin:0;text-wrap:balance}
+.mock{font-size:13px;color:var(--muted);background:var(--surface);border:1px dashed var(--border);border-radius:4px;padding:10px 12px;margin-top:16px}
+section{display:flex;flex-direction:column;gap:14px}
+.sec-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.status{font-size:12px;letter-spacing:.04em;text-transform:uppercase;font-weight:700;padding:3px 8px;border-radius:99px;border:1px solid currentColor}
+.st-partial{color:var(--c-orange)} .st-none{color:var(--c-red)} .st-done{color:var(--c-green)}
+.gap{font-size:14px;color:var(--muted);margin:0;padding-left:18px}
+.field{display:flex;flex-direction:column;gap:6px}
+label,.lbl{font-weight:600}
+.help{font-size:14px;color:var(--muted)}
+input[type=text],input[type=date],select{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--muted);border-radius:4px;min-height:44px;padding:8px 10px;width:100%}
+.amt{font-family:var(--mono);font-variant-numeric:tabular-nums}
+button{font:inherit;min-height:44px;padding:8px 18px;border-radius:4px;border:1px solid var(--primary);cursor:pointer;background:var(--primary);color:var(--on-primary);font-weight:600}
+button.ghost{background:transparent;color:var(--primary)}
+button:disabled{opacity:.45;cursor:not-allowed}
+button[aria-pressed="true"]{background:var(--primary);color:var(--on-primary)}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.combo{position:relative}
+.listbox{position:absolute;left:0;right:0;top:100%;margin:4px 0 0;padding:4px 0;list-style:none;max-height:280px;overflow:auto;background:var(--bg);border:1px solid var(--muted);border-radius:4px;z-index:4;box-shadow:0 6px 18px rgb(0 0 0/.15)}
+.listbox li{padding:8px 12px;cursor:pointer}
+.listbox li[aria-selected="true"],.listbox li:hover{background:var(--surface)}
+.o-cat{font-size:18px;font-weight:800} .o-sub{font-weight:700;padding-left:24px!important} .o-item{padding-left:40px!important}
+.o-top-item{padding-left:24px!important}
+.toast{color:var(--c-green);font-weight:600;min-height:1.5em}
+.err{color:var(--alert);font-weight:600;font-size:14px}
+/* category colors */
+.k-blue{color:var(--c-blue)} .k-red{color:var(--c-red)} .k-hblue{color:var(--c-hblue)} .k-green{color:var(--c-green)}
+.k-lgreen{color:var(--c-lgreen)} .k-orange{color:var(--c-orange)} .k-lorange{color:var(--c-lorange)} .k-elorange{color:var(--c-elorange)}
+/* table */
+.tbox{overflow-x:auto;border:1px solid var(--border);border-radius:4px}
+table{border-collapse:collapse;width:100%;font-size:15px}
+th,td{padding:7px 10px;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+thead th{background:var(--surface);font-size:13px;letter-spacing:.03em}
+td.n{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.i0{font-weight:800} .i1{padding-left:28px} .i2{padding-left:48px}
+.sub.i1{font-weight:700}
+tr.net td{background:var(--c-hblue-bg)}
+.cap{caption-side:bottom;padding:8px;text-align:left}.sr{position:absolute;left:-9999px}
+.neg{color:var(--alert)}
+.expbtn{background:none;border:0;color:inherit;font:inherit;min-height:0;padding:0 4px 0 0;cursor:pointer}
+/* overlay */
+dialog{border:0;padding:0;width:min(720px,100vw);max-height:100%;background:var(--bg);color:var(--fg)}
+dialog::backdrop{background:rgb(0 0 0/.5)}
+.dlg{padding:20px max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:18px}
+fieldset{border:1px solid var(--border);border-radius:4px;padding:12px 14px;margin:0;display:flex;flex-direction:column;gap:6px}
+legend{font-weight:700;padding:0 4px}
+.grp{display:flex;flex-direction:column;gap:2px;padding-block:6px;border-top:1px solid var(--border)}
+.grp:first-of-type{border-top:0}
+.cb{display:flex;gap:10px;align-items:center;min-height:36px;font-weight:400}
+.cb input{width:20px;height:20px}
+.create{display:flex;gap:8px;margin-top:4px}
+.create input{flex:1}
+details summary{cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:center}
+.pre{display:flex;gap:6px;align-items:center}
+.pre select{min-width:118px;width:auto}
+.est input{width:110px}
+.na{color:var(--muted)}
+@media (prefers-reduced-motion:no-preference){.toast{transition:opacity .3s}}
+</style>
+
+<div class="wrap">
+<header>
+  <h1>Simple Budget</h1>
+  <div class="row"><button class="ghost" id="open-setup" type="button">Set estimates</button></div>
+</header>
+
+<p class="mock">Clickable mockup of the v0.2 target, built from <code>stuff.md</code> and <code>0004-table-design.md</code>. The sample data is made up and lives only in this page. The status chip on each section compares this mockup to the app's current code.</p>
+
+<section aria-labelledby="add-h">
+  <div class="sec-head"><h2 id="add-h">Add budget item</h2><span class="status st-partial">Partly built</span></div>
+  <ul class="gap"><li>The app still asks for estimate, recurrence, due date and autopay here. Those move to Set estimates.</li><li>The Item control exists but is uncommitted, and its styling is unverified.</li></ul>
+  <div class="field combo">
+    <label for="item">Item <span aria-hidden="true">*</span></label>
+    <input id="item" type="text" role="combobox" aria-expanded="false" aria-controls="lb" aria-autocomplete="list" autocomplete="off" placeholder="Start typing, e.g. coffee">
+    <ul id="lb" class="listbox" role="listbox" hidden></ul>
+  </div>
+  <div class="field">
+    <label for="amt">Amount <span aria-hidden="true">*</span></label>
+    <span id="amt-help" class="help">Use a minus sign for a credit or refund, e.g. -12.50</span>
+    <input id="amt" class="amt" type="text" inputmode="decimal" aria-describedby="amt-help">
+  </div>
+  <div class="field">
+    <label for="dt">Date</label>
+    <input id="dt" type="date">
+  </div>
+  <div id="form-err" class="err" role="alert"></div>
+  <div class="row"><button id="save" type="button">Save</button><span id="toast" class="toast" aria-live="polite"></span></div>
+</section>
+
+<section aria-labelledby="bud-h">
+  <div class="sec-head"><h2 id="bud-h">Budget</h2><span class="status st-partial">Day only</span></div>
+  <ul class="gap"><li>The app's Day table groups by raw category name and lists the computed rows last, so it doesn't follow the 0004 order, indents or colors.</li><li>Week and Month are flat lists in the app. The 0004 layouts are planned for v0.4.</li></ul>
+  <div class="row" role="group" aria-label="Range">
+    <button class="ghost" type="button" data-range="day">Day</button>
+    <button class="ghost" type="button" data-range="week">Week</button>
+    <button class="ghost" type="button" data-range="month">Month</button>
+    <label class="cb"><input type="checkbox" id="show-est" checked> Show estimates</label>
+  </div>
+  <div class="tbox"><table id="tbl"></table></div>
+</section>
+</div>
+
+<dialog id="setup" aria-labelledby="setup-h">
+ <div class="dlg">
+  <div class="sec-head"><h2 id="setup-h">Budget setup</h2><span class="status st-partial">Partly built</span></div>
+  <fieldset id="pick">
+    <legend>Select the items you think you'll use regularly.</legend>
+    <span class="help">If you'd like to skip ahead just select "Save". Income, Tax, Emergency fund, Charity, and a few other items are preselected for you.</span>
+    <div id="pick-body"></div>
+  </fieldset>
+  <details id="est-wrap" open>
+    <summary>Estimates for selected items</summary>
+    <div class="tbox"><table id="est-tbl"></table></div>
+  </details>
+  <fieldset>
+    <legend>Default display range</legend>
+    <div class="row" id="def-range"></div>
+  </fieldset>
+  <div class="row"><button id="setup-save" type="button">Save</button><button id="setup-close" class="ghost" type="button">Close</button></div>
+ </div>
+</dialog>
+
+<script>
+// ---------- category tree (0004-table-design.md) ----------
+const T = [
+ {n:'Pay',k:'blue',type:'income',direct:1},
+ {n:'Incidental Income',k:'blue',type:'income',direct:1},
+ {n:'Taxes',k:'red',type:'tax',direct:1},
+ {n:'Net Income',k:'hblue',computed:1},
+ {n:'Savings',k:'green',type:'savings',items:['General Maintenance','Emergency','Roth 401k','Trad 401k','Roth IRA','IRA','403b','HSA','FSA']},
+ {n:'Expenses',k:'orange',type:'expense',subs:[
+   {n:'Groceries',direct:1},{n:'Gas',direct:1},{n:'Gifts',direct:1},
+   {n:'Charity',items:['Miscellaneous','United Way','Wikipedia','Library'],route:'Miscellaneous'},
+   {n:'Incidentals',items:['Coffee Shops','Treats','Snacks','Pet Stuff','Eat Food Out','Dates','Family Time','Clothing','Shoes','Gen. Self Care','Books','Alcohol','Hair Cuts','Decorations','Crafting','Miscellaneous']},
+   {n:'Medical',items:['Miscellaneous'],route:'Miscellaneous'},
+   {n:'Insurance',items:['Car','Life','Medical','Dental','Vision']},
+   {n:'Maintenance',items:['Car','House','Lawn Mowing','Miscellaneous']},
+   {n:'Debt',items:['Mortgage','Credit Card']},
+   {n:'Utilities',items:['Power','Water','Internet','Phone','Trash']},
+   {n:'Subscriptions',items:['Netflix','YouTube Premium','Prime','Dropout','Duolingo','LastPass','1Password','Proton Suite','Nebula','Gym','Audible','Librio.fm']},
+ ]},
+];
+const RECUR_SUBS=new Set(['Debt','Utilities','Subscriptions']), AUTOPAY_SUBS=RECUR_SUBS;
+const RECUR=[['day','Daily'],['week','Weekly'],['biweek','Every 2 weeks'],['bimonthly','Bi-monthly (twice a month)'],['month','Monthly']];
+const PER_MONTH={day:30.44,week:4.345,biweek:2.17,bimonthly:2,month:1};
+// key format: "Top" | "Top/Item" | "Expenses/Sub" | "Expenses/Sub/Item"
+const leaf=(...p)=>p.join('/');
+
+// ---------- state ----------
+const iso=d=>d.toISOString().slice(0,10);
+const today=new Date(); const D=o=>{const d=new Date(today);d.setDate(d.getDate()+o);return iso(d)};
+let entries=[
+ {key:'Pay',amt:2150,date:D(0)},{key:'Taxes',amt:410,date:D(0)},
+ {key:'Savings/Emergency',amt:150,date:D(0)},{key:'Savings/Roth IRA',amt:200,date:D(-3)},
+ {key:'Expenses/Groceries',amt:86.42,date:D(0)},{key:'Expenses/Incidentals/Coffee Shops',amt:6.75,date:D(0)},
+ {key:'Expenses/Incidentals/Coffee Shops',amt:5.25,date:D(-2)},{key:'Expenses/Incidentals/Clothing',amt:-24,date:D(0)},
+ {key:'Expenses/Gas',amt:41.1,date:D(-1)},{key:'Expenses/Debt/Mortgage',amt:1340,date:D(-8)},
+ {key:'Expenses/Utilities/Power',amt:118.3,date:D(-12)},{key:'Expenses/Subscriptions/Netflix',amt:15.49,date:D(-5)},
+ {key:'Expenses/Charity/Miscellaneous',amt:25,date:D(-4)},{key:'Incidental Income',amt:60,date:D(-6)},
+];
+let est={ // per key: {v, r, auto}
+ 'Pay':{v:2150,r:'biweek'},'Taxes':{v:410,r:'biweek'},'Savings/Emergency':{v:300,r:'month'},
+ 'Expenses/Groceries':{v:600},'Expenses/Debt/Mortgage':{v:1340,r:'month',auto:true},
+ 'Expenses/Utilities/Power':{v:120,r:'month',auto:true},'Expenses/Subscriptions/Netflix':{v:15.49,r:'month',auto:true},
+ 'Expenses/Charity':{v:50},'Expenses/Incidentals/Coffee Shops':{v:40}
+};
+let selected=new Set(['Pay','Taxes','Savings/Emergency','Expenses/Charity','Expenses/Groceries','Expenses/Debt/Mortgage','Expenses/Utilities/Power','Expenses/Subscriptions/Netflix','Expenses/Incidentals/Coffee Shops']);
+let range='day', defRange='day', collapsed=new Set();
+
+// ---------- options for Item control ----------
+function options(){
+  const o=[];
+  for(const c of T){ if(c.computed) continue;
+    o.push({label:c.n,cls:'o-cat k-'+c.k,key:c.direct?c.n:null});
+    (c.items||[]).forEach(i=>o.push({label:i,cls:'o-top-item k-l'+c.k,key:leaf(c.n,i),path:c.n}));
+    (c.subs||[]).forEach(s=>{
+      o.push({label:s.n,cls:'o-sub k-lorange',key:s.direct?leaf(c.n,s.n):s.route?leaf(c.n,s.n,s.route):null,path:c.n});
+      [...(s.items||[])].sort().forEach(i=>o.push({label:i,cls:'o-item k-elorange',key:leaf(c.n,s.n,i),path:c.n+' › '+s.n}));
+    });
+  }
+  return o;
+}
+const item=document.getElementById('item'), lb=document.getElementById('lb');
+let opts=[], act=-1, chosen=null;
+function renderLB(){
+  const q=item.value.trim().toLowerCase();
+  const all=options();
+  // keep a parent heading if any child matches, so structure stays readable
+  opts=all.filter(x=>!q||x.label.toLowerCase().includes(q)||(x.path||'').toLowerCase().includes(q));
+  lb.innerHTML=opts.map((x,i)=>`<li id="o${i}" role="option" class="${x.cls}" aria-selected="${i===act}" ${x.key?'':'aria-disabled="true"'}>${x.label}${x.path&&q?` <span class="help">· ${x.path}</span>`:''}</li>`).join('')||'<li class="help">No match. Create it in Set estimates.</li>';
+  lb.hidden=false; item.setAttribute('aria-expanded','true');
+  item.setAttribute('aria-activedescendant',act>=0?'o'+act:'');
+}
+function pick(i){const x=opts[i]; if(!x) return;
+  if(!x.key){item.value=x.label;act=-1;renderLB();return;} // heading: narrows list
+  chosen=x.key; item.value=x.label+(x.path?` (${x.path})`:''); closeLB();}
+function closeLB(){lb.hidden=true;item.setAttribute('aria-expanded','false');act=-1}
+item.addEventListener('focus',renderLB);
+item.addEventListener('input',()=>{chosen=null;act=-1;renderLB()});
+item.addEventListener('keydown',e=>{
+  if(e.key==='ArrowDown'){e.preventDefault();act=Math.min(act+1,opts.length-1);renderLB();document.getElementById('o'+act)?.scrollIntoView({block:'nearest'})}
+  else if(e.key==='ArrowUp'){e.preventDefault();act=Math.max(act-1,0);renderLB();document.getElementById('o'+act)?.scrollIntoView({block:'nearest'})}
+  else if(e.key==='Enter'&&act>=0){e.preventDefault();pick(act)}
+  else if(e.key==='Escape'){closeLB()}
+});
+lb.addEventListener('mousedown',e=>{const li=e.target.closest('li[role=option]');if(li){e.preventDefault();pick(+li.id.slice(1))}});
+item.addEventListener('blur',()=>setTimeout(closeLB,120));
+document.getElementById('dt').value=iso(today);
+document.getElementById('save').onclick=()=>{
+  const err=document.getElementById('form-err'), a=document.getElementById('amt').value.trim();
+  const msgs=[]; if(!chosen) msgs.push('Choose an item from the list.');
+  if(a===''||!isFinite(+a)) msgs.push('Enter the amount as a number, e.g. 12.50 or -12.50.');
+  err.textContent=msgs.join(' ');
+  if(msgs.length){(chosen?document.getElementById('amt'):item).focus();return}
+  entries.push({key:chosen,amt:+a,date:document.getElementById('dt').value||iso(today)});
+  const t=document.getElementById('toast');t.textContent='Saved '+item.value.split(' (')[0];setTimeout(()=>t.textContent='',2500);
+  item.value='';document.getElementById('amt').value='';chosen=null;renderTable();
+};
+
+// ---------- budget table ----------
+const fmt=n=>n==null||n===0?'':(n<0?'−':'')+Math.abs(n).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+const startOfWeek=d=>{const x=new Date(d);x.setDate(x.getDate()-((x.getDay()+6)%7));return x};
+function periods(){
+  if(range==='day') return [{label:today.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'}),from:iso(today),to:iso(today),days:1}];
+  if(range==='week'){const s=startOfWeek(today),e=new Date(s);e.setDate(s.getDate()+6);
+    return [{label:s.toLocaleDateString(undefined,{month:'short',day:'numeric'})+' – '+e.toLocaleDateString(undefined,{month:'short',day:'numeric'}),from:iso(s),to:iso(e),days:7}]}
+  const m0=new Date(today.getFullYear(),today.getMonth(),1), m1=new Date(today.getFullYear(),today.getMonth()+1,0);
+  const out=[]; let s=new Date(m0);
+  while(s<=m1){const e=new Date(s);e.setDate(s.getDate()+(6-((s.getDay()+6)%7)));if(e>m1)e.setTime(m1);
+    out.push({label:s.getDate()+'–'+e.getDate()+' '+s.toLocaleDateString(undefined,{month:'short'}),from:iso(s),to:iso(e),days:(e-s)/864e5+1});
+    s=new Date(e);s.setDate(e.getDate()+1);}
+  return out;
+}
+const estFor=(key,p)=>{const e=est[key];if(!e||!e.v)return 0;return e.v*PER_MONTH[e.r||'month']*p.days/30.44};
+const actFor=(key,p)=>entries.filter(x=>(x.key===key||x.key.startsWith(key+'/'))&&x.date>=p.from&&x.date<=p.to).reduce((a,b)=>a+b.amt,0);
+const estTree=(key,p)=>Object.keys(est).filter(k=>k===key||k.startsWith(key+'/')).reduce((a,k)=>a+estFor(k,p),0);
+function renderTable(){
+  const P=periods(), showE=document.getElementById('show-est').checked, multi=P.length>1;
+  const cols=multi?[...P,{label:'Total',from:P[0].from,to:P.at(-1).to,days:P.reduce((a,b)=>a+b.days,0),total:1}]:P;
+  const cells=(key,custom)=>cols.map(p=>{const [e,a]=custom?custom(p):[estTree(key,p),actFor(key,p)];
+    return (showE?`<td class="n">${fmt(e)}</td>`:'')+`<td class="n${a<0?' neg':''}">${fmt(a)}</td>`}).join('');
+  const has=(key)=>cols.some(p=>actFor(key,p)!==0||(showE&&estTree(key,p)!==0));
+  const span=showE?2:1;
+  let h=`<caption class="help" class="cap">Only rows with an amount appear. Net Income, Savings, Expenses and the starred subcategories are computed.</caption><thead>`;
+  if(range!=='day') h+=`<tr><th></th>${cols.map(p=>`<th colspan="${span}" scope="colgroup">${p.label}</th>`).join('')}</tr>`;
+  h+=`<tr><th scope="col">${range==='day'?P[0].label:'Item'}</th>${cols.map(()=>(showE?'<th scope="col">Est.</th>':'')+'<th scope="col">Act.</th>').join('')}</tr></thead><tbody>`;
+  const tog=(id,label)=>`<button class="expbtn" type="button" aria-expanded="${!collapsed.has(id)}" data-tog="${id}">${collapsed.has(id)?'▸':'▾'} ${label}</button>`;
+  for(const c of T){
+    if(c.computed){ // Net Income
+      const f=p=>{const g=(k,fn)=>['Pay','Incidental Income'].reduce((a,x)=>a+fn(x,p),0)-fn('Taxes',p);return [g(0,estTree),g(0,actFor)]};
+      if(cols.some(p=>f(p).some(v=>v)))h+=`<tr class="net"><td class="i0 k-hblue">Net Income *</td>${cells(null,f)}</tr>`;continue;}
+    if(!has(c.n)) continue;
+    const kids=c.items||c.subs;
+    h+=`<tr><td class="i0 k-${c.k}">${kids?tog(c.n,c.n+(c.n!=='Pay'&&c.type!=='income'&&c.type!=='tax'?' *':'')):c.n}</td>${cells(c.n)}</tr>`;
+    if(collapsed.has(c.n)) continue;
+    (c.items||[]).forEach(i=>{const k=leaf(c.n,i);if(has(k))h+=`<tr><td class="i1 k-l${c.k}">${i}</td>${cells(k)}</tr>`});
+    (c.subs||[]).forEach(s=>{const k=leaf(c.n,s.n);if(!has(k))return;
+      h+=`<tr><td class="i1 sub k-lorange">${s.items?tog(k,s.n+' *'):s.n}</td>${cells(k)}</tr>`;
+      if(collapsed.has(k))return;
+      (s.items||[]).forEach(i=>{const ik=leaf(k,i);if(has(ik)&&!(s.route&&i===s.route&&!s.items.slice(1).some(x=>has(leaf(k,x)))&&false))h+=`<tr><td class="i2 k-elorange">${i}</td>${cells(ik)}</tr>`});
+    });
+  }
+  document.getElementById('tbl').innerHTML=h+'</tbody>';
+  document.querySelectorAll('[data-range]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.range===range));
+}
+document.getElementById('tbl').addEventListener('click',e=>{const b=e.target.closest('[data-tog]');if(!b)return;const id=b.dataset.tog;collapsed.has(id)?collapsed.delete(id):collapsed.add(id);renderTable();document.querySelector(`[data-tog="${CSS.escape(id)}"]`)?.focus()});
+document.querySelectorAll('[data-range]').forEach(b=>b.onclick=()=>{range=b.dataset.range;renderTable()});
+document.getElementById('show-est').onchange=renderTable;
+
+// ---------- Budget setup overlay ----------
+const dlg=document.getElementById('setup');
+let custom={}; // group key -> [names]
+function groups(){ // [{id,title,k,items:[{key,label}]}]
+  const g=[{id:'Income',title:'Income & taxes',k:'blue',items:[{key:'Pay',label:'Pay'},{key:'Incidental Income',label:'Incidental Income'},{key:'Taxes',label:'Taxes'}]}];
+  const sv=T.find(c=>c.n==='Savings'); g.push({id:'Savings',title:'Savings',k:'green',items:[...sv.items,...(custom.Savings||[])].map(i=>({key:leaf('Savings',i),label:i}))});
+  for(const s of T.find(c=>c.n==='Expenses').subs){const id=leaf('Expenses',s.n);
+    const its=s.items?[...s.items,...(custom[id]||[])].map(i=>({key:leaf(id,i),label:i})):[{key:id,label:s.n}];
+    if(s.n==='Charity') its.unshift({key:id,label:'Charity (general)'});
+    g.push({id,title:s.n,k:'lorange',items:its});}
+  return g;
+}
+function renderPick(){
+  document.getElementById('pick-body').innerHTML=groups().map(g=>`<div class="grp"><span class="lbl k-${g.k}">${g.title}</span>
+    ${g.items.map(i=>`<label class="cb"><input type="checkbox" data-key="${i.key}" ${selected.has(i.key)?'checked':''}> ${i.label}</label>`).join('')}
+    ${g.id!=='Income'?`<div class="create"><label class="help" for="c-${g.id}" class="sr">Create item in ${g.title}</label><input type="text" id="c-${g.id}" placeholder="Create" data-create="${g.id}"><button type="button" class="ghost" disabled data-add="${g.id}" aria-describedby="c-${g.id}">Add</button></div>`:''}</div>`).join('');
+}
+document.getElementById('pick-body').addEventListener('change',e=>{const k=e.target.dataset.key;if(!k)return;e.target.checked?selected.add(k):selected.delete(k);renderEst()});
+document.getElementById('pick-body').addEventListener('input',e=>{const g=e.target.dataset.create;if(g)document.querySelector(`[data-add="${CSS.escape(g)}"]`).disabled=!e.target.value.trim()});
+document.getElementById('pick-body').addEventListener('click',e=>{const g=e.target.dataset.add;if(!g)return;const inp=document.getElementById('c-'+g),v=inp.value.trim();if(!v)return;
+  (custom[g]=custom[g]||[]).push(v);selected.add(leaf(g,v));renderPick();renderEst();document.getElementById('c-'+g).focus()});
+function renderEst(){
+  const rows=[]; const g=groups();
+  for(const grp of g){const sel=grp.items.filter(i=>selected.has(i.key)); if(!sel.length) continue;
+    const isSub=grp.id.startsWith('Expenses/'), sub=grp.id.split('/')[1];
+    const charityAlone=sub==='Charity'&&sel.length===1&&sel[0].key===grp.id;
+    if(isSub&&!rows.some(r=>r.hdr==='Expenses')) rows.push({hdr:'Expenses',cls:'i0 k-orange'});
+    if(charityAlone){rows.push({key:grp.id,label:'Charity',cls:'i1 sub k-lorange',sub});continue}
+    const directSub=isSub&&sel.length===1&&sel[0].key===grp.id&&!T[5].subs.find(s=>s.n===sub).items;
+    if(directSub){rows.push({key:grp.id,label:sub,cls:'i1 sub k-lorange',sub});continue}
+    rows.push({hdr:grp.title,cls:isSub?'i1 sub k-lorange':'i0 k-'+grp.k});
+    sel.filter(i=>i.key!==grp.id).forEach(i=>rows.push({key:i.key,label:i.label,cls:(isSub?'i2 k-elorange':'i1 k-l'+(grp.k==='blue'?'blue':grp.k)),sub,income:grp.id==='Income'}));
+  }
+  let h=`<thead><tr><th scope="col">Item name</th><th scope="col" id="h-est">Estimated spending</th><th scope="col">Recurrence</th><th scope="col">Autopay</th></tr></thead><tbody>`;
+  rows.forEach((r,ix)=>{
+    if(r.hdr){h+=`<tr><td class="${r.cls}">${r.hdr}</td><td></td><td></td><td></td></tr>`;return}
+    const e=est[r.key]||{}, id='e'+ix, rec=r.income||RECUR_SUBS.has(r.sub), ap=AUTOPAY_SUBS.has(r.sub);
+    h+=`<tr><td class="${r.cls}" id="n-${id}">${r.label}</td>
+      <td class="est"><input type="text" class="amt" inputmode="decimal" id="${id}" data-est="${r.key}" value="${e.v??''}" aria-labelledby="h-est" aria-describedby="n-${id}"></td>
+      <td>${rec?`<div class="pre"><span aria-hidden="true">per</span><select data-rec="${r.key}" aria-label="Recurrence for ${r.label}">${RECUR.map(([v,l])=>`<option value="${v}" ${(e.r||'month')===v?'selected':''}>${l}</option>`).join('')}</select></div>`:'<span class="na">Monthly</span>'}</td>
+      <td>${ap?`<input type="checkbox" data-auto="${r.key}" aria-label="Autopay for ${r.label}" ${e.auto?'checked':''}>`:''}</td></tr>`;
+  });
+  document.getElementById('est-tbl').innerHTML=h+'</tbody>';
+}
+document.getElementById('est-tbl').addEventListener('change',e=>{const t=e.target,k=t.dataset.est||t.dataset.rec||t.dataset.auto;if(!k)return;const o=est[k]=est[k]||{};
+  if(t.dataset.est)o.v=t.value===''?undefined:+t.value; if(t.dataset.rec)o.r=t.value; if(t.dataset.auto)o.auto=t.checked;});
+function renderDef(){document.getElementById('def-range').innerHTML=['day','week','month'].map(r=>`<button type="button" class="ghost" aria-pressed="${defRange===r}" data-def="${r}">${r[0].toUpperCase()+r.slice(1)}</button>`).join('')}
+document.getElementById('def-range').addEventListener('click',e=>{const r=e.target.dataset.def;if(r){defRange=r;renderDef()}});
+document.getElementById('open-setup').onclick=()=>{renderPick();renderEst();renderDef();document.getElementById('pick').open=true;dlg.showModal()};
+document.getElementById('setup-close').onclick=()=>dlg.close();
+document.getElementById('setup-save').onclick=()=>{ // collapse, don't remove, the checkbox list
+  const p=document.getElementById('pick-body');p.hidden=!p.hidden;
+  document.getElementById('setup-save').textContent=p.hidden?'Saved · show item list':'Save';
+  range=defRange;renderTable();document.getElementById('est-wrap').open=true;};
+renderTable();
+</script>

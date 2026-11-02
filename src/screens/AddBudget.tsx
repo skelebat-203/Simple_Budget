@@ -1,133 +1,121 @@
 import { useState } from 'react'
-import { Button, AmountInput, DatePicker, ItemSelector, type ItemOption } from '../components/ui'
-import { budgetItemRepo } from '../storage/repository'
-import { FREQUENCIES } from '../components/ui/frequencies'
-import type { BudgetType, Frequency } from '../storage/db'
+import { AmountInput, Button, DatePicker, ItemSelector } from '../components/ui'
+import { budgetItemRepo, categoryRepo } from '../storage/repository'
+import type { Frequency } from '../storage/db'
+import { FREQUENCIES, isoDate, type CatNode } from '../budget/tree'
 
-export function AddBudget({ onSaved }: { onSaved: () => void }) {
-  const [selectedItem, setSelectedItem] = useState<ItemOption | null>(null)
-  const [name, setName] = useState('')
-  const [type, setType] = useState<BudgetType>('expense')
+type Errors = { item?: string; amount?: string; estimate?: string }
+
+export function AddBudget({ roots, onSaved, onOpenSetup }: {
+  roots: CatNode[]
+  onSaved: () => void
+  onOpenSetup: () => void
+}) {
+  const [target, setTarget] = useState<CatNode | null>(null)
   const [amount, setAmount] = useState('')
-  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10))
+  const [date, setDate] = useState(() => isoDate(new Date()))
   const [estimate, setEstimate] = useState('')
   const [frequency, setFrequency] = useState<Frequency>('month')
-  const [dueDate, setDueDate] = useState('')
-  const [autopay, setAutopay] = useState(false)
+  const [errors, setErrors] = useState<Errors>({})
   const [saving, setSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+  const [status, setStatus] = useState('')
+  const [formKey, setFormKey] = useState(0)
 
-  function handleItemChange(opt: ItemOption | null) {
-    setSelectedItem(opt)
-    if (opt) {
-      setName(opt.name)
-      setType(opt.type)
-    } else {
-      setName('')
-    }
-  }
-
-  function validate() {
-    const errs: Record<string, string> = {}
-    if (!name.trim()) errs.name = 'cannot be empty'
-    const amt = Number(amount)
-    if (amount === '' || amount === null || amount === undefined) {
-      errs.amount = 'cannot be empty'
-    } else if (!Number.isFinite(amt)) {
-      errs.amount = 'use number format'
-    }
-    if (estimate !== '') {
-      const est = Number(estimate)
-      if (!Number.isFinite(est)) errs.estimate = 'use number format'
-    }
-    setFieldErrors(errs)
-    return Object.keys(errs).length === 0
+  function validate(): Errors {
+    const e: Errors = {}
+    if (!target) e.item = 'Choose an item from the list.'
+    if (amount.trim() === '') e.amount = 'Enter an amount.'
+    else if (!Number.isFinite(Number(amount))) e.amount = 'Enter the amount as a number, e.g. 12.50 or -12.50.'
+    if (estimate.trim() !== '' && !Number.isFinite(Number(estimate))) e.estimate = 'Enter the estimated spend as a number, e.g. 40.'
+    return e
   }
 
   async function save() {
-    setError(null)
-    if (!validate()) {
-      const firstErr = Object.keys(fieldErrors)[0]
-      if (firstErr) {
-        const el = document.getElementById(firstErr === 'name' ? 'item-name' : firstErr === 'amount' ? 'item-amount' : firstErr === 'estimate' ? 'item-estimate' : `item-${firstErr}`)
-        if (el) el.focus()
-      }
-      setError('To continue, correct the following errors')
+    setStatus('')
+    const e = validate()
+    setErrors(e)
+    if (e.item || e.amount || e.estimate) {
+      document.getElementById(e.item ? 'item' : e.amount ? 'amount' : 'estimate')?.focus()
       return
     }
     setSaving(true)
     try {
-      await budgetItemRepo.add({
-        name: name.trim(),
-        category: selectedItem?.category || '',
-        type,
-        amount: Number(amount),
-        date,
-        estimate: estimate !== '' ? Number(estimate) : undefined,
-        frequency,
-        dueDate: dueDate || undefined,
-        autopay: autopay || undefined,
-      })
-      setSelectedItem(null)
-      setName('')
+      await budgetItemRepo.add({ categoryId: target!.cat.id, amount: Number(amount), date })
+      if (estimate.trim() !== '') {
+        await categoryRepo.update(target!.cat.id, { estimate: Number(estimate), frequency, selected: true })
+      }
+      setStatus(`Saved ${target!.cat.name}.`)
+      setTarget(null)
       setAmount('')
       setEstimate('')
       setFrequency('month')
-      setDueDate('')
-      setAutopay(false)
-      setFieldErrors({})
+      setFormKey(k => k + 1) // clears the Item control
       onSaved()
-    } catch (e) {
-      console.error(e)
-      setError('Error: failed to save item. Please try again.')
+    } catch (err) {
+      console.error(err)
+      setStatus('The item wasn’t saved. Try again.')
     } finally {
       setSaving(false)
     }
   }
 
+  // Prefill the estimate fields with what the item already has.
+  function pickTarget(t: CatNode | null) {
+    setTarget(t)
+    setEstimate(t?.cat.estimate != null ? String(t.cat.estimate) : '')
+    setFrequency(t?.cat.frequency ?? 'month')
+  }
+
+  const errorCount = Object.values(errors).filter(Boolean).length
+
   return (
-    <div className="form">
-      <h2 className="title">Add Budget Item</h2>
-      {error && error === 'To continue, correct the following errors' ? (
-        <div role="alert" aria-live="assertive" className="banner">
-          <h2 className="banner-title">To continue, correct the following errors</h2>
-          <ul>
-            {Object.entries(fieldErrors).map(([k, v]) => (
-              <li key={k}>
-                {v === 'cannot be empty' ? `Error: ${k === 'name' ? 'Item' : k === 'amount' ? 'Amount' : k} cannot be empty` : `Error: ${k === 'amount' ? 'Amount' : k === 'estimate' ? 'Estimated spend' : k} use number format`}
-              </li>
-            ))}
-          </ul>
+    <section className="panel" aria-labelledby="add-heading">
+      <div className="panel-head">
+        <h2 id="add-heading" className="section-title">Add budget item</h2>
+        <Button type="button" className="secondary" onClick={onOpenSetup}>Set estimates</Button>
+      </div>
+      {errorCount > 0 && (
+        <div role="alert" className="banner">
+          <p className="banner-title">To continue, fix {errorCount === 1 ? 'this error' : 'these errors'}:</p>
+          <ul>{Object.values(errors).filter(Boolean).map(m => <li key={m}>{m}</li>)}</ul>
         </div>
-      ) : error ? (
-        <div role="alert" aria-live="polite" className="error">{error}</div>
-      ) : null}
-      <label className="label" htmlFor="item-name">Item <span aria-hidden="true">*</span></label>
-      <ItemSelector id="item-name" value={name} onChange={handleItemChange} onTextChange={setName} aria-required={true} aria-describedby={fieldErrors.name ? 'err-name' : undefined} />
-      {fieldErrors.name && <div id="err-name" className="error">Error: Item {fieldErrors.name}</div>}
-      <label className="label" htmlFor="item-amount">Amount <span aria-hidden="true">*</span></label>
-      <small id="amount-help" className="help">Enter a number (negative amounts allowed for credits).</small>
-      <AmountInput id="item-amount" value={amount} onChange={e => setAmount(e.target.value)} aria-required="true" aria-invalid={!!fieldErrors.amount} aria-describedby={fieldErrors.amount ? 'err-amount amount-help' : 'amount-help'} />
-      {fieldErrors.amount && <div id="err-amount" className="error">Error: Amount {fieldErrors.amount === 'use number format' ? 'use number format' : fieldErrors.amount}</div>}
-      <label className="label" htmlFor="item-estimate">Estimated spend</label>
-      <AmountInput id="item-estimate" value={estimate} onChange={e => setEstimate(e.target.value)} aria-invalid={!!fieldErrors.estimate} aria-describedby={fieldErrors.estimate ? 'err-estimate estimate-help' : 'estimate-help'} />
-      <small id="estimate-help" className="help">Optional; how much this item typically costs per period.</small>
-      {fieldErrors.estimate && <div id="err-estimate" className="error">Error: Estimated spend {fieldErrors.estimate}</div>}
-      <label className="label" htmlFor="item-frequency">Recurrence</label>
-      <select id="item-frequency" className="input" value={frequency} onChange={e => setFrequency(e.target.value as Frequency)}>
-        {FREQUENCIES.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
-      </select>
-      <label className="label" htmlFor="item-date">Date</label>
-      <DatePicker id="item-date" value={date} onChange={e => setDate(e.target.value)} />
-      <label className="label" htmlFor="item-due-date">Due date</label>
-      <DatePicker id="item-due-date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
-      <small id="due-date-help" className="help">Optional; when the payment is due.</small>
-      <label className="label checkbox-item" htmlFor="item-autopay">
-        <input id="item-autopay" type="checkbox" className="checkbox" checked={autopay} onChange={e => setAutopay(e.target.checked)} />
-        Autopay
-      </label>
-      <Button onClick={save} disabled={saving}>{saving ? 'Saving...' : 'Save'}</Button>
-    </div>
+      )}
+      <div className="field">
+        <label className="label" htmlFor="item">Item <span aria-hidden="true">*</span></label>
+        <ItemSelector key={formKey} id="item" roots={roots} onChange={pickTarget}
+          invalid={!!errors.item} describedBy={errors.item ? 'item-error' : undefined} />
+        {errors.item && <p id="item-error" className="error">{errors.item}</p>}
+      </div>
+      <div className="field">
+        <label className="label" htmlFor="amount">Amount <span aria-hidden="true">*</span></label>
+        <p id="amount-help" className="help">Use a minus sign for a credit or refund, e.g. -12.50.</p>
+        <AmountInput id="amount" value={amount} onChange={e => setAmount(e.target.value)} aria-required="true"
+          aria-invalid={!!errors.amount || undefined}
+          aria-describedby={errors.amount ? 'amount-error amount-help' : 'amount-help'} />
+        {errors.amount && <p id="amount-error" className="error">{errors.amount}</p>}
+      </div>
+      <div className="field">
+        <label className="label" htmlFor="estimate">Estimated spend</label>
+        <p id="estimate-help" className="help">Optional. What you expect this item to cost each time it recurs.</p>
+        <AmountInput id="estimate" value={estimate} onChange={e => setEstimate(e.target.value)}
+          aria-invalid={!!errors.estimate || undefined}
+          aria-describedby={errors.estimate ? 'estimate-error estimate-help' : 'estimate-help'} />
+        {errors.estimate && <p id="estimate-error" className="error">{errors.estimate}</p>}
+      </div>
+      <div className="field">
+        <label className="label" htmlFor="frequency">Recurrence</label>
+        <select id="frequency" className="input" value={frequency} onChange={e => setFrequency(e.target.value as Frequency)}>
+          {FREQUENCIES.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
+        </select>
+      </div>
+      <div className="field">
+        <label className="label" htmlFor="date">Date</label>
+        <DatePicker id="date" value={date} onChange={e => setDate(e.target.value || isoDate(new Date()))} />
+      </div>
+      <div className="actions">
+        <Button type="button" onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Save'}</Button>
+        <p className="status" role="status">{status}</p>
+      </div>
+    </section>
   )
 }

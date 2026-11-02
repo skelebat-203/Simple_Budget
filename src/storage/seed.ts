@@ -1,94 +1,52 @@
 import { db } from './db'
+import { isPreselected } from './preselected'
 
-// Color tokens from docs/design/0004-table-design.md
-const C = {
-  blue: 'blue',
-  red: 'red',
-  highlightBlue: 'highlight-blue',
-  green: 'green',
-  lighterGreen: 'lighter-green',
-  orange: 'orange',
-  lighterOrange: 'lighter-orange',
-  evenLighterOrange: 'even-lighter-orange',
-}
+/** Seed tree from docs/design/0004-table-design.md. `*` rows are computed. */
+interface SeedNode { name: string; color: string; computed?: boolean; children?: SeedNode[] }
 
-async function add(name: string, parentId: number | null, color: string, computed: boolean): Promise<number> {
-  return db.categories.add({ name, parentId, color, computed })
-}
+const items = (color: string, names: string[]): SeedNode[] => names.map(name => ({ name, color }))
+const sub = (name: string, names: string[]): SeedNode =>
+  ({ name, color: 'lighter-orange', computed: true, children: items('even-lighter-orange', names) })
+
+const TREE: SeedNode[] = [
+  { name: 'Pay', color: 'blue' },
+  { name: 'Incidental Income', color: 'blue' },
+  { name: 'Taxes', color: 'red' },
+  { name: 'Net Income', color: 'highlight-blue', computed: true },
+  {
+    name: 'Savings', color: 'green', computed: true,
+    children: items('lighter-green', ['General Maintenance', 'Emergency', 'Roth 401k', 'Trad 401k', 'Roth IRA', 'IRA', '403b', 'HSA', 'FSA']),
+  },
+  {
+    name: 'Expenses', color: 'orange', computed: true,
+    children: [
+      { name: 'Groceries', color: 'lighter-orange' },
+      { name: 'Gas', color: 'lighter-orange' },
+      { name: 'Gifts', color: 'lighter-orange' },
+      sub('Charity', ['Miscellaneous', 'United Way', 'Wikipedia', 'Library']),
+      sub('Incidentals', ['Coffee Shops', 'Treats', 'Snacks', 'Pet Stuff', 'Eat Food Out', 'Dates', 'Family Time', 'Clothing', 'Shoes', 'Gen. Self Care', 'Books', 'Alcohol', 'Hair Cuts', 'Decorations', 'Crafting', 'Miscellaneous']),
+      sub('Medical', ['Miscellaneous']),
+      sub('Insurance', ['Car', 'Life', 'Medical', 'Dental', 'Vision']),
+      sub('Maintenance', ['Car', 'House', 'Lawn Mowing', 'Miscellaneous']),
+      sub('Debt', ['Mortgage', 'Credit Card']),
+      sub('Utilities', ['Power', 'Water', 'Internet', 'Phone', 'Trash']),
+      sub('Subscriptions', ['Netflix', 'YouTube Premium', 'Prime', 'Dropout', 'Duolingo', 'LastPass', '1Password', 'Proton Suite', 'Nebula', 'Gym', 'Audible', 'Librio.fm']),
+    ],
+  },
+]
 
 export async function seedCategories(): Promise<void> {
-  const count = await db.categories.count()
-  if (count > 0) return
-
+  if ((await db.categories.count()) > 0) return
   await db.transaction('rw', db.categories, async () => {
-    // Top-level
-    const pay = await add('Pay', null, C.blue, false)
-    const incidental = await add('Incidental Income', null, C.blue, false)
-    const taxes = await add('Taxes', null, C.red, false)
-    const netIncome = await add('Net Income', null, C.highlightBlue, true)
-    const savings = await add('Savings', null, C.green, true)
-    const expenses = await add('Expenses', null, C.orange, true)
-
-    // Savings items
-    const savingsItems = [
-      'General Maintenance', 'Emergency', 'Roth 401k', 'Trad 401k', 'Roth IRA',
-      'IRA', '403b', 'HSA', 'FSA',
-    ]
-    for (const n of savingsItems) await add(n, savings, C.lighterGreen, false)
-
-    // Expense subcategories
-    const groceries = await add('Groceries', expenses, C.lighterOrange, false)
-    const gas = await add('Gas', expenses, C.lighterOrange, false)
-    const gifts = await add('Gifts', expenses, C.lighterOrange, false)
-
-    const charity = await add('Charity', expenses, C.lighterOrange, true)
-    const incidentals = await add('Incidentals', expenses, C.lighterOrange, true)
-    const medical = await add('Medical', expenses, C.lighterOrange, true)
-    const insurance = await add('Insurance', expenses, C.lighterOrange, true)
-    const maintenance = await add('Maintenance', expenses, C.lighterOrange, true)
-    const debt = await add('Debt', expenses, C.lighterOrange, true)
-    const utilities = await add('Utilities', expenses, C.lighterOrange, true)
-    const subscriptions = await add('Subscriptions', expenses, C.lighterOrange, true)
-
-    // keep unused vars referenced
-    void groceries; void gas; void gifts
-
-    // Charity items
-    for (const n of ['Miscellaneous', 'United Way', 'Wikipedia', 'Library']) {
-      await add(n, charity, C.evenLighterOrange, false)
+    const insert = async (nodes: SeedNode[], parentId: number | null, parentName: string | null) => {
+      for (const n of nodes) {
+        const id = await db.categories.add({
+          name: n.name, color: n.color, parentId, computed: !!n.computed,
+          selected: isPreselected(n.name, parentName) || undefined,
+        })
+        if (n.children) await insert(n.children, id, n.name)
+      }
     }
-    // Incidentals items
-    for (const n of [
-      'Coffee Shops', 'Treats', 'Snacks', 'Pet Stuff', 'Eat Food Out', 'Dates',
-      'Family Time', 'Clothing', 'Shoes', 'Gen. Self Care', 'Books', 'Alcohol',
-      'Hair Cuts', 'Decorations', 'Crafting', 'Miscellaneous',
-    ]) {
-      await add(n, incidentals, C.evenLighterOrange, false)
-    }
-    // Insurance items
-    for (const n of ['Car', 'Life', 'Medical', 'Dental', 'Vision']) {
-      await add(n, insurance, C.evenLighterOrange, false)
-    }
-    // Maintenance items
-    for (const n of ['Car', 'House', 'Lawn Mowing', 'Miscellaneous']) {
-      await add(n, maintenance, C.evenLighterOrange, false)
-    }
-    // Debt items
-    for (const n of ['Mortgage', 'Credit Card']) {
-      await add(n, debt, C.evenLighterOrange, false)
-    }
-    // Utilities items
-    for (const n of ['Power', 'Water', 'Internet', 'Phone', 'Trash']) {
-      await add(n, utilities, C.evenLighterOrange, false)
-    }
-    // Subscriptions items
-    for (const n of [
-      'Netflix', 'YouTube Premium', 'Prime', 'Dropout', 'Duolingo', 'LastPass',
-      '1Password', 'Proton Suite', 'Nebula', 'Gym', 'Audible', 'Librio.fm',
-    ]) {
-      await add(n, subscriptions, C.evenLighterOrange, false)
-    }
-
-    void pay; void incidental; void taxes; void netIncome; void savings; void expenses; void medical
+    await insert(TREE, null, null)
   })
 }

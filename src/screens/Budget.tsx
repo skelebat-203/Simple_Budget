@@ -1,63 +1,39 @@
-import { useState, useEffect } from 'react'
-import { budgetItemRepo } from '../storage/repository'
-import type { BudgetItem } from '../storage/db'
-import { DayTable } from '../components/DayTable'
+import { useState } from 'react'
+import type { BudgetItem, Range } from '../storage/db'
+import type { CatNode } from '../budget/tree'
+import { BudgetTable } from '../components/BudgetTable'
 import { Button } from '../components/ui'
-import { BudgetSetup } from './BudgetSetup'
 
-export type BudgetView = 'day' | 'week' | 'month'
+const RANGES: { value: Range; label: string }[] = [
+  { value: 'day', label: 'Day' },
+  { value: 'week', label: 'Week' },
+  { value: 'month', label: 'Month' },
+]
 
-export function Budget({ refreshKey, defaultRange }: { refreshKey?: number; defaultRange: BudgetView }) {
-  const [view, setView] = useState<BudgetView>(defaultRange)
-  const [items, setItems] = useState<BudgetItem[]>([])
-  const [showSetup, setShowSetup] = useState(false)
-  const [range, setRange] = useState<BudgetView>(defaultRange)
-
-  useEffect(() => {
-    budgetItemRepo.list().then(setItems)
-  }, [refreshKey])
-  useEffect(() => {
-    setView(defaultRange)
-  }, [defaultRange])
-
-  function reload() {
-    budgetItemRepo.list().then(setItems)
-  }
-
+export function Budget({ roots, items, range, onRangeChange }: {
+  roots: CatNode[]
+  items: BudgetItem[]
+  range: Range
+  onRangeChange: (r: Range) => void
+}) {
+  const [showEstimates, setShowEstimates] = useState(true)
   return (
-    <div className="form wide">
+    <section className="panel wide" aria-labelledby="budget-heading">
       <h2 id="budget-heading" className="section-title">Budget</h2>
-      <div className="button-row">
-        <Button type="button" onClick={() => setShowSetup(true)}>Set estimates</Button>
+      <div className="toolbar">
+        <div className="toggle-group" role="group" aria-label="Range">
+          {RANGES.map(r => (
+            <Button key={r.value} type="button" className="toggle" aria-pressed={range === r.value} onClick={() => onRangeChange(r.value)}>
+              {r.label}
+            </Button>
+          ))}
+        </div>
+        <label className="check">
+          <input type="checkbox" checked={showEstimates} onChange={e => setShowEstimates(e.target.checked)} />
+          Show estimates
+        </label>
       </div>
-      <div className="button-row">
-        <Button type="button" onClick={() => setView('day')} disabled={view === 'day'} aria-pressed={view === 'day'}>Day</Button>
-        <Button type="button" onClick={() => setView('week')} disabled={view === 'week'} aria-pressed={view === 'week'}>Week</Button>
-        <Button type="button" onClick={() => setView('month')} disabled={view === 'month'} aria-pressed={view === 'month'}>Month</Button>
-      </div>
-      {view === 'day' ? (
-        <DayTable items={items} />
-      ) : (
-        <table className="table" aria-labelledby="budget-heading">
-          <caption>{view === 'week' ? 'Week' : 'Month'} view</caption>
-          <thead>
-            <tr><th scope="col">Name</th><th scope="col">Type</th><th scope="col">Amount</th><th scope="col">Date</th></tr>
-          </thead>
-          <tbody>
-            {items.map(i => (
-              <tr key={i.id} className="row-item"><td>{i.name}</td><td>{i.type}</td><td>{i.amount}</td><td>{i.date}</td></tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-      {showSetup && (
-        <BudgetSetup
-          onClose={() => setShowSetup(false)}
-          defaultRange={range}
-          onDefaultRangeChange={(v) => { setRange(v); setView(v) }}
-          onSaved={reload}
-        />
-      )}
-    </div>
+      <BudgetTable roots={roots} items={items} range={range} showEstimates={showEstimates} />
+    </section>
   )
 }

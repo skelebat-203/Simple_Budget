@@ -10,12 +10,18 @@ export const budgetItemRepo = {
     return db.budgetItems.update(id, { ...patch, updatedAt: Date.now() })
   },
   async remove(id: number) { return db.budgetItems.delete(id) },
-  async findByName(name: string) { return db.budgetItems.where('name').equals(name).toArray() },
 }
 
 export const categoryRepo = {
   async add(cat: Omit<Category, 'id'>) { return db.categories.add(cat) },
   async list() { return db.categories.toArray() },
+  async update(id: number, patch: Partial<Category>) { return db.categories.update(id, patch) },
+  /** Apply several patches in one transaction. */
+  async updateMany(patches: { id: number; patch: Partial<Category> }[]) {
+    await db.transaction('rw', db.categories, async () => {
+      for (const { id, patch } of patches) await db.categories.update(id, patch)
+    })
+  },
   async rename(id: number, name: string) { return db.categories.update(id, { name }) },
   async remove(id: number) { return db.categories.delete(id) },
 }
@@ -24,7 +30,7 @@ export const settingsRepo = {
   async get(): Promise<Settings> {
     const s = await db.settings.toCollection().first()
     if (s) return s
-    const created: Settings = { rewardsEnabled: true, notificationsEnabled: false }
+    const created: Settings = { rewardsEnabled: true, notificationsEnabled: false, defaultRange: 'day' }
     const id = await db.settings.add(created)
     return { ...created, id }
   },

@@ -8,7 +8,11 @@ Table design: `docs/design/0004-table-design.md`.
 - v0.1 complete (security review approved; findings fixed).
 - v0.2 in progress: category hierarchy model + seed data, estimates/frequency/dueDate/autopay on BudgetItem, Day table (Est./Act.), validation, accessibility, security review.
 - Automated accessibility audit (v0.2.5): Lighthouse accessibility 100/100, 0 failing audits; run on built app via `vite preview`.
-- v0.2.6 UI/UX refactor in progress (execution plan item 7).
+- v0.2.6 UI/UX refactor in progress (execution plan item 7). Rebuilt to match `docs/design/0006-prototype.html`; UI/UX approved by human; accessibility pass next. Build and lint pass.
+  - Data: Dexie v5. Amounts link to a category by `categoryId`; estimate/frequency/autopay/dueDate/selected live on `Category`; `Settings.defaultRange` added. Upgrade migrates old rows and adds Medical › Miscellaneous.
+  - Logic: `src/budget/tree.ts` (tree, routing, recurrence/autopay rules, periods, estimates).
+  - UI: `ItemSelector` (combined Item control), `AddBudget` (Item/Amount/optional Estimated spend + Recurrence per 0004/Date + Set estimates), `BudgetSetup` (`<dialog>`), `BudgetTable` (Day/Week/Month per 0004; replaces `DayTable`).
+  - `src/App.css` was never imported before this pass; now imported in `main.tsx`. Vite boilerplate removed from `src/index.css`.
 ## v0.2 execution plan
 
 Steps are ordered by version target. Within a subversion, each completed step bumps the last segment to the item's number (v0.2.0 → v0.2.1 …); the final item of the subversion bumps the middle segment and restarts the counter (v0.2's final item → v0.3.0). Commits autonomously per `versioning.md` (update `package.json` `version` without `v` prefix in the same pass).
