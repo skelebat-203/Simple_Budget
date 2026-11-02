@@ -11,8 +11,9 @@ const RANGES: { value: Range; label: string }[] = [
   { value: 'year', label: 'Annual' },
 ]
 
-export function Budget({ roots, items, range, onRangeChange, calendar }: {
+export function Budget({ roots, items, range, onRangeChange, calendar, onChanged }: {
   roots: CatNode[]
+  onChanged: () => void
   calendar: Calendar
   items: BudgetItem[]
   range: Range
@@ -38,7 +39,7 @@ export function Budget({ roots, items, range, onRangeChange, calendar }: {
         </label>
         <p id="estimates-help" className="help">Estimates show in Week and Month. Day and Annual show what you recorded.</p>
       </div>
-      <BudgetTable roots={roots} items={items} range={range} showEstimates={showEstimates} calendar={calendar} />
+      <BudgetTable roots={roots} items={items} range={range} showEstimates={showEstimates} calendar={calendar} onChanged={onChanged} />
     </section>
   )
 }

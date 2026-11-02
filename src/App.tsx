@@ -77,8 +77,8 @@ function App() {
       <h1 className="title">Simple Budget</h1>
       <Notices state={notices} onDismissPersist={dismissPersist} />
       <Tabs label="Sections" tabs={[
-        { id: 'add', label: 'Add budget item', panel: <AddBudget roots={roots} onSaved={() => { reloadItems(); reloadCats() }} onOpenSetup={() => setSetupOpen(true)} /> },
-        { id: 'budget', label: 'Budget', panel: <Budget roots={roots} items={items} range={range} onRangeChange={setRange} calendar={calendar} /> },
+        { id: 'add', label: 'Add purchase', panel: <AddBudget roots={roots} onSaved={() => { reloadItems(); reloadCats() }} onOpenSetup={() => setSetupOpen(true)} /> },
+        { id: 'budget', label: 'Budget', panel: <Budget roots={roots} items={items} range={range} onRangeChange={setRange} calendar={calendar} onChanged={() => { reloadItems(); reloadCats() }} /> },
       ]} />
       <Backup onRestored={() => {
         reloadCats(); reloadItems(); reloadSettings()

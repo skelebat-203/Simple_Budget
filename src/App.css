@@ -181,6 +181,13 @@
 .setup-table .create-row .input { flex: 0 1 14rem; }
 .reorder { display: inline-flex; align-items: center; gap: var(--space-xs); }
 .reorder .input { width: auto; }
+.btn.danger { background: var(--color-alert); border-color: var(--color-alert); color: var(--color-primary-foreground); }
+.row-actions { text-align: left; }
+.confirm { display: inline-flex; align-items: center; gap: var(--space-xs); flex-wrap: wrap; }
+.row.purchase .name { font-size: var(--font-size-sm); color: var(--color-text); }
+.row.purchase.depth-1 .name { padding-left: calc(var(--space-md) * 2); }
+.row.purchase.depth-2 .name { padding-left: calc(var(--space-md) * 3); }
+.row.purchase.depth-3 .name { padding-left: calc(var(--space-md) * 4); }
 .btn.small { padding: var(--space-xs) var(--space-sm); }
 .input.narrow { width: auto; max-width: 16rem; }
 .preview { display: flex; flex-direction: column; gap: var(--space-sm); }

@@ -13,7 +13,7 @@ const toList = (e: Errors): FieldError[] => FIELDS.filter(k => e[k]).map(k => ({
 const itemColorUnder = (root: CatNode) =>
   childColor({ cat: { ...root.cat, id: -1, name: '' }, depth: 1, parent: root, children: [] })
 
-/** Add budget item (0007 §4): Item, Amount, Date; a typed new item adds Category, Where? and Use in future. */
+/** Add purchase (0007 §4, §9): Item, Amount, Date; a typed new item adds Category, Where? and Use in future. */
 export function AddBudget({ roots, onSaved, onOpenSetup }: {
   roots: CatNode[]
   onSaved: () => void
@@ -119,7 +119,7 @@ export function AddBudget({ roots, onSaved, onOpenSetup }: {
   return (
     <section className="panel" aria-labelledby="add-heading">
       <div className="panel-head">
-        <h2 id="add-heading" className="section-title">Add budget item</h2>
+        <h2 id="add-heading" className="section-title">Add purchase</h2>
         <Button type="button" className="secondary" onClick={onOpenSetup}>Set estimates</Button>
       </div>
       <ErrorSummary ref={bannerRef} errors={toList(errors)} />
