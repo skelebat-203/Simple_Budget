@@ -32,5 +32,6 @@ Thumbs.db
 # Testing
 coverage/
 
-# Kilo steering/config
+# # AI Files
+.claude/
 .kilo/
