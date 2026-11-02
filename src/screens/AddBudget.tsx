@@ -3,11 +3,12 @@ import { AmountInput, Button, DatePicker, ErrorSummary, focusFirstError, ItemSel
 import { budgetItemRepo, categoryRepo } from '../storage/repository'
 import type { Frequency } from '../storage/db'
 import { FREQUENCIES, isoDate, type CatNode } from '../budget/tree'
+import { dateBounds, moneyError, parseMoney } from '../budget/validate'
 
-type Errors = { item?: string; amount?: string; estimate?: string }
+type Errors = { item?: string; amount?: string; estimate?: string; date?: string }
 
 const toList = (e: Errors): FieldError[] =>
-  (['item', 'amount', 'estimate'] as const).filter(k => e[k]).map(k => ({ fieldId: k, message: e[k]! }))
+  (['item', 'amount', 'estimate', 'date'] as const).filter(k => e[k]).map(k => ({ fieldId: k, message: e[k]! }))
 
 export function AddBudget({ roots, onSaved, onOpenSetup }: {
   roots: CatNode[]
@@ -24,18 +25,28 @@ export function AddBudget({ roots, onSaved, onOpenSetup }: {
   const [status, setStatus] = useState('')
   const [formKey, setFormKey] = useState(0)
   const bannerRef = useRef<HTMLDivElement>(null)
+  const [saveError, setSaveError] = useState('')
+  const [bounds] = useState(() => dateBounds(new Date()))
 
   function validate(): Errors {
     const e: Errors = {}
     if (!target) e.item = 'Error: Item cannot be empty'
-    if (amount.trim() === '') e.amount = 'Error: Amount cannot be empty'
-    else if (!Number.isFinite(Number(amount))) e.amount = 'Invalid: Amount use number format (e.g. 12.50 or -12.50)'
-    if (estimate.trim() !== '' && !Number.isFinite(Number(estimate))) e.estimate = 'Invalid: Estimated spend use number format (e.g. 40)'
+    // A number input reports '' for text it can't parse; tell that apart from empty (security-v0.2 3.3).
+    const amountEl = document.getElementById('amount') as HTMLInputElement | null
+    const amt = amountEl?.validity.badInput ? { ok: false as const, reason: 'format' as const } : parseMoney(amount, { allowNegative: true })
+    if (!amt.ok) e.amount = moneyError('Amount', amt, '12.50 or -12.50')
+    if (estimate.trim() !== '') {
+      const est = parseMoney(estimate, { allowNegative: false })
+      if (!est.ok) e.estimate = moneyError('Estimated spend', est, '40 or 1,200.00')
+    }
+    if (date === '') e.date = 'Error: Date cannot be empty'
+    else if (date < bounds.min || date > bounds.max) e.date = `Invalid: Date use a date from ${bounds.min} to ${bounds.max}`
     return e
   }
 
   async function save() {
     setStatus('')
+    setSaveError('')
     const e = validate()
     setErrors(e)
     const list = toList(e)
@@ -46,9 +57,11 @@ export function AddBudget({ roots, onSaved, onOpenSetup }: {
     }
     setSaving(true)
     try {
-      await budgetItemRepo.add({ categoryId: target!.cat.id, amount: Number(amount), date })
-      if (estimate.trim() !== '') {
-        await categoryRepo.update(target!.cat.id, { estimate: Number(estimate), frequency, selected: true })
+      const amt = parseMoney(amount, { allowNegative: true })
+      await budgetItemRepo.add({ categoryId: target!.cat.id, amount: amt.ok ? amt.value : 0, date })
+      const est = parseMoney(estimate, { allowNegative: false })
+      if (est.ok) {
+        await categoryRepo.update(target!.cat.id, { estimate: est.value, frequency, selected: true })
       }
       setStatus(`Saved ${target!.cat.name}.`)
       setTarget(null)
@@ -58,8 +71,9 @@ export function AddBudget({ roots, onSaved, onOpenSetup }: {
       setFormKey(k => k + 1) // clears the Item control
       onSaved()
     } catch (err) {
-      console.error(err)
-      setStatus('The item wasn’t saved. Try again.')
+      // Name and message only; never the record (security-v0.2 8.6).
+      console.error('Save failed:', err instanceof Error ? `${err.name}: ${err.message}` : 'unknown')
+      setSaveError('Error: The item wasn’t saved. Check that your device has free storage space, then try again.')
     } finally {
       setSaving(false)
     }
@@ -98,7 +112,7 @@ export function AddBudget({ roots, onSaved, onOpenSetup }: {
       <div className="field">
         <label className="label" htmlFor="estimate">Estimated spend</label>
         <p id="estimate-help" className="help">Optional. What you expect this item to cost each time it recurs.</p>
-        <AmountInput id="estimate" value={estimate} onChange={e => setEstimate(e.target.value)}
+        <input id="estimate" className="input" type="text" inputMode="decimal" autoComplete="off" value={estimate} onChange={e => setEstimate(e.target.value)}
           aria-invalid={!!errors.estimate || undefined}
           aria-describedby={errors.estimate ? 'estimate-error estimate-help' : 'estimate-help'} />
         {errors.estimate && <p id="estimate-error" className="error">{errors.estimate}</p>}
@@ -111,12 +125,15 @@ export function AddBudget({ roots, onSaved, onOpenSetup }: {
       </div>
       <div className="field">
         <label className="label" htmlFor="date">Date</label>
-        <DatePicker id="date" value={date} onChange={e => setDate(e.target.value || isoDate(new Date()))} />
+        <DatePicker id="date" value={date} min={bounds.min} max={bounds.max} aria-invalid={!!errors.date || undefined}
+          aria-describedby={errors.date ? 'date-error' : undefined} onChange={e => setDate(e.target.value)} />
+        {errors.date && <p id="date-error" className="error">{errors.date}</p>}
       </div>
       <div className="actions">
         <Button type="button" onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Save'}</Button>
         <p className="status" role="status">{status}</p>
       </div>
+      {saveError && <p className="error" role="alert">{saveError}</p>}
     </section>
   )
 }

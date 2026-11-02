@@ -1,0 +1,47 @@
+// Input rules shared by every form (security-v0.2 2.1, 3.2, 3.5).
+
+export const NAME_MAX = 60
+export const MONEY_MAX = 999_999_999.99
+
+/**
+ * Clean a user-typed name: Unicode NFC, drop control and format characters
+ * (e.g. right-to-left override, zero-width space), collapse whitespace, trim,
+ * cap length.
+ */
+export function cleanName(s: string): string {
+  return s.normalize('NFC').replace(/[\p{Cc}\p{Cf}]/gu, '').replace(/\s+/g, ' ').trim().slice(0, NAME_MAX)
+}
+
+export type MoneyResult = { ok: true; value: number } | { ok: false; reason: 'empty' | 'format' | 'negative' | 'range' }
+
+/**
+ * Parse a money string: plain decimal, optional leading minus, commas ignored,
+ * at most 2 decimal places, |value| ≤ MONEY_MAX. No hex, exponents or spaces.
+ */
+export function parseMoney(raw: string, { allowNegative }: { allowNegative: boolean }): MoneyResult {
+  const s = raw.trim().replace(/,/g, '')
+  if (s === '') return { ok: false, reason: 'empty' }
+  if (!/^-?(\d+(\.\d{0,2})?|\.\d{1,2})$/.test(s)) return { ok: false, reason: 'format' }
+  const value = Number(s)
+  if (value < 0 && !allowNegative) return { ok: false, reason: 'negative' }
+  if (Math.abs(value) > MONEY_MAX) return { ok: false, reason: 'range' }
+  return { ok: true, value: Object.is(value, -0) ? 0 : value }
+}
+
+/** Field-level message in the digital_accessibility.md format. */
+export function moneyError(field: string, r: Exclude<MoneyResult, { ok: true }>, example: string): string {
+  switch (r.reason) {
+    case 'empty': return `Error: ${field} cannot be empty`
+    case 'negative': return `Invalid: ${field} use a number of 0 or more`
+    case 'range': return `Invalid: ${field} use a number up to 999,999,999.99`
+    default: return `Invalid: ${field} use number format (e.g. ${example})`
+  }
+}
+
+/** Allowed date range for amounts: Jan 1 2000 to one year from today. */
+export function dateBounds(today: Date): { min: string; max: string } {
+  const max = new Date(today)
+  max.setFullYear(max.getFullYear() + 1)
+  const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  return { min: '2000-01-01', max: iso(max) }
+}

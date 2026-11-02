@@ -1,5 +1,6 @@
 import Dexie, { type Table } from 'dexie'
 import { isPreselected } from './preselected'
+import { cleanName } from '../budget/validate'
 
 /** Recurrence of an item's estimate. Bi-monthly means twice a month. */
 export type Frequency = 'day' | 'week' | 'biweek' | 'bimonthly' | 'month'
@@ -17,6 +18,8 @@ export interface BudgetItem {
   date: string
   createdAt: number
   updatedAt: number
+  /** Set when an upgrade couldn't be sure which category this amount belongs to. */
+  needsReview?: boolean
 }
 
 /**
@@ -49,6 +52,9 @@ export interface Settings {
   defaultRange?: Range
 }
 
+/** True when this session ran the fixed v5 upgrade, which already flags ambiguous rows. */
+let ranFixedV5 = false
+
 class SimpleBudgetDB extends Dexie {
   budgetItems!: Table<BudgetItem, number>
   categories!: Table<Category, number>
@@ -65,6 +71,7 @@ class SimpleBudgetDB extends Dexie {
     this.version(5)
       .stores({ budgetItems: '++id, categoryId, date', categories: '++id, name, parentId' })
       .upgrade(async tx => {
+        ranFixedV5 = true
         const cats = tx.table<Category, number>('categories')
         const all = await cats.toArray()
         const nameOf = (id: number | null) => all.find(c => c.id === id)?.name ?? null
@@ -80,30 +87,66 @@ class SimpleBudgetDB extends Dexie {
         const items = tx.table('budgetItems')
         for (const old of await items.toArray()) {
           const matches = all.filter(c => c.name === old.name)
-          let cat = matches.find(c => nameOf(c.parentId) === old.category) ?? matches[0]
+          // Old builds saved category '' or a top-level name, so a repeated name
+          // (Car, Miscellaneous) can't be placed for sure. Never guess silently:
+          // file it under the first match, flag it for review, and don't copy
+          // its estimate onto a category it may not belong to (security-v0.2 3.1).
+          const exact = matches.filter(c => nameOf(c.parentId) === old.category)
+          let cat = exact.length === 1 ? exact[0] : matches[0]
+          const ambiguous = exact.length !== 1 && matches.length > 1
           if (!cat) {
             // Free-text item from the old form: keep the amount under a new Expenses item.
-            const row: Category = { name: old.name || 'Unnamed', parentId: expenses?.id ?? null, color: 'lighter-orange', computed: false }
+            const row: Category = { name: cleanName(old.name ?? '') || 'Unnamed', parentId: expenses?.id ?? null, color: 'lighter-orange', computed: false }
             cat = { ...row, id: await cats.add(row) }
             all.push(cat)
           }
-          if (old.estimate != null || old.frequency || old.autopay || old.dueDate) {
-            await cats.update(cat.id!, {
-              estimate: old.estimate ?? cat.estimate,
-              frequency: old.frequency ?? cat.frequency,
-              autopay: old.autopay ?? cat.autopay,
-              dueDate: old.dueDate ?? cat.dueDate,
+          if (!ambiguous && (old.estimate != null || old.frequency || old.autopay || old.dueDate)) {
+            // Keep the first value found; later amounts don't overwrite it.
+            const patch: Partial<Category> = {
+              estimate: cat.estimate ?? old.estimate,
+              frequency: cat.frequency ?? old.frequency,
+              autopay: cat.autopay ?? old.autopay,
+              dueDate: cat.dueDate ?? old.dueDate,
               selected: true,
-            })
+            }
+            await cats.update(cat.id!, patch)
+            Object.assign(cat, patch)
           }
-          await items.put({ id: old.id, categoryId: cat.id!, amount: old.amount ?? 0, date: old.date, createdAt: old.createdAt, updatedAt: Date.now() })
+          const amount = Number.isFinite(old.amount) ? old.amount : 0
+          await items.put({ id: old.id, categoryId: cat.id!, amount, date: old.date, createdAt: old.createdAt, updatedAt: Date.now(), needsReview: ambiguous || undefined })
         }
 
         for (const c of all) {
           if (isPreselected(c.name, nameOf(c.parentId))) await cats.update(c.id!, { selected: true })
         }
       })
+    // v6: v5 (as shipped in v0.2.5) guessed on repeated names. Flag amounts it
+    // migrated (updatedAt > createdAt; no edit flow exists yet) whose category
+    // name repeats, so the user can check them once (security-v0.2 3.1).
+    this.version(6).stores({}).upgrade(async tx => {
+      if (ranFixedV5) return
+      const all = await tx.table<Category, number>('categories').toArray()
+      const count = new Map<string, number>()
+      for (const c of all) count.set(c.name, (count.get(c.name) ?? 0) + 1)
+      const repeated = new Set(all.filter(c => (count.get(c.name) ?? 0) > 1).map(c => c.id))
+      await tx.table<BudgetItem, number>('budgetItems').toCollection().modify(it => {
+        if (repeated.has(it.categoryId) && it.updatedAt > it.createdAt) it.needsReview = true
+      })
+    })
   }
 }
 
 export const db = new SimpleBudgetDB()
+
+/**
+ * Database lifecycle problems the UI must explain (security-v0.2 8.4):
+ * 'blocked' — an upgrade is waiting for another open tab to close;
+ * 'versionchange' — another tab upgraded the database, so this tab must reload.
+ */
+export const dbEvents = new EventTarget()
+db.on('blocked', () => { dbEvents.dispatchEvent(new Event('blocked')) })
+db.on('versionchange', () => {
+  db.close()
+  dbEvents.dispatchEvent(new Event('versionchange'))
+  return false
+})

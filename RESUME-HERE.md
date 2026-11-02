@@ -4,12 +4,13 @@ Tracking file for current work status. Roadmap authority: `docs/design/0003-road
 Table design: `docs/design/0004-table-design.md`.
 
 ## Current state
-- Version: v0.2.5
+- Version: v0.3.0 (v0.2 complete: security review done; v0.3 next — plan of action to be made at start)
 - v0.1 complete (security review approved; findings fixed).
 - v0.2 in progress: category hierarchy model + seed data, estimates/frequency/dueDate/autopay on BudgetItem, Day table (Est./Act.), validation, accessibility, security review.
 - Automated accessibility audit (v0.2.5): Lighthouse accessibility 100/100, 0 failing audits; run on built app via `vite preview`.
 - v0.2.6 UI/UX refactor in progress (execution plan item 7). Rebuilt to match `docs/design/0006-prototype.html`; UI/UX approved by human; committed as v0.2.5. Build and lint pass.
   - Accessibility pass (2026-11-02, automated part done): Lighthouse 13.5.0 a11y 100 on six states (empty page, Day table with data, Item list open, error banner, Month table, Budget setup open). Scripted checks pass: tab order, focus on first errant field, keyboard item pick, dialog focus on open + return to trigger on close, visible focus outline, no horizontal scroll at 320px. Fixes made: category/success/alert colors darkened to ≥5:1, error messages and banner per `digital_accessibility.md`, grouped checkboxes in lists, table `aria-labelledby`/`aria-describedby`, 44px targets, `aria-disabled` Add button, listbox removed from tab order. **Still needed: human screen reader test (NVDA/VoiceOver/TalkBack).**
+  - Security review v0.2 (2026-11-02): all 8 domains in `docs/audits/security/security-v0.2.md`, NETWORKED matrix. All non-Info findings fixed except Held items (5.1, 5.2 → v0.9; 5.4, 6.6 → v0.8; 3.4 → v0.4; 3.6 → v0.3) and 7.1 (no upstream fix). Dexie now v6 (flags ambiguous migrated amounts). New: JSON backup export/restore, storage persistence request, error boundary, startup/load/db-lifecycle error messages, shared input rules (`src/budget/validate.ts`), production CSP. Awaiting human review.
   - Next design work: `docs/design/0007-v0.3-design-updates.md` (draft from `stuff.md`; not in roadmap yet).
   - Data: Dexie v5. Amounts link to a category by `categoryId`; estimate/frequency/autopay/dueDate/selected live on `Category`; `Settings.defaultRange` added. Upgrade migrates old rows and adds Medical › Miscellaneous.
   - Logic: `src/budget/tree.ts` (tree, routing, recurrence/autopay rules, periods, estimates).

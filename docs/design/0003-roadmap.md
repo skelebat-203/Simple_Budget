@@ -38,6 +38,15 @@ tracked as a later-version item.
 - Categories CRUD on the hierarchy (create/rename/delete/list, add subcategories)
 - `dueDate`/`autopay` display + editing on items
 - Search/filter dropdown shared component reuse
+- Audit categories and items for repeated or ambiguous names (e.g. Car, Miscellaneous, Medical) and design a way to remove the ambiguity; resolve amounts flagged for review by the v6 upgrade (`docs/audits/security/security-v0.2.md` 3.1)
+- Design updates per `0007-v0.3-design-updates.md` (plan of action made when v0.3 starts):
+  - Calendar settings: week start, month boundaries (0007 §1)
+  - Category structure: Income group, subcategories under Income/Savings/Expenses, calculated subcategory estimates (0007 §2)
+  - Recurrence for all items; Quarterly/Annual for Debt, Utilities, Subscriptions; estimate scaling (0007 §3)
+  - Add form: remove estimate fields; selected-items list; new item/subcategory flow with "Use in future" (0007 §4)
+  - Budget setup overlay redesign: combined table, reordering, preview table, Save/Cancel (0007 §5)
+  - Tab navigation: Add budget item / Budget (0007 §6)
+  - Day (actuals only) and Annual tables (0007 §7)
 - UI/UX review (human approval)
 - Accessibility pass
 - Security review
@@ -45,6 +54,7 @@ tracked as a later-version item.
 ## v0.4 — Week/Month/Year + navigation
 - Week/Month/Year table views (date-spanning columns, per-period Est./Act.)
 - Historical navigation (prev/next date range)
+- Estimate scaling math: replace day-based scaling (monthly ÷ 30.44 × days) so monthly-style estimates show the typed amount per month (`docs/audits/security/security-v0.2.md` 3.4)
 - Estimate toggle (default on)
 - Expand/collapse category/subcategory rows + persisted state
 - UI/UX review (human approval)
@@ -64,6 +74,7 @@ tracked as a later-version item.
 - UI/UX for the upload flow
 - Deep subcategory nesting (subcategories containing subitems)
 - Add upload step to onboarding once it works
+- Data import / export: build on the v0.2 JSON backup export/restore (`docs/audits/security/security-v0.2.md` 6.2; file-handling requirements in 1.1 and 2.2)
 - UI/UX review (human approval)
 - Accessibility pass
 - Security review

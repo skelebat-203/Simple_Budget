@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Button, ErrorSummary, focusFirstError, type FieldError } from '../components/ui'
-import { categoryRepo, settingsRepo } from '../storage/repository'
+import { categoryRepo, saveSetup } from '../storage/repository'
+import { cleanName, moneyError, NAME_MAX, parseMoney } from '../budget/validate'
 import type { Frequency, Range } from '../storage/db'
 import {
   autopayApplies, childColor, flatten, FREQUENCIES, recurrenceApplies, subtree, type CatNode,
@@ -44,6 +45,7 @@ export function BudgetSetup({ roots, defaultRange, onClose, onChanged }: {
   const [create, setCreate] = useState<Record<string, string>>({})
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [status, setStatus] = useState('')
+  const [saveError, setSaveError] = useState('')
 
   const headingRef = useRef<HTMLHeadingElement>(null)
   const bannerRef = useRef<HTMLDivElement>(null)
@@ -69,15 +71,21 @@ export function BudgetSetup({ roots, defaultRange, onClose, onChanged }: {
   const isSelected = (n: CatNode) => d(n).selected
 
   async function addItem(g: Group) {
-    const name = (create[g.id] ?? '').trim()
+    const key = `create-${g.id}`
+    const name = cleanName(create[g.id] ?? '')
     if (!name || !g.parent) return
-    if (g.parent.children.some(c => c.cat.name.toLowerCase() === name.toLowerCase())) {
-      setErrors(e => ({ ...e, [`create-${g.id}`]: `Invalid: Create item in ${g.title} “${name}” already exists` }))
+    if (g.parent.children.some(c => cleanName(c.cat.name).toLowerCase() === name.toLowerCase())) {
+      setErrors(e => ({ ...e, [key]: `Invalid: Create item in ${g.title} “${name}” already exists` }))
       return
     }
-    await categoryRepo.add({ name, parentId: g.parent.cat.id, color: childColor(g.parent), computed: false, selected: true })
+    try {
+      await categoryRepo.add({ name, parentId: g.parent.cat.id, color: childColor(g.parent), computed: false, selected: true })
+    } catch {
+      setErrors(e => ({ ...e, [key]: `Error: Create item in ${g.title} wasn’t saved. Try again.` }))
+      return
+    }
     setCreate(c => ({ ...c, [g.id]: '' }))
-    setErrors(e => { const rest = { ...e }; delete rest[`create-${g.id}`]; return rest })
+    setErrors(e => { const rest = { ...e }; delete rest[key]; return rest })
     onChanged()
   }
 
@@ -87,24 +95,33 @@ export function BudgetSetup({ roots, defaultRange, onClose, onChanged }: {
   const estimateRows = flatten(roots).filter(n => n.cat.name !== 'Net Income' && subtree(n).some(isSelected))
 
   async function save() {
+    setSaveError('')
     const errs: Record<string, string> = {}
-    for (const n of estimateRows) {
+    const values = new Map<number, number | undefined>()
+    for (const n of flatten(roots)) {
       const v = d(n).estimate.trim()
-      if (hasControls(n) && v && !Number.isFinite(Number(v))) errs[`est-${n.cat.id}`] = `Invalid: Estimated spending for ${n.cat.name} use number format`
+      if (v === '') { values.set(n.cat.id, undefined); continue }
+      const r = parseMoney(v, { allowNegative: false })
+      if (r.ok) values.set(n.cat.id, r.value)
+      else if (hasControls(n)) errs[`est-${n.cat.id}`] = moneyError(`Estimated spending for ${n.cat.name}`, r, '40 or 1,200.00')
     }
     setErrors(errs)
     const list: FieldError[] = Object.entries(errs).map(([fieldId, message]) => ({ fieldId, message }))
     if (list.length) { requestAnimationFrame(() => focusFirstError(list, bannerRef.current)); return }
-    await categoryRepo.updateMany(flatten(roots).filter(n => draft[n.cat.id]).map(n => {
-      const x = d(n)
-      return { id: n.cat.id, patch: {
-        selected: x.selected,
-        estimate: x.estimate.trim() === '' ? undefined : Number(x.estimate),
-        frequency: recurrenceApplies(n) ? x.frequency : undefined,
-        autopay: autopayApplies(n) ? x.autopay : undefined,
-      } }
-    }))
-    await settingsRepo.update({ defaultRange: range })
+    try {
+      await saveSetup(flatten(roots).filter(n => draft[n.cat.id]).map(n => {
+        const x = d(n)
+        return { id: n.cat.id, patch: {
+          selected: x.selected,
+          estimate: values.get(n.cat.id),
+          frequency: recurrenceApplies(n) ? x.frequency : undefined,
+          autopay: autopayApplies(n) ? x.autopay : undefined,
+        } }
+      }), range)
+    } catch {
+      setSaveError('Error: Your estimates weren’t saved, and nothing was changed. Check that your device has free storage space, then try again.')
+      return
+    }
     setListCollapsed(true)
     setStatus('Estimates saved.')
     onChanged(range)
@@ -143,7 +160,7 @@ export function BudgetSetup({ roots, defaultRange, onClose, onChanged }: {
                 {g.parent && (
                   <div className="create-row">
                     <label className="sr-only" htmlFor={`create-${g.id}`}>Create item in {g.title}</label>
-                    <input id={`create-${g.id}`} className="input" placeholder="Create" value={create[g.id] ?? ''}
+                    <input id={`create-${g.id}`} className="input" placeholder="Create" maxLength={NAME_MAX} value={create[g.id] ?? ''}
                       aria-invalid={!!errors[`create-${g.id}`] || undefined}
                       aria-describedby={errors[`create-${g.id}`] ? `create-${g.id}-error` : undefined}
                       onChange={e => setCreate(c => ({ ...c, [g.id]: e.target.value }))}
@@ -231,6 +248,7 @@ export function BudgetSetup({ roots, defaultRange, onClose, onChanged }: {
           <Button type="button" onClick={save}>Save</Button>
           <p className="status" role="status">{status}</p>
         </div>
+        {saveError && <p className="error" role="alert">{saveError}</p>}
       </div>
     </dialog>
   )
