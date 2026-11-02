@@ -1,9 +1,14 @@
 import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react'
 import type { BudgetItem, Range } from '../storage/db'
 import { actualFor, domId, estimateTotal, isoDate, formatAmount, isTotal, periodsFor, rangeHasEstimates, repeatedNames, spokenName, type Calendar, type CatNode, type Period } from '../budget/tree'
-import { moneyError, parseMoney, slug } from '../budget/validate'
+import { cleanName, moneyError, NAME_MAX, parseMoney, slug } from '../budget/validate'
 import { budgetItemRepo, categoryRepo } from '../storage/repository'
 import { Button } from './ui'
+
+/** Open row action: Add value / Delete (Week, Month, §9.2) or Rename (Annual, §9.3). */
+type Kind = 'add' | 'delete' | 'rename'
+const fieldOf: Record<Kind, string> = { add: 'add_value', delete: 'delete_row', rename: 'rename_value' }
+const buttonOf: Record<Kind, string> = { add: 'add', delete: 'delete_row', rename: 'rename' }
 
 const COLLAPSED_KEY = 'simple-budget:collapsed'
 
@@ -40,7 +45,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
   const say = (n: CatNode) => spokenName(n, repeated)
   const [confirm, setConfirm] = useState<number | null>(null)
   /** Row with an open action: Add value or Delete (Week/Month, §9.2). */
-  const [rowEdit, setRowEdit] = useState<{ id: number; kind: 'add' | 'delete' } | null>(null)
+  const [rowEdit, setRowEdit] = useState<{ id: number; kind: Kind } | null>(null)
   const [value, setValue] = useState('')
   const [fieldError, setFieldError] = useState('')
   const [status, setStatus] = useState('')
@@ -79,13 +84,29 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
   /** Date for a value added from Week/Month: today if it's in range, else the range's last day. */
   const addDate = todayIso >= span.from && todayIso <= span.to ? todayIso : span.to
 
-  function openRow(n: CatNode, kind: 'add' | 'delete') {
-    setRowEdit({ id: n.cat.id, kind }); setValue(''); setFieldError(''); setError('')
-    focusAfter.current = domId(kind === 'add' ? 'add_value' : 'delete_row', n) + (kind === 'delete' ? '-cancel' : '')
+  function openRow(n: CatNode, kind: Kind) {
+    setRowEdit({ id: n.cat.id, kind }); setValue(kind === 'rename' ? n.cat.name : ''); setFieldError(''); setError('')
+    focusAfter.current = domId(fieldOf[kind], n) + (kind === 'delete' ? '-cancel' : '')
   }
-  function closeRow(n: CatNode, kind: 'add' | 'delete') {
+  function closeRow(n: CatNode, kind: Kind) {
     setRowEdit(null); setFieldError('')
-    focusAfter.current = domId(kind === 'add' ? 'add' : 'delete_row', n)
+    focusAfter.current = domId(buttonOf[kind], n)
+  }
+
+  async function rename(n: CatNode) {
+    const name = cleanName(value)
+    const fail = (msg: string) => { setFieldError(msg); focusAfter.current = domId('rename_value', n) }
+    if (!name) return fail(`Error: Name for ${say(n)} cannot be empty`)
+    if (n.parent!.children.some(c => c !== n && slug(c.cat.name) === slug(name))) return fail(`Invalid: Name “${name}” already exists in ${n.parent!.cat.name}`)
+    try {
+      await categoryRepo.rename(n.cat.id, name)
+    } catch {
+      setError(`Error: ${n.cat.name} wasn’t renamed. Try again.`)
+      return
+    }
+    setStatus(`Renamed ${say(n)} to ${name}.`)
+    closeRow(n, 'rename')
+    onChanged?.()
   }
 
   async function addValue(n: CatNode) {
@@ -125,11 +146,37 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
     openRow(n, 'delete')
   }
 
-  /** Actions cell for a category row in Week and Month (0007 §9.2). */
+  /** Actions cell for a category row: Week/Month add value and delete (§9.2), Annual rename (§9.3). */
   function rowActions(n: CatNode): ReactNode {
     if (!actions) return null
-    if (range !== 'week' && range !== 'month') return <td />
     const kind = rowEdit?.id === n.cat.id ? rowEdit.kind : null
+    if (range === 'year') {
+      if (!n.parent) return <td />
+      const id = domId('rename_value', n)
+      if (kind !== 'rename') {
+        return (
+          <td className="row-actions">
+            <Button type="button" className="secondary small" id={domId('rename', n)} aria-label={`Rename ${say(n)}`}
+              onClick={() => openRow(n, 'rename')}>Rename</Button>
+          </td>
+        )
+      }
+      return (
+        <td className="row-actions">
+          <span className="inline-form">
+            <label className="sr-only" htmlFor={id}>New name for {say(n)}</label>
+            <input id={id} className="input" maxLength={NAME_MAX} value={value} autoComplete="off"
+              aria-invalid={!!fieldError || undefined} aria-describedby={fieldError ? `${id}-error_msg` : undefined}
+              onChange={e => setValue(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); rename(n) } else if (e.key === 'Escape') closeRow(n, 'rename') }} />
+            <Button type="button" className="small" onClick={() => rename(n)}>Save</Button>
+            <Button type="button" className="secondary small" onClick={() => closeRow(n, 'rename')}>Cancel</Button>
+          </span>
+          {fieldError && <p id={`${id}-error_msg`} className="error">{fieldError}</p>}
+        </td>
+      )
+    }
+    if (range !== 'week' && range !== 'month') return <td />
     if (kind === 'add') {
       const id = domId('add_value', n)
       return (
