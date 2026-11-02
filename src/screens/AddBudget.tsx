@@ -1,10 +1,13 @@
-import { useState } from 'react'
-import { AmountInput, Button, DatePicker, ItemSelector } from '../components/ui'
+import { useRef, useState } from 'react'
+import { AmountInput, Button, DatePicker, ErrorSummary, focusFirstError, ItemSelector, type FieldError } from '../components/ui'
 import { budgetItemRepo, categoryRepo } from '../storage/repository'
 import type { Frequency } from '../storage/db'
 import { FREQUENCIES, isoDate, type CatNode } from '../budget/tree'
 
 type Errors = { item?: string; amount?: string; estimate?: string }
+
+const toList = (e: Errors): FieldError[] =>
+  (['item', 'amount', 'estimate'] as const).filter(k => e[k]).map(k => ({ fieldId: k, message: e[k]! }))
 
 export function AddBudget({ roots, onSaved, onOpenSetup }: {
   roots: CatNode[]
@@ -20,13 +23,14 @@ export function AddBudget({ roots, onSaved, onOpenSetup }: {
   const [saving, setSaving] = useState(false)
   const [status, setStatus] = useState('')
   const [formKey, setFormKey] = useState(0)
+  const bannerRef = useRef<HTMLDivElement>(null)
 
   function validate(): Errors {
     const e: Errors = {}
-    if (!target) e.item = 'Choose an item from the list.'
-    if (amount.trim() === '') e.amount = 'Enter an amount.'
-    else if (!Number.isFinite(Number(amount))) e.amount = 'Enter the amount as a number, e.g. 12.50 or -12.50.'
-    if (estimate.trim() !== '' && !Number.isFinite(Number(estimate))) e.estimate = 'Enter the estimated spend as a number, e.g. 40.'
+    if (!target) e.item = 'Error: Item cannot be empty'
+    if (amount.trim() === '') e.amount = 'Error: Amount cannot be empty'
+    else if (!Number.isFinite(Number(amount))) e.amount = 'Invalid: Amount use number format (e.g. 12.50 or -12.50)'
+    if (estimate.trim() !== '' && !Number.isFinite(Number(estimate))) e.estimate = 'Invalid: Estimated spend use number format (e.g. 40)'
     return e
   }
 
@@ -34,8 +38,10 @@ export function AddBudget({ roots, onSaved, onOpenSetup }: {
     setStatus('')
     const e = validate()
     setErrors(e)
-    if (e.item || e.amount || e.estimate) {
-      document.getElementById(e.item ? 'item' : e.amount ? 'amount' : 'estimate')?.focus()
+    const list = toList(e)
+    if (list.length) {
+      // Wait for the banner to render before moving focus.
+      requestAnimationFrame(() => focusFirstError(list, bannerRef.current))
       return
     }
     setSaving(true)
@@ -66,7 +72,7 @@ export function AddBudget({ roots, onSaved, onOpenSetup }: {
     setFrequency(t?.cat.frequency ?? 'month')
   }
 
-  const errorCount = Object.values(errors).filter(Boolean).length
+  const errorList = toList(errors)
 
   return (
     <section className="panel" aria-labelledby="add-heading">
@@ -74,12 +80,7 @@ export function AddBudget({ roots, onSaved, onOpenSetup }: {
         <h2 id="add-heading" className="section-title">Add budget item</h2>
         <Button type="button" className="secondary" onClick={onOpenSetup}>Set estimates</Button>
       </div>
-      {errorCount > 0 && (
-        <div role="alert" className="banner">
-          <p className="banner-title">To continue, fix {errorCount === 1 ? 'this error' : 'these errors'}:</p>
-          <ul>{Object.values(errors).filter(Boolean).map(m => <li key={m}>{m}</li>)}</ul>
-        </div>
-      )}
+      <ErrorSummary ref={bannerRef} errors={errorList} />
       <div className="field">
         <label className="label" htmlFor="item">Item <span aria-hidden="true">*</span></label>
         <ItemSelector key={formKey} id="item" roots={roots} onChange={pickTarget}

@@ -85,8 +85,8 @@ export function BudgetTable({ roots, items, range, showEstimates }: {
   const colSpan = showEstimates ? 2 : 1
   return (
     <div className="table-box">
-      <table className="table budget-table">
-        <caption>{range === 'day' ? columns[0].label : `${range === 'week' ? 'Week' : 'Month'} of ${columns[0].label.split(' – ')[0]}`}</caption>
+      <table className="table budget-table" aria-labelledby="budget-heading budget-caption" aria-describedby="budget-key">
+        <caption id="budget-caption">{range === 'day' ? columns[0].label : `${range === 'week' ? 'Week' : 'Month'} of ${columns[0].label.split(' – ')[0]}`}</caption>
         <thead>
           {range !== 'day' && (
             <tr>
@@ -108,7 +108,7 @@ export function BudgetTable({ roots, items, range, showEstimates }: {
           {rows.length ? rows : <tr><td className="empty" colSpan={1 + periods.length * colSpan}>Nothing recorded for this range yet.</td></tr>}
         </tbody>
       </table>
-      <p className="help">Only rows with an amount appear. Rows marked * are totals.</p>
+      <p id="budget-key" className="help">Only rows with an amount appear. Rows marked * are totals.</p>
     </div>
   )
 }

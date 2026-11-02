@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Button } from '../components/ui'
+import { Button, ErrorSummary, focusFirstError, type FieldError } from '../components/ui'
 import { categoryRepo, settingsRepo } from '../storage/repository'
 import type { Frequency, Range } from '../storage/db'
 import {
@@ -45,8 +45,17 @@ export function BudgetSetup({ roots, defaultRange, onClose, onChanged }: {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [status, setStatus] = useState('')
 
-  // Mounted only while open (see App), so open the modal once on mount.
-  useEffect(() => { ref.current?.showModal() }, [])
+  const headingRef = useRef<HTMLHeadingElement>(null)
+  const bannerRef = useRef<HTMLDivElement>(null)
+
+  // Mounted only while open (see App): open the modal, focus its heading, and
+  // return focus to whatever opened it when it unmounts.
+  useEffect(() => {
+    const opener = document.activeElement as HTMLElement | null
+    ref.current?.showModal()
+    headingRef.current?.focus()
+    return () => opener?.focus()
+  }, [])
 
   const groups = buildGroups(roots)
   // Unedited nodes (including ones created while open) read straight from the category.
@@ -63,7 +72,7 @@ export function BudgetSetup({ roots, defaultRange, onClose, onChanged }: {
     const name = (create[g.id] ?? '').trim()
     if (!name || !g.parent) return
     if (g.parent.children.some(c => c.cat.name.toLowerCase() === name.toLowerCase())) {
-      setErrors(e => ({ ...e, [`create-${g.id}`]: `${g.title} already has “${name}”.` }))
+      setErrors(e => ({ ...e, [`create-${g.id}`]: `Invalid: Create item in ${g.title} “${name}” already exists` }))
       return
     }
     await categoryRepo.add({ name, parentId: g.parent.cat.id, color: childColor(g.parent), computed: false, selected: true })
@@ -81,11 +90,11 @@ export function BudgetSetup({ roots, defaultRange, onClose, onChanged }: {
     const errs: Record<string, string> = {}
     for (const n of estimateRows) {
       const v = d(n).estimate.trim()
-      if (hasControls(n) && v && !Number.isFinite(Number(v))) errs[`est-${n.cat.id}`] = `Enter the estimate for ${n.cat.name} as a number.`
+      if (hasControls(n) && v && !Number.isFinite(Number(v))) errs[`est-${n.cat.id}`] = `Invalid: Estimated spending for ${n.cat.name} use number format`
     }
     setErrors(errs)
-    const first = Object.keys(errs)[0]
-    if (first) { document.getElementById(first)?.focus(); return }
+    const list: FieldError[] = Object.entries(errs).map(([fieldId, message]) => ({ fieldId, message }))
+    if (list.length) { requestAnimationFrame(() => focusFirstError(list, bannerRef.current)); return }
     await categoryRepo.updateMany(flatten(roots).filter(n => draft[n.cat.id]).map(n => {
       const x = d(n)
       return { id: n.cat.id, patch: {
@@ -105,9 +114,11 @@ export function BudgetSetup({ roots, defaultRange, onClose, onChanged }: {
     <dialog ref={ref} className="dialog" aria-labelledby="setup-heading" onClose={onClose}>
       <div className="dialog-body">
         <div className="panel-head">
-          <h2 id="setup-heading" className="section-title">Budget setup</h2>
+          <h2 id="setup-heading" ref={headingRef} tabIndex={-1} className="section-title">Budget setup</h2>
           <Button type="button" className="secondary" onClick={onClose}>Close</Button>
         </div>
+
+        <ErrorSummary ref={bannerRef} errors={Object.entries(errors).filter(([k]) => k.startsWith('est-')).map(([fieldId, message]) => ({ fieldId, message }))} />
 
         <fieldset className="fieldset">
           <legend className="legend">Select the items you think you’ll use regularly.</legend>
@@ -117,14 +128,18 @@ export function BudgetSetup({ roots, defaultRange, onClose, onChanged }: {
           </Button>
           <div id="setup-list" className="setup-groups" hidden={listCollapsed}>
             {groups.map(g => (
-              <div key={g.id} className="setup-group">
-                <p className={`group-title clr-${g.color}`}>{g.title}</p>
-                {g.options.map(o => (
-                  <label key={o.node.cat.id} className="check">
-                    <input type="checkbox" checked={isSelected(o.node)} onChange={e => patch(o.node, { selected: e.target.checked })} />
-                    {o.label}
-                  </label>
-                ))}
+              <div key={g.id} className="setup-group" role="group" aria-labelledby={`group-${g.id}`}>
+                <p id={`group-${g.id}`} className={`group-title clr-${g.color}`}>{g.title}</p>
+                <ul className="plain-list">
+                  {g.options.map(o => (
+                    <li key={o.node.cat.id}>
+                      <label className="check">
+                        <input type="checkbox" checked={isSelected(o.node)} onChange={e => patch(o.node, { selected: e.target.checked })} />
+                        {o.label}
+                      </label>
+                    </li>
+                  ))}
+                </ul>
                 {g.parent && (
                   <div className="create-row">
                     <label className="sr-only" htmlFor={`create-${g.id}`}>Create item in {g.title}</label>
@@ -133,7 +148,7 @@ export function BudgetSetup({ roots, defaultRange, onClose, onChanged }: {
                       aria-describedby={errors[`create-${g.id}`] ? `create-${g.id}-error` : undefined}
                       onChange={e => setCreate(c => ({ ...c, [g.id]: e.target.value }))}
                       onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addItem(g) } }} />
-                    <Button type="button" className="secondary" disabled={!(create[g.id] ?? '').trim()} aria-describedby={`create-${g.id}`} onClick={() => addItem(g)}>Add</Button>
+                    <Button type="button" className="secondary" aria-disabled={!(create[g.id] ?? '').trim()} aria-describedby={`create-${g.id}`} onClick={() => addItem(g)}>Add</Button>
                     {errors[`create-${g.id}`] && <p id={`create-${g.id}-error`} className="error">{errors[`create-${g.id}`]}</p>}
                   </div>
                 )}
@@ -143,10 +158,10 @@ export function BudgetSetup({ roots, defaultRange, onClose, onChanged }: {
         </fieldset>
 
         <details className="details" open>
-          <summary>Estimates for selected items</summary>
-          <p className="help">Estimates without a recurrence are monthly.</p>
+          <summary id="est-heading">Estimates for selected items</summary>
+          <p id="est-help" className="help">Estimates without a recurrence are monthly.</p>
           <div className="table-box">
-            <table className="table setup-table">
+            <table className="table setup-table" aria-labelledby="est-heading" aria-describedby="est-help">
               <thead>
                 <tr>
                   <th scope="col" className="name">Item name</th>
@@ -186,8 +201,11 @@ export function BudgetSetup({ roots, defaultRange, onClose, onChanged }: {
                       </td>
                       <td>
                         {controls && autopayApplies(n) && (
-                          <input type="checkbox" className="checkbox" aria-label={`Autopay for ${n.cat.name}`} checked={x.autopay}
-                            onChange={e => patch(n, { autopay: e.target.checked })} />
+                          <label className="check">
+                            <input type="checkbox" className="checkbox" checked={x.autopay}
+                              onChange={e => patch(n, { autopay: e.target.checked })} />
+                            <span className="sr-only">Autopay for {n.cat.name}</span>
+                          </label>
                         )}
                       </td>
                     </tr>

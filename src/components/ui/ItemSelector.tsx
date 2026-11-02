@@ -68,7 +68,7 @@ export function ItemSelector({ id, roots, onChange, invalid, describedBy }: {
         }}
       />
       {open && (
-        <ul id={listId} className="listbox" role="listbox" aria-label="Items">
+        <ul id={listId} className="listbox" role="listbox" aria-label="Items" tabIndex={-1}>
           {shown.length === 0 && <li className="listbox-empty">No match. Add it in Set estimates.</li>}
           {shown.map((n, i) => (
             <li
