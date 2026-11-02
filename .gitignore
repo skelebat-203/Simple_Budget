@@ -32,6 +32,9 @@ Thumbs.db
 # Testing
 coverage/
 
-# # AI Files
+# AI Files
 .claude/
 .kilo/
+
+# Human trash files
+human_scratch_files/

@@ -24,14 +24,19 @@ tracked as a later-version item.
 - ✅ UI fixes (contrast, combobox, refresh, layout, a11y)
 - ✅ Security review (approved) → transition to v0.2.0
 
-## v0.2 — Category model, estimates, Day table (in progress)
-- Category hierarchy model + seed data (full tree from `0004-table-design.md`, each with a color)
-- `BudgetItem` gains `estimate`, `frequency`, `dueDate`, `autopay`; add flow asks for estimated spend + frequency
-- Day table view (Est./Act. columns, only rows with amounts, category grouping)
-- Form validation (required fields, amount parsing)
-- UI/UX review (human approval)
-- Accessibility pass
-- Security review
+## v0.2 — Category model, estimates, Day table (complete)
+- ✅ Cleanup + structure (Vite boilerplate removed, unused assets dropped)
+- ✅ Category hierarchy model + seed data (full tree from `0004-table-design.md`, each with a color; computed rows flagged)
+- ✅ `BudgetItem` gains `estimate`, `frequency`, `dueDate`, `autopay`; add flow asks for estimated spend + frequency
+- ✅ Day table view (Est./Act. columns, only rows with amounts, category grouping)
+- ✅ Form validation (required fields, amount parsing) + accessibility fixes
+- ✅ UI/UX refactor per `0006-prototype.html`: combined Item control, Budget setup overlay, negative amounts, bi-monthly = twice a month, CSS classes instead of inline styles, table follows `0004` order/indents/colors
+- ✅ Week and Month table views (pulled forward from v0.4)
+- ✅ Data model rework (Dexie v5): amounts link to categories by id; estimate fields live on categories; Medical › Miscellaneous added
+- ✅ UI/UX review (approved)
+- ✅ Accessibility pass (Lighthouse 100 on six app states; keyboard and screen reader tests passed)
+- ✅ Security review (`docs/audits/security/security-v0.2.md`, approved): storage persistence + JSON backup export/restore, non-guessing migration + review flags (Dexie v6), shared money/date/name rules, clear error handling, production CSP → transition to v0.3.0
+
 ## v0.3 — Edit/Delete + Categories CRUD
 - Edit flow (matching items checkbox group, "New value" inputs, save)
 - Delete flow (matching items checkbox group, save)
