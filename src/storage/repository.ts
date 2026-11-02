@@ -1,5 +1,5 @@
 import { db, type BudgetItem, type Category, type Frequency, type DefaultRange, type MonthBoundary, type Settings } from './db'
-import { cleanName, MONEY_MAX } from '../budget/validate'
+import { cleanName, MONEY_MAX, slug } from '../budget/validate'
 import { toV7Structure } from './structure'
 
 const FREQS = new Set<Frequency>(['day', 'week', 'biweek', 'bimonthly', 'month', 'quarter', 'year'])
@@ -93,6 +93,44 @@ export const categoryRepo = {
   },
   async rename(id: number, name: string) { return db.categories.update(id, { name: cleanName(name) }) },
   async remove(id: number) { return db.categories.delete(id) },
+}
+
+/** A name already used by a sibling; the message finishes "Invalid: {field} …". */
+export class NameTakenError extends Error {}
+
+async function assertFree(parentId: number, name: string, where: string) {
+  const sibs = await db.categories.where('parentId').equals(parentId).toArray()
+  if (sibs.some(c => slug(c.name) === slug(name))) throw new NameTakenError(`“${cleanName(name)}” already exists in ${where}`)
+}
+
+/**
+ * Add form new-item flow (0007 §4.2), all-or-nothing: an optional new
+ * subcategory, the new item, and its first amount. `selected` is the
+ * "Use in future" choice. Returns the subcategory name when its estimate moved
+ * to Miscellaneous (§2.1).
+ */
+export async function addNewItem(o: {
+  name: string
+  parent: { id: number; name: string } | { newSub: string; root: { id: number; name: string }; color: string }
+  color: string
+  selected: boolean
+  amount: number
+  date: string
+}): Promise<string | undefined> {
+  return db.transaction('rw', db.categories, db.budgetItems, async () => {
+    let parent: { id: number; name: string }
+    if ('newSub' in o.parent) {
+      await assertFree(o.parent.root.id, o.parent.newSub, o.parent.root.name)
+      const sub = await categoryRepo.add({ name: o.parent.newSub, parentId: o.parent.root.id, color: o.parent.color, selected: o.selected || undefined })
+      parent = { id: sub.id, name: cleanName(o.parent.newSub) }
+    } else {
+      parent = o.parent
+    }
+    await assertFree(parent.id, o.name, parent.name)
+    const r = await categoryRepo.add({ name: o.name, parentId: parent.id, color: o.color, selected: o.selected || undefined })
+    await budgetItemRepo.add({ categoryId: r.id, amount: o.amount, date: o.date })
+    return r.movedFrom
+  })
 }
 
 export const settingsRepo = {

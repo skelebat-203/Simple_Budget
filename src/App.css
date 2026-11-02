@@ -18,6 +18,9 @@
 .panel-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-sm); flex-wrap: wrap; }
 .field { display: flex; flex-direction: column; gap: var(--space-xs); }
 .actions { display: flex; align-items: center; gap: var(--space-md); flex-wrap: wrap; }
+/* Save is always on the right (0007 §4.2); the status line sits below. */
+.actions-end { justify-content: flex-end; }
+.actions-end .status { order: 2; flex: 1 1 100%; text-align: right; }
 .toolbar { display: flex; align-items: center; gap: var(--space-md); flex-wrap: wrap; }
 .toggle-group { display: flex; gap: var(--space-sm); flex-wrap: wrap; }
 
@@ -105,13 +108,16 @@
   border-radius: var(--radius-sm);
   box-shadow: 0 6px 18px rgb(0 0 0 / 0.15);
 }
-.option { padding: var(--space-sm) var(--space-md); min-height: 44px; cursor: pointer; }
+.listbox { scroll-padding-top: 3rem; }
+.option-group { list-style: none; margin: 0; padding: 0; }
+/* The heading of the section in view sticks until the next one pushes it up (0007 §8.3). */
+.option-heading {
+  position: sticky; top: 0; z-index: 1;
+  padding: var(--space-xs) var(--space-md); background: var(--color-background-page);
+  border-bottom: 1px solid var(--color-border); font-weight: var(--font-weight-bold); font-size: var(--font-size-sm);
+}
+.option { padding: var(--space-sm) var(--space-md) var(--space-sm) calc(var(--space-md) * 2); min-height: 44px; cursor: pointer; }
 .option[aria-selected="true"], .option:hover { background: var(--color-border); }
-.option.depth-0 { font-size: var(--font-size-lg); font-weight: var(--font-weight-bold); }
-.option.depth-1 { padding-left: calc(var(--space-md) * 2); }
-.option.depth-1.group { font-weight: var(--font-weight-bold); }
-.option.depth-2 { padding-left: calc(var(--space-md) * 3); }
-.option-path { font-size: var(--font-size-sm); color: var(--color-text); font-weight: var(--font-weight-normal); }
 .listbox-empty { padding: var(--space-sm) var(--space-md); color: var(--color-text); }
 
 /* --- Tables (docs/design/0004-table-design.md) --- */

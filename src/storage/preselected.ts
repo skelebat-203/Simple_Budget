@@ -7,6 +7,7 @@ export const PRESELECTED: [string, string | null][] = [
   ['Taxes', null],
   ['Emergency', 'Savings'],
   ['Charity', 'Expenses'],
+  ['Miscellaneous', 'Charity'],
   ['Groceries', 'Expenses'],
   ['Mortgage', 'Debt'],
   ['Power', 'Utilities'],

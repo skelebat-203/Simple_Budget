@@ -4,9 +4,9 @@ Tracking file for current work status. Roadmap authority: `docs/design/0003-road
 Design: `0004-table-design.md` (table), `0006-prototype.html` (v0.2 UI), `0007-v0.3-design-updates.md` (v0.3 changes; wins on conflict).
 
 ## Current state
-- Version: v0.3.7. v0.2 complete (security review approved, `docs/audits/security/security-v0.2.md`).
+- Version: v0.3.8. v0.2 complete (security review approved, `docs/audits/security/security-v0.2.md`).
 - Data: Dexie v7 (Income group, stored sibling `order`, `computed` only on top-level rows; see `src/storage/structure.ts`). Amounts link to categories by `categoryId`; estimate fields live on `Category`. `needsReview` removed (0007 §8.4).
-- Next: step 8 below. UI sign-off for each UI step is collected at step 14 (commits say "UI review pending").
+- Next: step 9 below. UI sign-off for each UI step is collected at step 14 (commits say "UI review pending").
 - Testing: headless Chromium via host flatpak + puppeteer-core; scripts in the session scratchpad.
 
 ## v0.3 plan of action
@@ -55,7 +55,7 @@ Covers every v0.3 roadmap item. Each completed step bumps the last version segme
    - Verify: keyboard and screen reader walkthrough of select-all, reorder and Cancel; preview matches the Budget tab.
    - Deps: steps 2, 3, 4, 6.
 
-8. **Add form update** (v0.3.8) — remove Estimated spend and Recurrence (resolves security-v0.2 3.6); the Item list shows selected items until the user types, then searches everything; new-item flow with a Category dropdown, Where? for a new subcategory, and Use in future (unchecked) left of a fixed right-side Save; new entries always appear in the tables.
+8. ✅ **Add form update** (v0.3.8) — UI review pending (step 14); resolves security-v0.2 3.6. Charity › Miscellaneous is now preselected (Charity became a total row) — remove Estimated spend and Recurrence (resolves security-v0.2 3.6); the Item list shows selected items until the user types, then searches everything; new-item flow with a Category dropdown, Where? for a new subcategory, and Use in future (unchecked) left of a fixed right-side Save; new entries always appear in the tables.
    - Source: 0007 §4.
    - Files: `src/screens/AddBudget.tsx`, `src/components/ui/ItemSelector.tsx`, `repository.ts`.
    - Verify: create an item, and a subcategory + item, with and without Use in future; the tables show them.
