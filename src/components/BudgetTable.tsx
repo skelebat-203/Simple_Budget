@@ -1,8 +1,8 @@
 import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react'
 import type { BudgetItem, Range } from '../storage/db'
-import { actualFor, estimateTotal, formatAmount, isTotal, periodsFor, rangeHasEstimates, repeatedNames, spokenName, type Calendar, type CatNode, type Period } from '../budget/tree'
-import { slug } from '../budget/validate'
-import { budgetItemRepo } from '../storage/repository'
+import { actualFor, domId, estimateTotal, isoDate, formatAmount, isTotal, periodsFor, rangeHasEstimates, repeatedNames, spokenName, type Calendar, type CatNode, type Period } from '../budget/tree'
+import { moneyError, parseMoney, slug } from '../budget/validate'
+import { budgetItemRepo, categoryRepo } from '../storage/repository'
 import { Button } from './ui'
 
 const COLLAPSED_KEY = 'simple-budget:collapsed'
@@ -39,6 +39,10 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
   const repeated = repeatedNames(roots)
   const say = (n: CatNode) => spokenName(n, repeated)
   const [confirm, setConfirm] = useState<number | null>(null)
+  /** Row with an open action: Add value or Delete (Week/Month, §9.2). */
+  const [rowEdit, setRowEdit] = useState<{ id: number; kind: 'add' | 'delete' } | null>(null)
+  const [value, setValue] = useState('')
+  const [fieldError, setFieldError] = useState('')
   const [status, setStatus] = useState('')
   const [error, setError] = useState('')
   const focusAfter = useRef<string | null>(null)
@@ -68,6 +72,108 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
     setStatus(`Deleted the ${say(n)} purchase of ${formatAmount(i.amount) || '0.00'}.`)
     focusAfter.current = next
     onChanged?.()
+  }
+
+  const span = total ?? columns[0]
+  const todayIso = isoDate(today)
+  /** Date for a value added from Week/Month: today if it's in range, else the range's last day. */
+  const addDate = todayIso >= span.from && todayIso <= span.to ? todayIso : span.to
+
+  function openRow(n: CatNode, kind: 'add' | 'delete') {
+    setRowEdit({ id: n.cat.id, kind }); setValue(''); setFieldError(''); setError('')
+    focusAfter.current = domId(kind === 'add' ? 'add_value' : 'delete_row', n) + (kind === 'delete' ? '-cancel' : '')
+  }
+  function closeRow(n: CatNode, kind: 'add' | 'delete') {
+    setRowEdit(null); setFieldError('')
+    focusAfter.current = domId(kind === 'add' ? 'add' : 'delete_row', n)
+  }
+
+  async function addValue(n: CatNode) {
+    const r = parseMoney(value, { allowNegative: true })
+    if (!r.ok) {
+      setFieldError(moneyError(`Value for ${say(n)}`, r, '12.50 or -12.50'))
+      focusAfter.current = domId('add_value', n)
+      return
+    }
+    try {
+      await budgetItemRepo.add({ categoryId: n.cat.id, amount: r.value, date: addDate })
+    } catch {
+      setError(`Error: The value for ${n.cat.name} wasn’t saved. Try again.`)
+      return
+    }
+    setStatus(`Added ${formatAmount(r.value) || '0.00'} to ${say(n)} on ${addDate}.`)
+    closeRow(n, 'add')
+    onChanged?.()
+  }
+
+  async function deleteRow(n: CatNode) {
+    try {
+      await categoryRepo.removeEmpty(n.cat.id)
+    } catch {
+      setError(`Error: ${n.cat.name} wasn’t deleted. Try again.`)
+      return
+    }
+    setRowEdit(null)
+    setStatus(`Deleted ${say(n)}.`)
+    focusAfter.current = `${idBase}-caption`
+    onChanged?.()
+  }
+
+  function tryDelete(n: CatNode) {
+    const why = n.children.length ? 'delete its items first' : items.some(i => i.categoryId === n.cat.id) ? 'delete its purchases first' : ''
+    if (why) { setStatus(`${say(n)} can’t be deleted yet: ${why}.`); return }
+    openRow(n, 'delete')
+  }
+
+  /** Actions cell for a category row in Week and Month (0007 §9.2). */
+  function rowActions(n: CatNode): ReactNode {
+    if (!actions) return null
+    if (range !== 'week' && range !== 'month') return <td />
+    const kind = rowEdit?.id === n.cat.id ? rowEdit.kind : null
+    if (kind === 'add') {
+      const id = domId('add_value', n)
+      return (
+        <td className="row-actions">
+          <span className="inline-form">
+            <label className="sr-only" htmlFor={id}>Value to add to {say(n)}</label>
+            <input id={id} className="input amount" inputMode="decimal" value={value} autoComplete="off"
+              aria-invalid={!!fieldError || undefined}
+              aria-describedby={fieldError ? `${id}-error_msg ${idBase}-add-help` : `${idBase}-add-help`}
+              onChange={e => setValue(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addValue(n) } else if (e.key === 'Escape') closeRow(n, 'add') }} />
+            <Button type="button" className="small" onClick={() => addValue(n)}>Save</Button>
+            <Button type="button" className="secondary small" onClick={() => closeRow(n, 'add')}>Cancel</Button>
+          </span>
+          {fieldError && <p id={`${id}-error_msg`} className="error">{fieldError}</p>}
+        </td>
+      )
+    }
+    const del = domId('delete_row', n)
+    if (kind === 'delete') {
+      return (
+        <td className="row-actions">
+          <span className="confirm" role="group" aria-label={`Delete ${say(n)}?`}>
+            <span aria-hidden="true">Delete {n.cat.name}?</span>
+            <Button type="button" className="danger small" id={`${del}-confirm`} onClick={() => deleteRow(n)}>Delete</Button>
+            <Button type="button" className="secondary small" id={`${del}-cancel`} onClick={() => closeRow(n, 'delete')}>Cancel</Button>
+          </span>
+        </td>
+      )
+    }
+    return (
+      <td className="row-actions">
+        <span className="reorder">
+          {!isTotal(n) && n.cat.name !== 'Net Income' && (
+            <Button type="button" className="secondary small" id={domId('add', n)} aria-label={`Add value to ${say(n)}`}
+              onClick={() => openRow(n, 'add')}>Add value</Button>
+          )}
+          {n.parent && (
+            <Button type="button" className="secondary small" id={del} aria-label={`Delete ${say(n)}`}
+              onClick={() => tryDelete(n)}>Delete</Button>
+          )}
+        </span>
+      </td>
+    )
   }
 
   const values = (n: CatNode, p: Period) => ({ est: estimateTotal(n, p), act: actualFor(n, p, items) })
@@ -112,7 +218,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
             : label}
         </th>
         {cells(p => values(n, p))}
-        {actions && <td />}
+        {rowActions(n)}
       </tr>,
     )
     if (!open) return
@@ -187,6 +293,9 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
         </tbody>
       </table>
       <p id={`${idBase}-key`} className="help">Only rows with an amount appear. Rows marked * are totals.{range === 'day' && ' Each purchase is listed under its item.'}</p>
+      {actions && (range === 'week' || range === 'month') && (
+        <p id={`${idBase}-add-help`} className="help">Add value records a new amount on that item, dated {addDate}. Use a minus sign to subtract, e.g. -12.50. Rows can be deleted once they have no purchases.</p>
+      )}
       {actions && <p className="status" role="status">{status}</p>}
       {error && <p className="error" role="alert">{error}</p>}
     </div>

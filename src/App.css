@@ -183,6 +183,7 @@
 .reorder .input { width: auto; }
 .btn.danger { background: var(--color-alert); border-color: var(--color-alert); color: var(--color-primary-foreground); }
 .row-actions { text-align: left; }
+.inline-form { display: inline-flex; align-items: center; gap: var(--space-xs); }
 .confirm { display: inline-flex; align-items: center; gap: var(--space-xs); flex-wrap: wrap; }
 .row.purchase .name { font-size: var(--font-size-sm); color: var(--color-text); }
 .row.purchase.depth-1 .name { padding-left: calc(var(--space-md) * 2); }

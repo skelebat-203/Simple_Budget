@@ -4,9 +4,9 @@ Tracking file for current work status. Roadmap authority: `docs/design/0003-road
 Design: `0004-table-design.md` (table), `0006-prototype.html` (v0.2 UI), `0007-v0.3-design-updates.md` (v0.3 changes; wins on conflict).
 
 ## Current state
-- Version: v0.3.10. v0.2 complete (security review approved, `docs/audits/security/security-v0.2.md`).
+- Version: v0.3.11. v0.2 complete (security review approved, `docs/audits/security/security-v0.2.md`).
 - Data: Dexie v7 (Income group, stored sibling `order`, `computed` only on top-level rows; see `src/storage/structure.ts`). Amounts link to categories by `categoryId`; estimate fields live on `Category`. `needsReview` removed (0007 §8.4).
-- Next: step 11 below. Steps 10–12 replanned 2026-11-02 (0007 §9): edit/delete live in the tables. UI sign-off for each UI step is collected at step 14 (commits say "UI review pending").
+- Next: step 12 below. Steps 10–12 replanned 2026-11-02 (0007 §9): edit/delete live in the tables. UI sign-off for each UI step is collected at step 14 (commits say "UI review pending").
 - Testing: headless Chromium via host flatpak + puppeteer-core; scripts in the session scratchpad.
 
 ## v0.3 plan of action
@@ -73,7 +73,7 @@ Covers every v0.3 roadmap item. Each completed step bumps the last version segme
     - Verify: deleted purchases leave every table and total; keyboard + focus after delete.
     - Deps: step 6.
 
-11. **Week/Month add value + delete rows** (v0.3.11) — Add value (+/−) on item rows; delete subcategories/items with no purchases and no items; top-level never deletable.
+11. ✅ **Week/Month add value + delete rows** (v0.3.11) — UI review pending (step 14) — Add value (+/−) on item rows; delete subcategories/items with no purchases and no items; top-level never deletable.
     - Source: 0007 §9.2.
     - Files: `src/components/BudgetTable.tsx`, `repository.ts`.
     - Verify: added value shows in totals with the right date; blocked deletes explain why.
