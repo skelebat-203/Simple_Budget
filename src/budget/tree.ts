@@ -40,16 +40,6 @@ export const subtree = (n: CatNode): CatNode[] => [n, ...n.children.flatMap(subt
 /** Total row: a top-level computed row, or a subcategory that has items (0007 §2.1). */
 export const isTotal = (n: CatNode) => !!n.cat.computed || n.children.length > 0
 
-/**
- * Node that receives an amount entered on `n`. Totals take none, except a
- * subcategory with a "Miscellaneous" item, which routes there (0004).
- */
-export function entryTarget(n: CatNode): CatNode | null {
-  if (!isTotal(n)) return n
-  if (n.cat.computed) return null
-  return n.children.find(c => c.cat.name === 'Miscellaneous' && !isTotal(c)) ?? null
-}
-
 const BILL_GROUPS = new Set(['Debt', 'Utilities', 'Subscriptions'])
 const rootOf = (n: CatNode): CatNode => (n.parent ? rootOf(n.parent) : n)
 const inBillGroup = (n: CatNode) => ancestors(n).some(a => BILL_GROUPS.has(a.cat.name))

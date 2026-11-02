@@ -4,9 +4,9 @@ Tracking file for current work status. Roadmap authority: `docs/design/0003-road
 Design: `0004-table-design.md` (table), `0006-prototype.html` (v0.2 UI), `0007-v0.3-design-updates.md` (v0.3 changes; wins on conflict).
 
 ## Current state
-- Version: v0.3.8. v0.2 complete (security review approved, `docs/audits/security/security-v0.2.md`).
+- Version: v0.3.9. v0.2 complete (security review approved, `docs/audits/security/security-v0.2.md`).
 - Data: Dexie v7 (Income group, stored sibling `order`, `computed` only on top-level rows; see `src/storage/structure.ts`). Amounts link to categories by `categoryId`; estimate fields live on `Category`. `needsReview` removed (0007 §8.4).
-- Next: step 9 below. UI sign-off for each UI step is collected at step 14 (commits say "UI review pending").
+- Next: step 10 below. UI sign-off for each UI step is collected at step 14 (commits say "UI review pending").
 - Testing: headless Chromium via host flatpak + puppeteer-core; scripts in the session scratchpad.
 
 ## v0.3 plan of action
@@ -61,7 +61,7 @@ Covers every v0.3 roadmap item. Each completed step bumps the last version segme
    - Verify: create an item, and a subcategory + item, with and without Use in future; the tables show them.
    - Deps: steps 2 and 7.
 
-9. **Shared search/filter component** (v0.3.9) — make `ItemSelector` the single search/filter dropdown, reusable by Edit, Delete and Categories (including a category-only mode with unselectable headings); sticky parent headings, repeat-name accessible names and option ids per 0007 §8.3.
+9. ✅ **Shared search/filter component** (v0.3.9) — built during step 8 (`ItemSelector`: item / category modes, `initial` filter); reuse is checked in steps 10–12 — make `ItemSelector` the single search/filter dropdown, reusable by Edit, Delete and Categories (including a category-only mode with unselectable headings); sticky parent headings, repeat-name accessible names and option ids per 0007 §8.3.
    - Source: roadmap v0.3.
    - Files: `src/components/ui/ItemSelector.tsx`.
    - Verify: used unchanged in steps 8 and 10–12.
