@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Button, ErrorSummary, focusFirstError, type FieldError } from '../components/ui'
 import { categoryRepo, saveSetup } from '../storage/repository'
 import { cleanName, moneyError, NAME_MAX, parseMoney } from '../budget/validate'
-import type { Frequency, Range } from '../storage/db'
+import type { DefaultRange as Range, Frequency } from '../storage/db'
 import {
   autopayApplies, childColor, flatten, frequenciesFor, isTotal, recurrenceApplies, subtree, type CatNode,
 } from '../budget/tree'

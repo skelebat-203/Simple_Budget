@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { BudgetItem, Range } from '../storage/db'
-import type { Calendar, CatNode } from '../budget/tree'
+import { rangeHasEstimates, type Calendar, type CatNode } from '../budget/tree'
 import { BudgetTable } from '../components/BudgetTable'
 import { Button } from '../components/ui'
 
@@ -8,6 +8,7 @@ const RANGES: { value: Range; label: string }[] = [
   { value: 'day', label: 'Day' },
   { value: 'week', label: 'Week' },
   { value: 'month', label: 'Month' },
+  { value: 'year', label: 'Annual' },
 ]
 
 export function Budget({ roots, items, range, onRangeChange, calendar }: {
@@ -30,9 +31,12 @@ export function Budget({ roots, items, range, onRangeChange, calendar }: {
           ))}
         </div>
         <label className="check">
-          <input type="checkbox" checked={showEstimates} onChange={e => setShowEstimates(e.target.checked)} />
+          <input type="checkbox" checked={showEstimates && rangeHasEstimates(range)} aria-disabled={!rangeHasEstimates(range) || undefined}
+            aria-describedby="estimates-help"
+            onChange={e => { if (rangeHasEstimates(range)) setShowEstimates(e.target.checked) }} />
           Show estimates
         </label>
+        <p id="estimates-help" className="help">Estimates show in Week and Month. Day and Annual show what you recorded.</p>
       </div>
       <BudgetTable roots={roots} items={items} range={range} showEstimates={showEstimates} calendar={calendar} />
     </section>

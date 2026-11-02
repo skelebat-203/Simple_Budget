@@ -1,9 +1,9 @@
-import { db, type BudgetItem, type Category, type Frequency, type MonthBoundary, type Range, type Settings } from './db'
+import { db, type BudgetItem, type Category, type Frequency, type DefaultRange, type MonthBoundary, type Settings } from './db'
 import { cleanName, MONEY_MAX } from '../budget/validate'
 import { toV7Structure } from './structure'
 
 const FREQS = new Set<Frequency>(['day', 'week', 'biweek', 'bimonthly', 'month', 'quarter', 'year'])
-const RANGES = new Set<Range>(['day', 'week', 'month'])
+const RANGES = new Set<DefaultRange>(['day', 'week', 'month'])
 const validWeekStart = (n: unknown): n is number => Number.isInteger(n) && (n as number) >= 0 && (n as number) <= 6
 const validBoundary = (b: unknown): b is MonthBoundary => b === 'weeks' || b === 'calendar'
 
@@ -111,7 +111,7 @@ export const settingsRepo = {
 }
 
 /** Budget setup save: category patches and the default range in one transaction (security-v0.2 8.3). */
-export async function saveSetup(patches: { id: number; patch: Partial<Category> }[], defaultRange: Range) {
+export async function saveSetup(patches: { id: number; patch: Partial<Category> }[], defaultRange: DefaultRange) {
   await db.transaction('rw', db.categories, db.settings, async () => {
     for (const { id, patch } of patches) await db.categories.update(id, patch)
     await settingsRepo.update({ defaultRange })

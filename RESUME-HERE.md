@@ -4,9 +4,9 @@ Tracking file for current work status. Roadmap authority: `docs/design/0003-road
 Design: `0004-table-design.md` (table), `0006-prototype.html` (v0.2 UI), `0007-v0.3-design-updates.md` (v0.3 changes; wins on conflict).
 
 ## Current state
-- Version: v0.3.5. v0.2 complete (security review approved, `docs/audits/security/security-v0.2.md`).
+- Version: v0.3.6. v0.2 complete (security review approved, `docs/audits/security/security-v0.2.md`).
 - Data: Dexie v7 (Income group, stored sibling `order`, `computed` only on top-level rows; see `src/storage/structure.ts`). Amounts link to categories by `categoryId`; estimate fields live on `Category`. `needsReview` removed (0007 §8.4).
-- Next: step 6 below. UI sign-off for each UI step is collected at step 14 (commits say "UI review pending").
+- Next: step 7 below. UI sign-off for each UI step is collected at step 14 (commits say "UI review pending").
 - Testing: headless Chromium via host flatpak + puppeteer-core; scripts in the session scratchpad.
 
 ## v0.3 plan of action
@@ -43,7 +43,7 @@ Covers every v0.3 roadmap item. Each completed step bumps the last version segme
    - Verify: keyboard walkthrough; only one panel visible.
    - Deps: none.
 
-6. **Day and Annual tables** (v0.3.6) — Day shows actuals only (no Est. column); new Annual range with an Act. column per month plus a year total; Annual is not a default-range option.
+6. ✅ **Day and Annual tables** (v0.3.6) — UI review pending (step 14); Annual uses calendar months so no day is counted twice — Day shows actuals only (no Est. column); new Annual range with an Act. column per month plus a year total; Annual is not a default-range option.
    - Source: 0007 §7.
    - Files: `src/components/BudgetTable.tsx`, `src/screens/Budget.tsx`, `src/budget/tree.ts`.
    - Verify: sample data across months totals correctly; Day has no Est. column.

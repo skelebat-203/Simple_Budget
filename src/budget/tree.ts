@@ -114,6 +114,15 @@ export function periodsFor(range: Range, today: Date, cal: Calendar = DEFAULT_CA
     const s = weekStartOf(today, cal.weekStart)
     return { columns: [span(s, addDays(s, 6))], total: null, title: `Week of ${short(s)}` }
   }
+  if (range === 'year') {
+    // Calendar months, so no day falls in two columns.
+    const y = today.getFullYear()
+    const columns = Array.from({ length: 12 }, (_, m) => {
+      const p = span(new Date(y, m, 1), new Date(y, m + 1, 0))
+      return { ...p, label: new Date(y, m, 1).toLocaleDateString(undefined, { month: 'short' }) }
+    })
+    return { columns, total: { ...span(new Date(y, 0, 1), new Date(y, 11, 31)), label: 'Total' }, title: String(y) }
+  }
   const title = today.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
   let first = new Date(today.getFullYear(), today.getMonth(), 1)
   let last = new Date(today.getFullYear(), today.getMonth() + 1, 0)
@@ -130,6 +139,9 @@ export function periodsFor(range: Range, today: Date, cal: Calendar = DEFAULT_CA
   }
   return { columns, total: { ...span(first, last), label: 'Total' }, title }
 }
+
+/** Day and Annual tables show actuals only (0007 §7.2, §7.4). */
+export const rangeHasEstimates = (r: Range) => r === 'week' || r === 'month'
 
 /** Sum of amounts in `n`'s subtree within the period. */
 export function actualFor(n: CatNode, p: Period, items: BudgetItem[]): number {

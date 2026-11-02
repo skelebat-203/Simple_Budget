@@ -6,7 +6,7 @@ import { Backup } from './components/Backup'
 import { Notices, type NoticeState } from './components/Notices'
 import { Tabs } from './components/ui'
 import { budgetItemRepo, categoryRepo, settingsRepo, skipped } from './storage/repository'
-import { dbEvents, type BudgetItem, type Category, type Range } from './storage/db'
+import { dbEvents, type BudgetItem, type Category, type DefaultRange, type Range } from './storage/db'
 import { buildTree, DEFAULT_CALENDAR, type Calendar } from './budget/tree'
 
 const PERSIST_DISMISSED = 'simple-budget:persist-dismissed'
@@ -16,7 +16,7 @@ function App() {
   const [cats, setCats] = useState<Category[]>([])
   const [items, setItems] = useState<BudgetItem[]>([])
   const [range, setRange] = useState<Range>('day')
-  const [defaultRange, setDefaultRange] = useState<Range>('day')
+  const [defaultRange, setDefaultRange] = useState<DefaultRange>('day')
   const [calendar, setCalendar] = useState<Calendar>(DEFAULT_CALENDAR)
   const [setupOpen, setSetupOpen] = useState(false)
   const [notices, setNotices] = useState<NoticeState>({})
