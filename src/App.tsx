@@ -6,7 +6,7 @@ import { Backup } from './components/Backup'
 import { Notices, type NoticeState } from './components/Notices'
 import { budgetItemRepo, categoryRepo, settingsRepo, skipped } from './storage/repository'
 import { dbEvents, type BudgetItem, type Category, type Range } from './storage/db'
-import { buildTree } from './budget/tree'
+import { buildTree, DEFAULT_CALENDAR, type Calendar } from './budget/tree'
 
 const PERSIST_DISMISSED = 'simple-budget:persist-dismissed'
 const LOAD_ERROR = 'Reload the page to try again. If this keeps happening, your browser may be blocking storage for this app.'
@@ -16,6 +16,7 @@ function App() {
   const [items, setItems] = useState<BudgetItem[]>([])
   const [range, setRange] = useState<Range>('day')
   const [defaultRange, setDefaultRange] = useState<Range>('day')
+  const [calendar, setCalendar] = useState<Calendar>(DEFAULT_CALENDAR)
   const [setupOpen, setSetupOpen] = useState(false)
   const [notices, setNotices] = useState<NoticeState>({})
   const note = useCallback((p: Partial<NoticeState>) => setNotices(n => ({ ...n, ...p })), [])
@@ -28,13 +29,19 @@ function App() {
     .then(i => { setItems(i); note({ skipped: skipped.items + skipped.categories }) })
     .catch(() => note({ loadError: LOAD_ERROR })), [note])
 
+  const reloadSettings = useCallback(() => settingsRepo.get()
+    .then(s => {
+      const r = s.defaultRange ?? 'day'
+      setRange(r); setDefaultRange(r)
+      setCalendar({ weekStart: s.weekStart ?? 0, monthBoundary: s.monthBoundary ?? 'weeks' })
+    })
+    .catch(() => note({ loadError: LOAD_ERROR })), [note])
+
   useEffect(() => {
     reloadCats()
     reloadItems()
-    settingsRepo.get()
-      .then(s => { const r = s.defaultRange ?? 'day'; setRange(r); setDefaultRange(r) })
-      .catch(() => note({ loadError: LOAD_ERROR }))
-  }, [reloadCats, reloadItems, note])
+    reloadSettings()
+  }, [reloadCats, reloadItems, reloadSettings])
 
   // Ask the browser to keep this app's data (security-v0.2 6.1).
   useEffect(() => {
@@ -69,10 +76,9 @@ function App() {
       <h1 className="title">Simple Budget</h1>
       <Notices state={notices} onDismissPersist={dismissPersist} />
       <AddBudget roots={roots} onSaved={() => { reloadItems(); reloadCats() }} onOpenSetup={() => setSetupOpen(true)} />
-      <Budget roots={roots} items={items} range={range} onRangeChange={setRange} />
+      <Budget roots={roots} items={items} range={range} onRangeChange={setRange} calendar={calendar} />
       <Backup onRestored={() => {
-        reloadCats(); reloadItems()
-        settingsRepo.get().then(s => { const r = s.defaultRange ?? 'day'; setRange(r); setDefaultRange(r) }).catch(() => note({ loadError: LOAD_ERROR }))
+        reloadCats(); reloadItems(); reloadSettings()
       }} />
       {setupOpen && (
         <BudgetSetup

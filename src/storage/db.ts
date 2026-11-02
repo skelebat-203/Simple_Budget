@@ -54,7 +54,13 @@ export interface Settings {
   rewardsEnabled: boolean
   notificationsEnabled: boolean
   defaultRange?: Range
+  /** Day a week starts on, 0 = Sunday … 6 = Saturday (0007 §1.1). */
+  weekStart?: number
+  /** 'weeks': months span whole weeks; 'calendar': the 1st to the last day (0007 §1.2). */
+  monthBoundary?: MonthBoundary
 }
+
+export type MonthBoundary = 'weeks' | 'calendar'
 
 class SimpleBudgetDB extends Dexie {
   budgetItems!: Table<BudgetItem, number>

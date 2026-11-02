@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { BudgetItem, Range } from '../storage/db'
-import type { CatNode } from '../budget/tree'
+import type { Calendar, CatNode } from '../budget/tree'
 import { BudgetTable } from '../components/BudgetTable'
 import { Button } from '../components/ui'
 
@@ -10,8 +10,9 @@ const RANGES: { value: Range; label: string }[] = [
   { value: 'month', label: 'Month' },
 ]
 
-export function Budget({ roots, items, range, onRangeChange }: {
+export function Budget({ roots, items, range, onRangeChange, calendar }: {
   roots: CatNode[]
+  calendar: Calendar
   items: BudgetItem[]
   range: Range
   onRangeChange: (r: Range) => void
@@ -33,7 +34,7 @@ export function Budget({ roots, items, range, onRangeChange }: {
           Show estimates
         </label>
       </div>
-      <BudgetTable roots={roots} items={items} range={range} showEstimates={showEstimates} />
+      <BudgetTable roots={roots} items={items} range={range} showEstimates={showEstimates} calendar={calendar} />
     </section>
   )
 }

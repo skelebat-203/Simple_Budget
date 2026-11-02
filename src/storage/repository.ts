@@ -1,9 +1,24 @@
-import { db, type BudgetItem, type Category, type Frequency, type Range, type Settings } from './db'
+import { db, type BudgetItem, type Category, type Frequency, type MonthBoundary, type Range, type Settings } from './db'
 import { cleanName, MONEY_MAX } from '../budget/validate'
 import { toV7Structure } from './structure'
 
 const FREQS = new Set<Frequency>(['day', 'week', 'biweek', 'bimonthly', 'month', 'quarter', 'year'])
 const RANGES = new Set<Range>(['day', 'week', 'month'])
+const validWeekStart = (n: unknown): n is number => Number.isInteger(n) && (n as number) >= 0 && (n as number) <= 6
+const validBoundary = (b: unknown): b is MonthBoundary => b === 'weeks' || b === 'calendar'
+
+/** Stored settings with every value checked and defaults filled in (0007 §1). */
+function cleanSettings(s: Partial<Settings>): Settings {
+  return {
+    id: s.id,
+    rewardsEnabled: s.rewardsEnabled ?? true,
+    notificationsEnabled: !!s.notificationsEnabled,
+    defaultRange: s.defaultRange && RANGES.has(s.defaultRange) ? s.defaultRange : 'day',
+    weekStart: validWeekStart(s.weekStart) ? s.weekStart : 0,
+    monthBoundary: validBoundary(s.monthBoundary) ? s.monthBoundary : 'weeks',
+  }
+}
+
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 const isMoney = (n: unknown): n is number => typeof n === 'number' && Number.isFinite(n) && Math.abs(n) <= MONEY_MAX
 
@@ -83,8 +98,9 @@ export const categoryRepo = {
 export const settingsRepo = {
   async get(): Promise<Settings> {
     const s = await db.settings.toCollection().first()
-    if (s) return { ...s, defaultRange: s.defaultRange && RANGES.has(s.defaultRange) ? s.defaultRange : 'day' }
-    const created: Settings = { rewardsEnabled: true, notificationsEnabled: false, defaultRange: 'day' }
+    if (s) return cleanSettings(s)
+    const created = cleanSettings({})
+    delete created.id
     const id = await db.settings.add(created)
     return { ...created, id }
   },
@@ -144,10 +160,7 @@ export function checkBackup(data: unknown): Backup {
     ...b,
     budgetItems: b.budgetItems.map(({ id, categoryId, amount, date, createdAt, updatedAt }) => ({ id, categoryId, amount, date, createdAt, updatedAt })),
     categories: cats.map(c => ({ ...c, name: cleanName(c.name) })),
-    settings: b.settings.slice(0, 1).map(s => ({
-      id: s.id, rewardsEnabled: !!s.rewardsEnabled, notificationsEnabled: !!s.notificationsEnabled,
-      defaultRange: RANGES.has(s.defaultRange as Range) ? s.defaultRange : 'day',
-    })),
+    settings: b.settings.slice(0, 1).map(s => cleanSettings({ ...s, rewardsEnabled: !!s.rewardsEnabled })),
   }
 }
 

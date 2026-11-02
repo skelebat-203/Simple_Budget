@@ -4,9 +4,9 @@ Tracking file for current work status. Roadmap authority: `docs/design/0003-road
 Design: `0004-table-design.md` (table), `0006-prototype.html` (v0.2 UI), `0007-v0.3-design-updates.md` (v0.3 changes; wins on conflict).
 
 ## Current state
-- Version: v0.3.3. v0.2 complete (security review approved, `docs/audits/security/security-v0.2.md`).
+- Version: v0.3.4. v0.2 complete (security review approved, `docs/audits/security/security-v0.2.md`).
 - Data: Dexie v7 (Income group, stored sibling `order`, `computed` only on top-level rows; see `src/storage/structure.ts`). Amounts link to categories by `categoryId`; estimate fields live on `Category`. `needsReview` removed (0007 §8.4).
-- Next: step 4 below. UI sign-off for each UI step is collected at step 14 (commits say "UI review pending").
+- Next: step 5 below. UI sign-off for each UI step is collected at step 14 (commits say "UI review pending").
 - Testing: headless Chromium via host flatpak + puppeteer-core; scripts in the session scratchpad.
 
 ## v0.3 plan of action
@@ -31,7 +31,7 @@ Covers every v0.3 roadmap item. Each completed step bumps the last version segme
    - Verify: scaling checks for each recurrence; $120 quarterly shows about $40 in a month view.
    - Deps: step 2.
 
-4. **Calendar settings** (v0.3.4) — week start (any day, default Sunday) and month boundaries (whole weeks by default, or calendar month), stored in Settings and used by the Week and Month tables.
+4. ✅ **Calendar settings** (v0.3.4) — week start (any day, default Sunday) and month boundaries (whole weeks by default, or calendar month), stored in Settings and used by the Week and Month tables.
    - Source: 0007 §1.
    - Files: `src/storage/db.ts` (`Settings`), `src/budget/tree.ts` (`periodsFor`), `repository.ts`.
    - Verify: period boundaries for sample months under each setting.

@@ -1,6 +1,6 @@
 import { Fragment, useState, type ReactNode } from 'react'
 import type { BudgetItem, Range } from '../storage/db'
-import { actualFor, estimateTotal, formatAmount, isTotal, periodsFor, type CatNode, type Period } from '../budget/tree'
+import { actualFor, estimateTotal, formatAmount, isTotal, periodsFor, type Calendar, type CatNode, type Period } from '../budget/tree'
 
 const COLLAPSED_KEY = 'simple-budget:collapsed'
 
@@ -13,15 +13,16 @@ function loadCollapsed(): Set<number> {
  * 0/1/2, category colors, computed rows, only rows with an amount, and
  * expand/collapse state kept across range changes and restarts.
  */
-export function BudgetTable({ roots, items, range, showEstimates }: {
+export function BudgetTable({ roots, items, range, showEstimates, calendar }: {
   roots: CatNode[]
+  calendar: Calendar
   items: BudgetItem[]
   range: Range
   showEstimates: boolean
 }) {
   const [collapsed, setCollapsed] = useState(loadCollapsed)
   const [today] = useState(() => new Date())
-  const { columns, total } = periodsFor(range, today)
+  const { columns, total, title } = periodsFor(range, today, calendar)
   const periods = total ? [...columns, total] : columns
 
   const values = (n: CatNode, p: Period) => ({ est: estimateTotal(n, p), act: actualFor(n, p, items) })
@@ -86,7 +87,7 @@ export function BudgetTable({ roots, items, range, showEstimates }: {
   return (
     <div className="table-box">
       <table className="table budget-table" aria-labelledby="budget-heading budget-caption" aria-describedby="budget-key">
-        <caption id="budget-caption">{range === 'day' ? columns[0].label : `${range === 'week' ? 'Week' : 'Month'} of ${columns[0].label.split(' – ')[0]}`}</caption>
+        <caption id="budget-caption">{title}</caption>
         <thead>
           {range !== 'day' && (
             <tr>

@@ -1,6 +1,6 @@
 // Pure logic for the category tree, display periods and estimates.
 // Structure and rules: docs/design/0004-table-design.md, docs/human_scratch_files/stuff.md.
-import type { BudgetItem, Category, Frequency, Range } from '../storage/db'
+import type { BudgetItem, Category, Frequency, MonthBoundary, Range } from '../storage/db'
 
 export type Cat = Category & { id: number }
 
@@ -88,31 +88,47 @@ export const isoDate = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 
 const addDays = (d: Date, n: number) => { const x = new Date(d); x.setDate(x.getDate() + n); return x }
-const mondayOf = (d: Date) => addDays(d, -((d.getDay() + 6) % 7))
 const short = (d: Date) => d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 const span = (from: Date, to: Date): Period =>
   ({ label: `${short(from)} – ${short(to)}`, from: isoDate(from), to: isoDate(to), days: Math.round((to.getTime() - from.getTime()) / 864e5) + 1 })
 
-/** Columns for a range. Month = one column per (calendar-clipped) week plus a total. */
-export function periodsFor(range: Range, today: Date): { columns: Period[]; total: Period | null } {
+/** Calendar settings (0007 §1): week start day (0 = Sunday) and month boundaries. */
+export interface Calendar { weekStart: number; monthBoundary: MonthBoundary }
+export const DEFAULT_CALENDAR: Calendar = { weekStart: 0, monthBoundary: 'weeks' }
+
+/** First day of the week containing `d`. */
+export const weekStartOf = (d: Date, weekStart: number) => addDays(d, -((d.getDay() - weekStart + 7) % 7))
+
+/**
+ * Columns for a range. Week = the week containing today. Month = one column
+ * per week plus a total: whole weeks from the week holding the 1st to the
+ * week holding the last day, or (calendar) weeks clipped to the month.
+ */
+export function periodsFor(range: Range, today: Date, cal: Calendar = DEFAULT_CALENDAR): { columns: Period[]; total: Period | null; title: string } {
   if (range === 'day') {
     const d = isoDate(today)
-    return { columns: [{ label: today.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }), from: d, to: d, days: 1 }], total: null }
+    const label = today.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })
+    return { columns: [{ label, from: d, to: d, days: 1 }], total: null, title: label }
   }
   if (range === 'week') {
-    const m = mondayOf(today)
-    return { columns: [span(m, addDays(m, 6))], total: null }
+    const s = weekStartOf(today, cal.weekStart)
+    return { columns: [span(s, addDays(s, 6))], total: null, title: `Week of ${short(s)}` }
   }
-  const first = new Date(today.getFullYear(), today.getMonth(), 1)
-  const last = new Date(today.getFullYear(), today.getMonth() + 1, 0)
+  const title = today.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
+  let first = new Date(today.getFullYear(), today.getMonth(), 1)
+  let last = new Date(today.getFullYear(), today.getMonth() + 1, 0)
+  if (cal.monthBoundary === 'weeks') {
+    first = weekStartOf(first, cal.weekStart)
+    last = addDays(weekStartOf(last, cal.weekStart), 6)
+  }
   const columns: Period[] = []
   for (let s = first; s <= last;) {
-    let e = addDays(mondayOf(s), 6)
+    let e = addDays(weekStartOf(s, cal.weekStart), 6)
     if (e > last) e = last
     columns.push(span(s, e))
     s = addDays(e, 1)
   }
-  return { columns, total: { ...span(first, last), label: 'Total' } }
+  return { columns, total: { ...span(first, last), label: 'Total' }, title }
 }
 
 /** Sum of amounts in `n`'s subtree within the period. */
