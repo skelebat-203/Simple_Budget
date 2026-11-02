@@ -43,7 +43,7 @@ tracked as a later-version item.
 - Categories CRUD on the hierarchy (create/rename/delete/list, add subcategories)
 - `dueDate`/`autopay` display + editing on items
 - Search/filter dropdown shared component reuse
-- Audit categories and items for repeated or ambiguous names (e.g. Car, Miscellaneous, Medical) and design a way to remove the ambiguity; resolve amounts flagged for review by the v6 upgrade (`docs/audits/security/security-v0.2.md` 3.1)
+- ✅ Audit categories and items for repeated or ambiguous names (0007 §8); remove the `needsReview` flags (pre-alpha, no legacy data)
 - Design updates per `0007-v0.3-design-updates.md` (plan of action made when v0.3 starts):
   - Calendar settings: week start, month boundaries (0007 §1)
   - Category structure: Income group, subcategories under Income/Savings/Expenses, calculated subcategory estimates (0007 §2)

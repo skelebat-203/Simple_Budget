@@ -39,10 +39,6 @@ export const budgetItemRepo = {
     return db.budgetItems.update(id, { ...patch, updatedAt: Date.now() })
   },
   async remove(id: number) { return db.budgetItems.delete(id) },
-  /** Clear the "needs review" flag on every amount (security-v0.2 3.1). */
-  async clearReviewFlags() {
-    await db.budgetItems.filter(i => !!i.needsReview).modify(i => { delete i.needsReview })
-  },
 }
 
 export const categoryRepo = {

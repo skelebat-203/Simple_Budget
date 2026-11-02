@@ -4,21 +4,21 @@ Tracking file for current work status. Roadmap authority: `docs/design/0003-road
 Design: `0004-table-design.md` (table), `0006-prototype.html` (v0.2 UI), `0007-v0.3-design-updates.md` (v0.3 changes; wins on conflict).
 
 ## Current state
-- Version: v0.3.0. v0.2 complete (security review approved, `docs/audits/security/security-v0.2.md`).
-- Data: Dexie v6. Amounts link to categories by `categoryId`; estimate fields live on `Category`; ambiguous migrated amounts carry `needsReview`.
-- Next: step 1 below.
+- Version: v0.3.1. v0.2 complete (security review approved, `docs/audits/security/security-v0.2.md`).
+- Data: Dexie v6. Amounts link to categories by `categoryId`; estimate fields live on `Category`. `needsReview` removed (0007 §8.4).
+- Next: step 2 below.
 
 ## v0.3 plan of action
 
 Covers every v0.3 roadmap item. Each completed step bumps the last version segment to the step number (v0.3.1, v0.3.2 …); the final step bumps to v0.4.0. Commit on each bump per `versioning.md`. UI-touching steps are not complete until the human approves the UI/UX (`0005-ui-ux-review-checklist.md`).
 
-1. **Name-ambiguity audit** (v0.3.1) — list every repeated or ambiguous name in the seed tree and custom categories (Car, Miscellaneous, Medical …); propose how to remove the ambiguity (e.g. distinct names, or a parent-qualified display everywhere); decide how flagged amounts get resolved.
+1. ✅ **Name-ambiguity audit** (v0.3.1) — decided in 0007 §8; needsReview removed. Original scope: — list every repeated or ambiguous name in the seed tree and custom categories (Car, Miscellaneous, Medical …); propose how to remove the ambiguity (e.g. distinct names, or a parent-qualified display everywhere); decide how flagged amounts get resolved.
    - Source: roadmap v0.3; security-v0.2 3.1.
    - Deliverable: findings + proposal (location agreed with human), with a human decision.
    - Verify: human approves the proposal.
-   - Deps: none. Its decision feeds steps 2 and 10.
+   - Deps: none. Its decision feeds step 9 (0007 §8.3).
 
-2. **Category structure + data model** (v0.3.2) — Income group over Pay, Incidental Income and custom subcategories; Taxes stays its own row; Net Income = Income − Taxes; subcategories allowed under Income, Savings and Expenses; a stored sort order; calculated subcategory estimates, with a manual estimate moved to a new Miscellaneous item (plus info banner) when the first child is created. Apply the step 1 decision. Dexie v7 upgrade, tested on a seeded v6 database.
+2. **Category structure + data model** (v0.3.2) — Income group over Pay, Incidental Income and custom subcategories; Taxes stays its own row; Net Income = Income − Taxes; subcategories allowed under Income, Savings and Expenses; a stored sort order; calculated subcategory estimates, with a manual estimate moved to a new Miscellaneous item (plus info banner) when the first child is created. Dexie v7 (also strips any leftover `needsReview` field) upgrade, tested on a seeded v6 database.
    - Source: 0007 §2.
    - Files: `src/storage/db.ts`, `seed.ts`, `repository.ts`, `src/budget/tree.ts`, `src/components/BudgetTable.tsx`.
    - Verify: upgrade keeps every amount and estimate; table shows the new top level; totals match before and after.
@@ -60,16 +60,16 @@ Covers every v0.3 roadmap item. Each completed step bumps the last version segme
    - Verify: create an item, and a subcategory + item, with and without Use in future; the tables show them.
    - Deps: steps 2 and 7.
 
-9. **Shared search/filter component** (v0.3.9) — make `ItemSelector` the single search/filter dropdown, reusable by Edit, Delete and Categories (including a category-only mode with unselectable headings).
+9. **Shared search/filter component** (v0.3.9) — make `ItemSelector` the single search/filter dropdown, reusable by Edit, Delete and Categories (including a category-only mode with unselectable headings); sticky parent headings, repeat-name accessible names and option ids per 0007 §8.3.
    - Source: roadmap v0.3.
    - Files: `src/components/ui/ItemSelector.tsx`.
    - Verify: used unchanged in steps 8 and 10–12.
    - Deps: step 8.
 
-10. **Edit flow** (v0.3.10) — search items or filter by category, optional date and amount filters, matching amounts as a checkbox group (at least one required), a required "New value" per selected amount; moving an amount to another item, which resolves `needsReview` amounts per step 1.
-    - Source: `0001-initial-requirements.md` Edit; roadmap v0.3; security-v0.2 3.1.
+10. **Edit flow** (v0.3.10) — search items or filter by category, optional date and amount filters, matching amounts as a checkbox group (at least one required), a required "New value" per selected amount; moving an amount to another item.
+    - Source: `0001-initial-requirements.md` Edit; roadmap v0.3.
     - Files: new `src/screens/EditBudget.tsx`, `repository.ts`.
-    - Verify: edit and move amounts; flagged amounts clear once resolved.
+    - Verify: edit and move amounts.
     - Deps: step 9.
 
 11. **Delete flow** (v0.3.11) — same search and filters, matching amounts as a checkbox group (at least one required), delete with confirmation.

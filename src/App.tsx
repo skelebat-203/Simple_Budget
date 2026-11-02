@@ -67,8 +67,7 @@ function App() {
   return (
     <main className="main">
       <h1 className="title">Simple Budget</h1>
-      <Notices state={notices} roots={roots} items={items} onDismissPersist={dismissPersist}
-        onReviewed={() => { budgetItemRepo.clearReviewFlags().then(reloadItems).catch(() => note({ loadError: LOAD_ERROR })) }} />
+      <Notices state={notices} onDismissPersist={dismissPersist} />
       <AddBudget roots={roots} onSaved={() => { reloadItems(); reloadCats() }} onOpenSetup={() => setSetupOpen(true)} />
       <Budget roots={roots} items={items} range={range} onRangeChange={setRange} />
       <Backup onRestored={() => {

@@ -1,6 +1,4 @@
 import { Button } from './ui'
-import type { BudgetItem } from '../storage/db'
-import { displayName, flatten, formatAmount, type CatNode } from '../budget/tree'
 
 export interface NoticeState {
   loadError?: string
@@ -11,15 +9,10 @@ export interface NoticeState {
 }
 
 /** App-wide messages about storage and data health. */
-export function Notices({ state, roots, items, onDismissPersist, onReviewed }: {
+export function Notices({ state, onDismissPersist }: {
   state: NoticeState
-  roots: CatNode[]
-  items: BudgetItem[]
   onDismissPersist: () => void
-  onReviewed: () => void
 }) {
-  const flagged = items.filter(i => i.needsReview)
-  const byId = new Map(flatten(roots).map(n => [n.cat.id, n]))
   return (
     <>
       {state.dbChanged && (
@@ -51,19 +44,6 @@ export function Notices({ state, roots, items, onDismissPersist, onReviewed }: {
           <h2 className="banner-title">Your browser may clear this budget</h2>
           <p>The browser didn’t agree to keep this app’s data permanently, so it could delete it if space runs low. Install the app to your home screen, and export a backup regularly.</p>
           <div className="actions"><Button type="button" className="secondary" onClick={onDismissPersist}>Got it</Button></div>
-        </div>
-      )}
-      {flagged.length > 0 && (
-        <div className="banner banner-warn" role="status">
-          <h2 className="banner-title">Check {flagged.length === 1 ? 'this amount' : `these ${flagged.length} amounts`}</h2>
-          <p>An app update couldn’t tell which category these older amounts belong to, because the name is used in more than one place. Each total still includes them. Note any that are filed under the wrong item; moving amounts arrives with editing in a later update.</p>
-          <ul>
-            {flagged.map(i => {
-              const n = byId.get(i.categoryId)
-              return <li key={i.id}>{n ? displayName(n) : 'Unknown item'}: {formatAmount(i.amount) || '0.00'} on {i.date}</li>
-            })}
-          </ul>
-          <div className="actions"><Button type="button" className="secondary" onClick={onReviewed}>I’ve checked these</Button></div>
         </div>
       )}
     </>
