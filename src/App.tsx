@@ -4,6 +4,7 @@ import { Budget } from './screens/Budget'
 import { BudgetSetup } from './screens/BudgetSetup'
 import { Backup } from './components/Backup'
 import { Notices, type NoticeState } from './components/Notices'
+import { Tabs } from './components/ui'
 import { budgetItemRepo, categoryRepo, settingsRepo, skipped } from './storage/repository'
 import { dbEvents, type BudgetItem, type Category, type Range } from './storage/db'
 import { buildTree, DEFAULT_CALENDAR, type Calendar } from './budget/tree'
@@ -75,8 +76,10 @@ function App() {
     <main className="main">
       <h1 className="title">Simple Budget</h1>
       <Notices state={notices} onDismissPersist={dismissPersist} />
-      <AddBudget roots={roots} onSaved={() => { reloadItems(); reloadCats() }} onOpenSetup={() => setSetupOpen(true)} />
-      <Budget roots={roots} items={items} range={range} onRangeChange={setRange} calendar={calendar} />
+      <Tabs label="Sections" tabs={[
+        { id: 'add', label: 'Add budget item', panel: <AddBudget roots={roots} onSaved={() => { reloadItems(); reloadCats() }} onOpenSetup={() => setSetupOpen(true)} /> },
+        { id: 'budget', label: 'Budget', panel: <Budget roots={roots} items={items} range={range} onRangeChange={setRange} calendar={calendar} /> },
+      ]} />
       <Backup onRestored={() => {
         reloadCats(); reloadItems(); reloadSettings()
       }} />
