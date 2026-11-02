@@ -85,10 +85,12 @@ function App() {
       }} />
       {setupOpen && (
         <BudgetSetup
-          roots={roots}
+          cats={cats}
+          items={items}
           defaultRange={defaultRange}
+          calendar={calendar}
           onClose={() => setSetupOpen(false)}
-          onChanged={r => { reloadCats(); if (r) { setDefaultRange(r); setRange(r) } }}
+          onSaved={() => { reloadCats(); reloadSettings(); setSetupOpen(false) }}
         />
       )}
     </main>

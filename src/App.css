@@ -169,6 +169,29 @@
 .details summary { cursor: pointer; font-weight: var(--font-weight-bold); min-height: 44px; display: flex; align-items: center; }
 .details[open] { display: flex; flex-direction: column; gap: var(--space-sm); }
 .setup-table td { text-align: left; }
+.setup-table .row.create td { white-space: normal; }
+.create-row .label { align-self: center; }
+.create-row select.input { flex: 0 1 auto; width: auto; }
+.setup-table .create-row .input { flex: 0 1 14rem; }
+.reorder { display: inline-flex; align-items: center; gap: var(--space-xs); }
+.reorder .input { width: auto; }
+.btn.small { padding: var(--space-xs) var(--space-sm); }
+.input.narrow { width: auto; max-width: 16rem; }
+.preview { display: flex; flex-direction: column; gap: var(--space-sm); }
+
+/* Setup footer: Cancel left, Save right, stuck to the dialog bottom (0007 §5.1).
+   Unstuck when the viewport is short (zoomed or landscape phone), per CLAUDE.md override. */
+.dialog.setup { display: flex; flex-direction: column; width: min(1100px, 100%); }
+.dialog.setup[open] { display: flex; }
+.dialog.setup:not([open]) { display: none; }
+.dialog-footer {
+  position: sticky; bottom: 0; display: flex; justify-content: space-between; gap: var(--space-md);
+  padding: var(--space-md); background: var(--color-background-page); border-top: 1px solid var(--color-border);
+}
+.dialog.setup { scroll-padding-bottom: 6rem; }
+@media (max-height: 480px) {
+  .dialog-footer { position: static; }
+}
 .pre { display: inline-flex; align-items: center; gap: var(--space-xs); }
 .pre .input { width: auto; }
 

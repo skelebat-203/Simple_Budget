@@ -1,255 +1,347 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Button, ErrorSummary, focusFirstError, type FieldError } from '../components/ui'
-import { categoryRepo, saveSetup } from '../storage/repository'
-import { cleanName, moneyError, NAME_MAX, parseMoney } from '../budget/validate'
-import type { DefaultRange as Range, Frequency } from '../storage/db'
+import { BudgetTable } from '../components/BudgetTable'
+import { saveSetup } from '../storage/repository'
+import { cleanName, moneyError, NAME_MAX, parseMoney, slug } from '../budget/validate'
+import type { BudgetItem, Category, DefaultRange, Frequency, MonthBoundary } from '../storage/db'
 import {
-  autopayApplies, childColor, flatten, frequenciesFor, isTotal, recurrenceApplies, subtree, type CatNode,
+  buildTree, domId, estimateTotal, flatten, formatAmount, frequenciesFor, isTotal, repeatedNames, spokenName,
+  subtree, type Calendar, type Cat, type CatNode,
 } from '../budget/tree'
+import * as edit from '../budget/setupEdits'
 
-type Draft = { selected: boolean; estimate: string; frequency: Frequency; autopay: boolean }
+const RANGES: { value: DefaultRange; label: string }[] = [
+  { value: 'day', label: 'Day' }, { value: 'week', label: 'Week' }, { value: 'month', label: 'Month' },
+]
+const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+const BOUNDARIES: { value: MonthBoundary; label: string }[] = [
+  { value: 'weeks', label: 'Whole weeks (each month starts and ends on a full week)' },
+  { value: 'calendar', label: 'Calendar month (the 1st to the last day)' },
+]
+const MONTH = { label: '', from: '', to: '', days: 30.44 }
 
-interface Group { id: string; title: string; color: string; parent: CatNode | null; options: { node: CatNode; label: string }[] }
-
-/** Checkbox groups: taxes, then each top-level group of items, then one group per subcategory. */
-function buildGroups(roots: CatNode[]): Group[] {
-  const groups: Group[] = []
-  const plain = roots.filter(r => !r.cat.computed)
-  if (plain.length) groups.push({ id: 'plain', title: plain.map(r => r.cat.name).join(', '), color: 'blue', parent: null, options: plain.map(node => ({ node, label: node.cat.name })) })
-  for (const r of roots.filter(r => r.cat.computed && r.children.length)) {
-    const allItems = r.children.every(c => !c.children.length)
-    const parents = allItems ? [r] : r.children
-    for (const g of parents) {
-      const self = !isTotal(g) && g !== r ? [{ node: g, label: g.cat.name }]
-        : g.cat.name === 'Charity' ? [{ node: g, label: 'Charity (general)' }] : []
-      groups.push({ id: String(g.cat.id), title: g.cat.name, color: g.cat.color, parent: g, options: [...self, ...g.children.map(node => ({ node, label: node.cat.name }))] })
-    }
-  }
-  return groups
-}
-
-const PRE_RANGES: Range[] = ['day', 'week', 'month']
-
-/** "Budget setup" overlay (stuff.md #4). */
-export function BudgetSetup({ roots, defaultRange, onClose, onChanged }: {
-  roots: CatNode[]
-  defaultRange: Range
+/** Budget setup overlay (0007 §5). Edits a working copy; Save stores it and closes, Cancel drops it. */
+export function BudgetSetup({ cats, items, defaultRange, calendar, onClose, onSaved }: {
+  cats: Category[]
+  items: BudgetItem[]
+  defaultRange: DefaultRange
+  calendar: Calendar
   onClose: () => void
-  /** Categories or settings changed; reload them. */
-  onChanged: (range?: Range) => void
+  onSaved: () => void
 }) {
   const ref = useRef<HTMLDialogElement>(null)
-  const [draft, setDraft] = useState<Record<number, Draft>>({})
-  const [range, setRange] = useState<Range>(defaultRange)
-  const [listCollapsed, setListCollapsed] = useState(false)
-  const [create, setCreate] = useState<Record<string, string>>({})
+  const headingRef = useRef<HTMLHeadingElement>(null)
+  const bannerRef = useRef<HTMLDivElement>(null)
+  const [original] = useState(() => cats.filter((c): c is Cat => typeof c.id === 'number'))
+  const [work, setWork] = useState<Cat[]>(original)
+  /** Estimate text as typed, by row id; rows not typed in show their stored estimate. */
+  const [est, setEst] = useState<Record<number, string>>({})
+  const [range, setRange] = useState(defaultRange)
+  const [weekStart, setWeekStart] = useState(calendar.weekStart)
+  const [boundary, setBoundary] = useState(calendar.monthBoundary)
+  const [create, setCreate] = useState<Record<number, { name: string; parent: number }>>({})
+  const [moveTarget, setMoveTarget] = useState<Record<number, number>>({})
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [status, setStatus] = useState('')
   const [saveError, setSaveError] = useState('')
+  const [saving, setSaving] = useState(false)
+  const focusAfter = useRef<string | null>(null)
+  const setFocusId = (id: string) => { focusAfter.current = id }
 
-  const headingRef = useRef<HTMLHeadingElement>(null)
-  const bannerRef = useRef<HTMLDivElement>(null)
-
-  // Mounted only while open (see App): open the modal, focus its heading, and
-  // return focus to whatever opened it when it unmounts.
+  // Mounted only while open (see App): open modal, focus its heading, return focus to the opener on unmount.
+  // The opener is read on first render: in StrictMode the effect runs twice,
+  // and by the second run focus is already inside the dialog.
+  const [opener] = useState(() => document.activeElement as HTMLElement | null)
   useEffect(() => {
-    const opener = document.activeElement as HTMLElement | null
-    ref.current?.showModal()
+    const dialog = ref.current
+    dialog?.showModal()
     headingRef.current?.focus()
     return () => opener?.focus()
-  }, [])
+  }, [opener])
 
-  const groups = buildGroups(roots)
-  // Unedited nodes (including ones created while open) read straight from the category.
-  const d = (n: CatNode): Draft => draft[n.cat.id] ?? {
-    selected: !!n.cat.selected,
-    estimate: n.cat.estimate != null ? String(n.cat.estimate) : '',
-    frequency: n.cat.frequency ?? 'month',
-    autopay: !!n.cat.autopay,
+  // Re-focus a control after its row moved in the table.
+  useEffect(() => {
+    if (!focusAfter.current) return
+    document.getElementById(focusAfter.current)?.focus()
+    focusAfter.current = null
+  })
+
+  const roots = useMemo(() => buildTree(work), [work])
+  const repeated = useMemo(() => repeatedNames(roots), [roots])
+  const say = (n: CatNode) => spokenName(n, repeated)
+  const estText = (c: Cat) => est[c.id] ?? (c.estimate != null ? String(c.estimate) : '')
+
+  /** Store a row's typed estimate in the working copy (before it can move, §2.1). */
+  function flush(cs: Cat[], id: number): Cat[] {
+    if (!(id in est)) return cs
+    const r = parseMoney(est[id], { allowNegative: false })
+    if (!r.ok && r.reason !== 'empty') return cs
+    setEst(e => { const rest = { ...e }; delete rest[id]; return rest })
+    return edit.patch(cs, id, { estimate: r.ok ? r.value : undefined })
   }
-  const patch = (n: CatNode, p: Partial<Draft>) => setDraft(x => ({ ...x, [n.cat.id]: { ...d(n), ...p } }))
-  const isSelected = (n: CatNode) => d(n).selected
 
-  async function addItem(g: Group) {
-    const key = `create-${g.id}`
-    const name = cleanName(create[g.id] ?? '')
-    if (!name || !g.parent) return
-    if (g.parent.children.some(c => cleanName(c.cat.name).toLowerCase() === name.toLowerCase())) {
-      setErrors(e => ({ ...e, [key]: `Invalid: Create item in ${g.title} “${name}” already exists` }))
+  const leaves = (n: CatNode) => subtree(n).filter(x => !x.children.length)
+  const isChecked = (n: CatNode) => leaves(n).every(x => x.cat.selected)
+  const isMixed = (n: CatNode) => !isChecked(n) && leaves(n).some(x => x.cat.selected)
+
+  function addRow(root: CatNode) {
+    const key = `create-${slug(root.cat.name)}`
+    const c = create[root.cat.id] ?? { name: '', parent: root.cat.id }
+    const name = cleanName(c.name)
+    if (!name) return
+    const parent = flatten([root]).find(n => n.cat.id === c.parent) ?? root
+    if (edit.nameTaken(work, parent.cat.id, name)) {
+      setErrors(e => ({ ...e, [key]: `Invalid: Create in ${root.cat.name} “${name}” already exists in ${parent.cat.name}` }))
       return
     }
-    try {
-      const r = await categoryRepo.add({ name, parentId: g.parent.cat.id, color: childColor(g.parent), selected: true })
-      if (r.movedFrom) setStatus(`Your ${r.movedFrom} estimate moved to ${r.movedFrom} › Miscellaneous. ${r.movedFrom} now totals its items.`)
-    } catch {
-      setErrors(e => ({ ...e, [key]: `Error: Create item in ${g.title} wasn’t saved. Try again.` }))
-      return
-    }
-    setCreate(c => ({ ...c, [g.id]: '' }))
+    const r = edit.create(flush(work, parent.cat.id), name, parent.cat.id)
+    setWork(r.cats)
+    setCreate(x => ({ ...x, [root.cat.id]: { name: '', parent: c.parent } }))
     setErrors(e => { const rest = { ...e }; delete rest[key]; return rest })
-    onChanged()
+    setStatus(r.movedFrom
+      ? `Added ${name}. Your ${r.movedFrom} estimate moved to ${r.movedFrom} › Miscellaneous. ${r.movedFrom} now totals its items.`
+      : `Added ${name} to ${parent.cat.name}.`)
   }
 
-  // Charity shows its own controls only when it's the only Charity choice selected.
-  const charityAlone = (n: CatNode) => isSelected(n) && !n.children.some(isSelected)
-  const hasControls = (n: CatNode) => isSelected(n) && (n.cat.name === 'Charity' && isTotal(n) ? charityAlone(n) : !isTotal(n))
-  const estimateRows = flatten(roots).filter(n => n.cat.name !== 'Net Income' && subtree(n).some(isSelected))
+  function moveRow(n: CatNode, delta: -1 | 1) {
+    const sibs = n.parent?.children ?? roots
+    const i = sibs.indexOf(n)
+    if (i + delta < 0 || i + delta >= sibs.length) return
+    setWork(edit.move(work, n.cat.id, delta))
+    setStatus(`Moved ${say(n)} ${delta < 0 ? 'up' : 'down'}.`)
+    setFocusId(domId(delta < 0 ? 'move_up' : 'move_down', n))
+  }
+
+  function moveUnder(n: CatNode) {
+    const to = moveTarget[n.cat.id]
+    const target = edit.moveTargets(n).find(t => t.cat.id === to)
+    if (!target || target.cat.id === n.cat.parentId) return
+    if (edit.nameTaken(work, target.cat.id, n.cat.name, n.cat.id)) {
+      setStatus(`${target.cat.name} already has ${n.cat.name}. Rename one first.`)
+      return
+    }
+    const r = edit.moveTo(flush(work, target.cat.id), n.cat.id, target.cat.id)
+    setWork(r.cats)
+    setStatus(`Moved ${say(n)} to ${target.cat.name}.` + (r.movedFrom ? ` Your ${r.movedFrom} estimate moved to ${r.movedFrom} › Miscellaneous.` : ''))
+    const moved = flatten(buildTree(r.cats)).find(x => x.cat.id === n.cat.id)
+    if (moved) setFocusId(domId('move_to', moved))
+  }
 
   async function save() {
     setSaveError('')
     const errs: Record<string, string> = {}
-    const values = new Map<number, number | undefined>()
+    let final = work
     for (const n of flatten(roots)) {
-      const v = d(n).estimate.trim()
-      if (v === '') { values.set(n.cat.id, undefined); continue }
-      const r = parseMoney(v, { allowNegative: false })
-      if (r.ok) values.set(n.cat.id, r.value)
-      else if (hasControls(n)) errs[`est-${n.cat.id}`] = moneyError(`Estimated spending for ${n.cat.name}`, r, '40 or 1,200.00')
+      if (isTotal(n)) { final = edit.patch(final, n.cat.id, { estimate: undefined, frequency: undefined, autopay: undefined }); continue }
+      const text = estText(n.cat).trim()
+      if (text === '') { final = edit.patch(final, n.cat.id, { estimate: undefined }); continue }
+      const r = parseMoney(text, { allowNegative: false })
+      if (r.ok) final = edit.patch(final, n.cat.id, { estimate: r.value })
+      else errs[domId('estimate', n)] = moneyError(`Estimated spending for ${say(n)}`, r, '40 or 1,200.00')
     }
     setErrors(errs)
     const list: FieldError[] = Object.entries(errs).map(([fieldId, message]) => ({ fieldId, message }))
     if (list.length) { requestAnimationFrame(() => focusFirstError(list, bannerRef.current)); return }
+    setSaving(true)
     try {
-      await saveSetup(flatten(roots).filter(n => draft[n.cat.id]).map(n => {
-        const x = d(n)
-        return { id: n.cat.id, patch: {
-          selected: x.selected,
-          estimate: values.get(n.cat.id),
-          frequency: recurrenceApplies(n) && frequenciesFor(n).some(f => f.value === x.frequency) ? x.frequency : undefined,
-          autopay: autopayApplies(n) ? x.autopay : undefined,
-        } }
-      }), range)
+      await saveSetup(final, original, { defaultRange: range, weekStart, monthBoundary: boundary })
     } catch {
-      setSaveError('Error: Your estimates weren’t saved, and nothing was changed. Check that your device has free storage space, then try again.')
+      setSaving(false)
+      setSaveError('Error: Your budget setup wasn’t saved, and nothing was changed. Check that your device has free storage space, then try again.')
       return
     }
-    setListCollapsed(true)
-    setStatus('Estimates saved.')
-    onChanged(range)
+    onSaved()
   }
 
+  // Preview reflects typed estimates that are already valid.
+  const previewRoots = useMemo(() => buildTree(work.map(c => {
+    if (!(c.id in est)) return c
+    const r = parseMoney(est[c.id], { allowNegative: false })
+    return r.ok ? { ...c, estimate: r.value } : r.reason === 'empty' ? { ...c, estimate: undefined } : c
+  })), [work, est])
+
+  const rows: ReactNode[] = []
+  const addRows = (n: CatNode) => {
+    if (n.cat.name === 'Net Income') return
+    rows.push(setupRow(n))
+    n.children.forEach(addRows)
+    if (!n.parent && n.cat.computed) rows.push(createRow(n))
+  }
+  roots.forEach(addRows)
+
+  function setupRow(n: CatNode) {
+    const total = isTotal(n)
+    const nameId = domId('name', n)
+    const estId = domId('estimate', n)
+    const sibs = n.parent?.children ?? roots
+    const i = sibs.indexOf(n)
+    const label = total ? `${n.cat.name} *` : n.cat.name
+    const targets = edit.canMoveTo(n) ? edit.moveTargets(n) : []
+    return (
+      <tr key={n.cat.id} className={`row depth-${n.depth}${n.children.length ? ' group' : ''}`}>
+        <td>
+          {(n.parent || !n.cat.computed) && (
+            <input type="checkbox" className="checkbox" id={domId('select', n)}
+              aria-label={n.children.length ? `Select all ${say(n)} items` : `Select ${say(n)}`}
+              checked={isChecked(n)} ref={el => { if (el) el.indeterminate = isMixed(n) }}
+              onChange={e => setWork(edit.setSelected(work, n.cat.id, e.target.checked))} />
+          )}
+        </td>
+        <th scope="row" id={nameId} className={`name clr-${n.cat.color}`}>{label}</th>
+        <td>
+          {total
+            ? n.parent && <span>{formatAmount(estimateTotal(n, MONTH)) || '0.00'} <span className="help">per month</span></span>
+            : <>
+              <input id={estId} className="input amount" inputMode="decimal" value={estText(n.cat)}
+                aria-labelledby="setup-est-col" aria-describedby={errors[estId] ? `${nameId} ${estId}-error_msg` : nameId}
+                aria-invalid={!!errors[estId] || undefined}
+                onChange={e => setEst(x => ({ ...x, [n.cat.id]: e.target.value }))} />
+              {errors[estId] && <p id={`${estId}-error_msg`} className="error">{errors[estId]}</p>}
+            </>}
+        </td>
+        <td>
+          {!total && (
+            <span className="pre">
+              <span aria-hidden="true">per</span>
+              <select className="input" id={domId('recurrence', n)} aria-label={`Recurrence for ${say(n)}`}
+                value={n.cat.frequency ?? 'month'}
+                onChange={e => setWork(edit.patch(work, n.cat.id, { frequency: e.target.value as Frequency }))}>
+                {frequenciesFor(n).map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
+              </select>
+            </span>
+          )}
+        </td>
+        <td>
+          {!total && (
+            <input type="checkbox" className="checkbox" id={domId('autopay', n)} aria-label={`Autopay for ${say(n)}`}
+              checked={!!n.cat.autopay} onChange={e => setWork(edit.patch(work, n.cat.id, { autopay: e.target.checked }))} />
+          )}
+        </td>
+        <td>
+          {n.parent && (
+            <span className="reorder">
+              <Button type="button" className="secondary small" id={domId('move_up', n)} aria-label={`Move ${say(n)} up`}
+                aria-disabled={i === 0 || undefined} onClick={() => moveRow(n, -1)}><span aria-hidden="true">↑</span></Button>
+              <Button type="button" className="secondary small" id={domId('move_down', n)} aria-label={`Move ${say(n)} down`}
+                aria-disabled={i === sibs.length - 1 || undefined} onClick={() => moveRow(n, 1)}><span aria-hidden="true">↓</span></Button>
+              {targets.length > 1 && <>
+                <select className="input" id={domId('move_to', n)} aria-label={`Move ${say(n)} to`}
+                  value={moveTarget[n.cat.id] ?? n.cat.parentId ?? ''}
+                  onChange={e => setMoveTarget(m => ({ ...m, [n.cat.id]: Number(e.target.value) }))}>
+                  {targets.map(t => <option key={t.cat.id} value={t.cat.id}>{t.cat.name}</option>)}
+                </select>
+                <Button type="button" className="secondary small" aria-label={`Move ${say(n)}`}
+                  aria-describedby={domId('move_to', n)} onClick={() => moveUnder(n)}>Move</Button>
+              </>}
+            </span>
+          )}
+        </td>
+      </tr>
+    )
+  }
+
+  function createRow(root: CatNode) {
+    const base = `create-${slug(root.cat.name)}`
+    const c = create[root.cat.id] ?? { name: '', parent: root.cat.id }
+    const err = errors[base]
+    const set = (p: Partial<typeof c>) => setCreate(x => ({ ...x, [root.cat.id]: { ...c, ...p } }))
+    return (
+      <tr key={`create-${root.cat.id}`} className="row create">
+        <td colSpan={6}>
+          <div className="create-row">
+            <label className="label" htmlFor={base}>Create in {root.cat.name}</label>
+            <input id={base} className="input" maxLength={NAME_MAX} value={c.name}
+              aria-invalid={!!err || undefined} aria-describedby={err ? `${base}-error_msg` : undefined}
+              onChange={e => set({ name: e.target.value })}
+              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addRow(root) } }} />
+            <label className="label" htmlFor={`${base}-parent`}>Add to</label>
+            <select id={`${base}-parent`} className="input" value={c.parent} onChange={e => set({ parent: Number(e.target.value) })}>
+              {[root, ...root.children].map(t => <option key={t.cat.id} value={t.cat.id}>{t.cat.name}</option>)}
+            </select>
+            <Button type="button" className="secondary" aria-disabled={!c.name.trim() || undefined} aria-describedby={base}
+              onClick={() => addRow(root)}>Add</Button>
+            {err && <p id={`${base}-error_msg`} className="error">{err}</p>}
+          </div>
+        </td>
+      </tr>
+    )
+  }
+
+  const errorList = Object.entries(errors).filter(([k]) => k.startsWith('estimate-')).map(([fieldId, message]) => ({ fieldId, message }))
+
   return (
-    <dialog ref={ref} className="dialog" aria-labelledby="setup-heading" onClose={onClose}>
+    <dialog ref={ref} className="dialog setup" aria-labelledby="setup-heading" onClose={onClose}>
       <div className="dialog-body">
-        <div className="panel-head">
-          <h2 id="setup-heading" ref={headingRef} tabIndex={-1} className="section-title">Budget setup</h2>
-          <Button type="button" className="secondary" onClick={onClose}>Close</Button>
+        <h2 id="setup-heading" ref={headingRef} tabIndex={-1} className="section-title">Budget setup</h2>
+        <ErrorSummary ref={bannerRef} errors={errorList} />
+        <p id="setup-help" className="help">If you’d like to skip ahead just select “Save” at the bottom of the screen. Income, Tax, Emergency fund, Charity, and a few other items have been preselected for you.</p>
+        <p className="status" role="status">{status}</p>
+
+        <div className="table-box">
+          <table className="table setup-table" aria-labelledby="setup-heading" aria-describedby="setup-help setup-key">
+            <thead>
+              <tr>
+                <th scope="col">Select</th>
+                <th scope="col" className="name">Item name</th>
+                <th scope="col" id="setup-est-col">Estimated spending</th>
+                <th scope="col">Recurrence</th>
+                <th scope="col">Autopay</th>
+                <th scope="col">Order</th>
+              </tr>
+            </thead>
+            <tbody>{rows}</tbody>
+          </table>
+          <p id="setup-key" className="help">Rows marked * total their items; their estimate is the sum of their items’ monthly estimates.</p>
         </div>
 
-        <ErrorSummary ref={bannerRef} errors={Object.entries(errors).filter(([k]) => k.startsWith('est-')).map(([fieldId, message]) => ({ fieldId, message }))} />
-
-        <fieldset className="fieldset">
-          <legend className="legend">Select the items you think you’ll use regularly.</legend>
-          <p className="help">If you’d like to skip ahead just select “Save”. Income, Tax, Emergency fund, Charity, and a few other items are preselected for you.</p>
-          <Button type="button" className="secondary" aria-expanded={!listCollapsed} aria-controls="setup-list" onClick={() => setListCollapsed(c => !c)}>
-            {listCollapsed ? 'Show item list' : 'Hide item list'}
-          </Button>
-          <div id="setup-list" className="setup-groups" hidden={listCollapsed}>
-            {groups.map(g => (
-              <div key={g.id} className="setup-group" role="group" aria-labelledby={`group-${g.id}`}>
-                <p id={`group-${g.id}`} className={`group-title clr-${g.color}`}>{g.title}</p>
-                <ul className="plain-list">
-                  {g.options.map(o => (
-                    <li key={o.node.cat.id}>
-                      <label className="check">
-                        <input type="checkbox" checked={isSelected(o.node)} onChange={e => patch(o.node, { selected: e.target.checked })} />
-                        {o.label}
-                      </label>
-                    </li>
-                  ))}
-                </ul>
-                {g.parent && (
-                  <div className="create-row">
-                    <label className="sr-only" htmlFor={`create-${g.id}`}>Create item in {g.title}</label>
-                    <input id={`create-${g.id}`} className="input" placeholder="Create" maxLength={NAME_MAX} value={create[g.id] ?? ''}
-                      aria-invalid={!!errors[`create-${g.id}`] || undefined}
-                      aria-describedby={errors[`create-${g.id}`] ? `create-${g.id}-error` : undefined}
-                      onChange={e => setCreate(c => ({ ...c, [g.id]: e.target.value }))}
-                      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addItem(g) } }} />
-                    <Button type="button" className="secondary" aria-disabled={!(create[g.id] ?? '').trim()} aria-describedby={`create-${g.id}`} onClick={() => addItem(g)}>Add</Button>
-                    {errors[`create-${g.id}`] && <p id={`create-${g.id}-error`} className="error">{errors[`create-${g.id}`]}</p>}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </fieldset>
-
-        <details className="details" open>
-          <summary id="est-heading">Estimates for selected items</summary>
-          <p id="est-help" className="help">Estimates without a recurrence are monthly.</p>
-          <div className="table-box">
-            <table className="table setup-table" aria-labelledby="est-heading" aria-describedby="est-help">
-              <thead>
-                <tr>
-                  <th scope="col" className="name">Item name</th>
-                  <th scope="col" id="est-col">Estimated spending</th>
-                  <th scope="col">Recurrence</th>
-                  <th scope="col">Autopay</th>
-                </tr>
-              </thead>
-              <tbody>
-                {estimateRows.map(n => {
-                  const x = d(n)
-                  const nameId = `name-${n.cat.id}`
-                  const errId = `est-${n.cat.id}`
-                  const controls = hasControls(n)
-                  return (
-                    <tr key={n.cat.id} className={`row depth-${n.depth}${n.children.length ? ' group' : ''}`}>
-                      <th scope="row" id={nameId} className={`name clr-${n.cat.color}`}>{n.cat.name}</th>
-                      <td>
-                        {controls && <>
-                          <input id={errId} className="input amount" inputMode="decimal" value={x.estimate}
-                            aria-labelledby="est-col" aria-describedby={errors[errId] ? `${nameId} ${errId}-msg` : nameId}
-                            aria-invalid={!!errors[errId] || undefined}
-                            onChange={e => patch(n, { estimate: e.target.value })} />
-                          {errors[errId] && <p id={`${errId}-msg`} className="error">{errors[errId]}</p>}
-                        </>}
-                      </td>
-                      <td>
-                        {controls && recurrenceApplies(n) && (
-                          <span className="pre">
-                            <span aria-hidden="true">per</span>
-                            <select className="input" aria-label={`Recurrence for ${n.cat.name}`} value={x.frequency}
-                              onChange={e => patch(n, { frequency: e.target.value as Frequency })}>
-                              {frequenciesFor(n).map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
-                            </select>
-                          </span>
-                        )}
-                      </td>
-                      <td>
-                        {controls && autopayApplies(n) && (
-                          <label className="check">
-                            <input type="checkbox" className="checkbox" checked={x.autopay}
-                              onChange={e => patch(n, { autopay: e.target.checked })} />
-                            <span className="sr-only">Autopay for {n.cat.name}</span>
-                          </label>
-                        )}
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        </details>
-
-        <fieldset className="fieldset">
-          <legend className="legend">Default display range</legend>
-          <div className="toggle-group">
-            {PRE_RANGES.map(r => (
-              <Button key={r} type="button" className="toggle" aria-pressed={range === r} onClick={() => setRange(r)}>
-                {r[0].toUpperCase() + r.slice(1)}
-              </Button>
-            ))}
-          </div>
-        </fieldset>
-
-        <div className="actions">
-          <Button type="button" onClick={save}>Save</Button>
-          <p className="status" role="status">{status}</p>
+        <div className="field">
+          <label className="label" htmlFor="week_start">Week starts on</label>
+          <select id="week_start" className="input narrow" value={weekStart} onChange={e => setWeekStart(Number(e.target.value))}>
+            {DAYS.map((d, i) => <option key={d} value={i}>{d}</option>)}
+          </select>
         </div>
+
+        <fieldset className="fieldset" role="radiogroup" aria-labelledby="month_boundary-legend">
+          <legend id="month_boundary-legend" className="legend">Month boundaries</legend>
+          <ul className="plain-list">
+            {BOUNDARIES.map(b => (
+              <li key={b.value}>
+                <label className="check">
+                  <input type="radio" name="month_boundary" id={`month_boundary-${b.value}`} value={b.value}
+                    checked={boundary === b.value} onChange={() => setBoundary(b.value)} />
+                  {b.label}
+                </label>
+              </li>
+            ))}
+          </ul>
+        </fieldset>
+
+        <fieldset className="fieldset" role="radiogroup" aria-labelledby="default_range-legend">
+          <legend id="default_range-legend" className="legend">Default display range</legend>
+          <ul className="plain-list">
+            {RANGES.map(r => (
+              <li key={r.value}>
+                <label className="check">
+                  <input type="radio" name="default_range" id={`default_range-${r.value}`} value={r.value}
+                    checked={range === r.value} onChange={() => setRange(r.value)} />
+                  {r.label}
+                </label>
+              </li>
+            ))}
+          </ul>
+        </fieldset>
+
+        <section className="preview" aria-labelledby="preview-heading">
+          <h3 id="preview-heading" className="section-title">Preview</h3>
+          <BudgetTable roots={previewRoots} items={items} range={range} showEstimates idBase="preview" preview
+            calendar={{ weekStart, monthBoundary: boundary }} />
+        </section>
+
         {saveError && <p className="error" role="alert">{saveError}</p>}
+      </div>
+      <div className="dialog-footer">
+        <Button type="button" className="secondary" onClick={onClose}>Cancel</Button>
+        <Button type="button" onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Save'}</Button>
       </div>
     </dialog>
   )

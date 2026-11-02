@@ -1,6 +1,7 @@
 // Pure logic for the category tree, display periods and estimates.
 // Structure and rules: docs/design/0004-table-design.md, docs/human_scratch_files/stuff.md.
 import type { BudgetItem, Category, Frequency, MonthBoundary, Range } from '../storage/db'
+import { slug } from './validate'
 
 export type Cat = Category & { id: number }
 
@@ -166,3 +167,18 @@ export function childColor(parent: CatNode): string {
   if (root === 'Savings') return 'lighter-green'
   return parent.parent ? 'even-lighter-orange' : 'lighter-orange'
 }
+
+/** Names that appear on more than one row (0007 §8). */
+export const repeatedNames = (roots: CatNode[]) => {
+  const count = new Map<string, number>()
+  for (const n of flatten(roots)) count.set(n.cat.name, (count.get(n.cat.name) ?? 0) + 1)
+  return new Set([...count].filter(([, c]) => c > 1).map(([name]) => name))
+}
+
+/** Accessible name: "Name, Parent" when the name repeats (0007 §8.3). */
+export const spokenName = (n: CatNode, repeated: Set<string>) =>
+  repeated.has(n.cat.name) && n.parent ? `${n.cat.name}, ${n.parent.cat.name}` : n.cat.name
+
+/** DOM id per the CLAUDE.md convention: {field}-{parent}-{item}-{databaseId}. Unsaved rows (negative ids) use new{n}. */
+export const domId = (field: string, n: CatNode) =>
+  [field, n.parent && slug(n.parent.cat.name), slug(n.cat.name), n.cat.id < 0 ? `new${-n.cat.id}` : n.cat.id].filter(Boolean).join('-')

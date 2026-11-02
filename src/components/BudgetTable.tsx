@@ -13,8 +13,12 @@ function loadCollapsed(): Set<number> {
  * 0/1/2, category colors, computed rows, only rows with an amount, and
  * expand/collapse state kept across range changes and restarts.
  */
-export function BudgetTable({ roots, items, range, showEstimates: wantEstimates, calendar }: {
+export function BudgetTable({ roots, items, range, showEstimates: wantEstimates, calendar, idBase = 'budget', preview = false }: {
   roots: CatNode[]
+  /** Prefix for this table's ids; the heading it's named by is `{idBase}-heading`. */
+  idBase?: string
+  /** Read-only preview (0007 §5.4): every row expanded, no expand/collapse buttons. */
+  preview?: boolean
   calendar: Calendar
   items: BudgetItem[]
   range: Range
@@ -58,12 +62,12 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
   function addRow(n: CatNode) {
     if (!hasAmount(n)) return
     const kids = n.children.filter(hasAmount)
-    const open = !collapsed.has(n.cat.id)
+    const open = preview || !collapsed.has(n.cat.id)
     const label = isTotal(n) ? `${n.cat.name} *` : n.cat.name
     rows.push(
       <tr key={n.cat.id} className={`row depth-${n.depth}${n.children.length ? ' group' : ''}`}>
         <th scope="row" className={`name clr-${n.cat.color}`}>
-          {kids.length > 0
+          {kids.length > 0 && !preview
             ? <button type="button" className="expander" aria-expanded={open} onClick={() => toggle(n.cat.id)}>{label}</button>
             : label}
         </th>
@@ -87,8 +91,8 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
   const colSpan = showEstimates ? 2 : 1
   return (
     <div className="table-box">
-      <table className="table budget-table" aria-labelledby="budget-heading budget-caption" aria-describedby="budget-key">
-        <caption id="budget-caption">{title}</caption>
+      <table className="table budget-table" aria-labelledby={`${idBase}-heading ${idBase}-caption`} aria-describedby={`${idBase}-key`}>
+        <caption id={`${idBase}-caption`}>{title}</caption>
         <thead>
           {range !== 'day' && (
             <tr>
@@ -110,7 +114,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
           {rows.length ? rows : <tr><td className="empty" colSpan={1 + periods.length * colSpan}>Nothing recorded for this range yet.</td></tr>}
         </tbody>
       </table>
-      <p id="budget-key" className="help">Only rows with an amount appear. Rows marked * are totals.</p>
+      <p id={`${idBase}-key`} className="help">Only rows with an amount appear. Rows marked * are totals.</p>
     </div>
   )
 }

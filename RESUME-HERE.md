@@ -4,9 +4,9 @@ Tracking file for current work status. Roadmap authority: `docs/design/0003-road
 Design: `0004-table-design.md` (table), `0006-prototype.html` (v0.2 UI), `0007-v0.3-design-updates.md` (v0.3 changes; wins on conflict).
 
 ## Current state
-- Version: v0.3.6. v0.2 complete (security review approved, `docs/audits/security/security-v0.2.md`).
+- Version: v0.3.7. v0.2 complete (security review approved, `docs/audits/security/security-v0.2.md`).
 - Data: Dexie v7 (Income group, stored sibling `order`, `computed` only on top-level rows; see `src/storage/structure.ts`). Amounts link to categories by `categoryId`; estimate fields live on `Category`. `needsReview` removed (0007 §8.4).
-- Next: step 7 below. UI sign-off for each UI step is collected at step 14 (commits say "UI review pending").
+- Next: step 8 below. UI sign-off for each UI step is collected at step 14 (commits say "UI review pending").
 - Testing: headless Chromium via host flatpak + puppeteer-core; scripts in the session scratchpad.
 
 ## v0.3 plan of action
@@ -49,7 +49,7 @@ Covers every v0.3 roadmap item. Each completed step bumps the last version segme
    - Verify: sample data across months totals correctly; Day has no Est. column.
    - Deps: steps 2 and 4.
 
-7. **Budget setup redesign** (v0.3.7) — one combined table (Select as the first column; a subcategory checkbox selects or clears its items and its accessible name says so; selection never clears estimates); a Create row per group; Move up/down and Move to reordering; calendar settings; Default display range as a radio group; live preview table; sticky footer with Cancel left and Save right; Save closes; new supporting text.
+7. ✅ **Budget setup redesign** (v0.3.7) — UI review pending (step 14). Create rows: one per category with an Add to select (human choice, 0007 §5.2). For review: the setup table scrolls sideways on narrow screens (data-table exception) — one combined table (Select as the first column; a subcategory checkbox selects or clears its items and its accessible name says so; selection never clears estimates); a Create row per group; Move up/down and Move to reordering; calendar settings; Default display range as a radio group; live preview table; sticky footer with Cancel left and Save right; Save closes; new supporting text.
    - Source: 0007 §5.
    - Files: `src/screens/BudgetSetup.tsx`, `src/components/BudgetTable.tsx` (preview reuse), `repository.ts`, `src/App.css`.
    - Verify: keyboard and screen reader walkthrough of select-all, reorder and Cancel; preview matches the Budget tab.

@@ -110,11 +110,29 @@ export const settingsRepo = {
   },
 }
 
-/** Budget setup save: category patches and the default range in one transaction (security-v0.2 8.3). */
-export async function saveSetup(patches: { id: number; patch: Partial<Category> }[], defaultRange: DefaultRange) {
+/**
+ * Budget setup save (0007 §5.5): the edited category list and settings in one
+ * transaction (security-v0.2 8.3). Rows with negative ids are new; they are
+ * added parents-first and their temporary ids are swapped for real ones.
+ */
+export async function saveSetup(working: Category[], original: Category[], settings: Partial<Settings>) {
+  const before = new Map(original.map(c => [c.id, JSON.stringify(c)]))
   await db.transaction('rw', db.categories, db.settings, async () => {
-    for (const { id, patch } of patches) await db.categories.update(id, patch)
-    await settingsRepo.update({ defaultRange })
+    const real = new Map<number, number>()
+    const mapId = (id: number | null) => (id != null && id < 0 ? real.get(id)! : id)
+    const fresh = working.filter(c => c.id! < 0)
+    while (fresh.length) {
+      const i = fresh.findIndex(c => c.parentId == null || c.parentId >= 0 || real.has(c.parentId))
+      if (i < 0) throw new Error('New row has no parent')
+      const [c] = fresh.splice(i, 1)
+      const { id, ...row } = c
+      real.set(id!, await db.categories.add({ ...row, name: cleanName(row.name), parentId: mapId(row.parentId) }))
+    }
+    for (const c of working) {
+      if (c.id! < 0 || before.get(c.id) === JSON.stringify(c)) continue
+      await db.categories.put({ ...c, name: cleanName(c.name), parentId: mapId(c.parentId) })
+    }
+    await settingsRepo.update(settings)
   })
 }
 

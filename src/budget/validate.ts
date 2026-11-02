@@ -45,3 +45,6 @@ export function dateBounds(today: Date): { min: string; max: string } {
   const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
   return { min: '2000-01-01', max: iso(max) }
 }
+
+/** Name → id segment (CLAUDE.md id convention): lowercase, every run of other characters becomes '-'. */
+export const slug = (name: string) => name.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-+|-+$/g, '')
