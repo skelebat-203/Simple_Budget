@@ -4,12 +4,14 @@ import { actualFor, domId, estimateTotal, isoDate, formatAmount, isTotal, period
 import { cleanName, moneyError, NAME_MAX, parseMoney, slug } from '../budget/validate'
 import { budgetItemRepo, categoryRepo } from '../storage/repository'
 import { Button } from './ui'
+import { useTreegrid } from './ui/useTreegrid'
 
 /** Open row action: Add value / Delete (Week, Month, §9.2) or Rename (Annual, §9.3). */
 type Kind = 'add' | 'delete' | 'rename'
 const fieldOf: Record<Kind, string> = { add: 'add_value', delete: 'delete_row', rename: 'rename_value' }
 const buttonOf: Record<Kind, string> = { add: 'add', delete: 'delete_row', rename: 'rename' }
 
+const GRID = '__grid__'
 const COLLAPSED_KEY = 'simple-budget:collapsed'
 
 function loadCollapsed(): Set<number> {
@@ -55,7 +57,9 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
   const focusAfter = useRef<string | null>(null)
   useEffect(() => {
     if (!focusAfter.current) return
-    document.getElementById(focusAfter.current)?.focus()
+    // GRID: focus the table's first cell (e.g. after the last purchase in a list is deleted).
+    const el = focusAfter.current === GRID ? grid.ref.current?.querySelector<HTMLElement>('tbody th, tbody td') : document.getElementById(focusAfter.current)
+    el?.focus()
     focusAfter.current = null
   })
 
@@ -138,7 +142,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
     }
     setRowEdit(null)
     setStatus(`Deleted ${say(n)}.`)
-    focusAfter.current = `${idBase}-caption`
+    focusAfter.current = GRID
     onChanged?.()
   }
 
@@ -240,6 +244,8 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
   const hasAmount = (n: CatNode) =>
     periods.some(p => { const v = values(n, p); return v.act !== 0 || (showEstimates && v.est !== 0) })
 
+  const grid = useTreegrid(id => toggle(id), !preview)
+
   function toggle(id: number) {
     const next = new Set(collapsed)
     if (next.has(id)) next.delete(id); else next.add(id)
@@ -265,18 +271,23 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
   }
 
   const rows: ReactNode[] = []
+  /** A row expands when it has rows under it: child rows with amounts, or (Day) its purchases. */
+  const expandable = (n: CatNode) => n.children.some(hasAmount) || purchasesOf(n).length > 0
   function addRow(n: CatNode) {
     if (!hasAmount(n)) return
     const kids = n.children.filter(hasAmount)
     const open = preview || !collapsed.has(n.cat.id)
     const label = n.cat.name
     rows.push(
-      <tr key={n.cat.id} className={`row depth-${n.depth}${n.children.length ? ' group' : ''}`}>
+      <tr key={n.cat.id} className={`row depth-${n.depth}${n.children.length ? ' group' : ''}`}
+        {...(preview ? {} : { 'data-id': n.cat.id, 'aria-level': n.depth + 1, 'aria-expanded': expandable(n) ? open : undefined })}>
         <th scope="row" className={`name clr-${n.cat.color}`}>
           <span className="name-line">
-            {rowEdit?.id === n.cat.id && rowEdit.kind === 'rename' ? null : kids.length > 0 && !preview
-              ? <button type="button" className="expander" aria-expanded={open} onClick={() => toggle(n.cat.id)}>{label}</button>
-              : label}
+            {expandable(n) && !preview && (
+              // Mouse affordance; keyboard users expand with Right/Left (treegrid).
+              <span className="twisty" aria-hidden="true" onClick={() => toggle(n.cat.id)}>{open ? '▾' : '▸'}</span>
+            )}
+            {rowEdit?.id === n.cat.id && rowEdit.kind === 'rename' ? null : <span>{label}</span>}
             {renameControls(n)}
           </span>
           {(range === 'week' || range === 'month') && !isTotal(n) && (n.cat.dueDate || n.cat.autopay) && (
@@ -293,11 +304,11 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
     const bought = purchasesOf(n)
     bought.forEach((i, k) => {
       const id = deleteId(n, i)
-      // After a delete, focus the next purchase's Delete, else the previous, else the caption.
-      const next = bought[k + 1] ? deleteId(n, bought[k + 1]) : bought[k - 1] ? deleteId(n, bought[k - 1]) : `${idBase}-caption`
+      // After a delete, focus the next purchase's Delete, else the previous, else the table's first cell.
+      const next = bought[k + 1] ? deleteId(n, bought[k + 1]) : bought[k - 1] ? deleteId(n, bought[k - 1]) : GRID
       const asking = confirm === i.id
       rows.push(
-        <tr key={`p${i.id}`} className={`row purchase depth-${n.depth + 1}`}>
+        <tr key={`p${i.id}`} className={`row purchase depth-${n.depth + 1}`} {...(preview ? {} : { "aria-level": n.depth + 2 })}>
           <th scope="row" className="name">{purchaseLabel(i)}</th>
           <td className={`num${i.amount < 0 ? ' neg' : ''}`}>{formatAmount(i.amount) || '0.00'}</td>
           {actionCol && (
@@ -323,7 +334,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
     if (r.cat.name !== 'Net Income') { addRow(r); continue }
     if (periods.some(p => { const v = netIncome(p); return v.act !== 0 || (showEstimates && v.est !== 0) })) {
       rows.push(
-        <tr key={r.cat.id} className="row depth-0 net">
+        <tr key={r.cat.id} className="row depth-0 net" {...(preview ? {} : { 'aria-level': 1 })}>
           <th scope="row" className={`name clr-${r.cat.color}`}>Net Income</th>
           {cells(netIncome)}
           {actionCol && <td />}
@@ -335,8 +346,9 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
   const colSpan = showEstimates ? 2 : 1
   return (
     <div className="table-box">
-      <table className="table budget-table" aria-labelledby={`${idBase}-heading ${idBase}-caption`} aria-describedby={`${idBase}-key`}>
-        <caption id={`${idBase}-caption`} tabIndex={-1}>{title}</caption>
+      <table className="table budget-table" aria-labelledby={`${idBase}-heading ${idBase}-caption`}
+        aria-describedby={preview ? `${idBase}-key` : `${idBase}-key ${idBase}-keys`} {...grid}>
+        <caption id={`${idBase}-caption`}>{title}</caption>
         <thead>
           {range !== 'day' && range !== 'year' && showEstimates && (
             <tr>
@@ -360,10 +372,11 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
           </tr>
         </thead>
         <tbody>
-          {rows.length ? rows : <tr><td className="empty" colSpan={1 + periods.length * colSpan + (actionCol ? 1 : 0)}>Nothing recorded for this range yet.</td></tr>}
+          {rows.length ? rows : <tr aria-level={1}><td className="empty" colSpan={1 + periods.length * colSpan + (actionCol ? 1 : 0)}>Nothing recorded for this range yet.</td></tr>}
         </tbody>
       </table>
       <p id={`${idBase}-key`} className="help">Only rows with an amount appear. Every row totals the rows under it.{range === 'day' && ' Each purchase is listed under its item.'}</p>
+      {!preview && <p id={`${idBase}-keys`} className="help">Keyboard: arrow keys move between cells; Right and Left open and close a row; Enter reaches a cell’s buttons; Escape returns to the cell.</p>}
       {actions && (range === 'week' || range === 'month') && (
         <p id={`${idBase}-add-help`} className="help">Add value records a new amount on that item, dated {addDate}. Use a minus sign to subtract, e.g. -12.50. A row can be deleted when it has no items and at most one purchase.</p>
       )}

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Button, ErrorSummary, focusFirstError, type FieldError } from '../components/ui'
+import { useTreegrid } from '../components/ui/useTreegrid'
 import { BudgetTable } from '../components/BudgetTable'
 import { saveSetup } from '../storage/repository'
 import { cleanName, dateBounds, moneyError, NAME_MAX, parseMoney, slug } from '../budget/validate'
@@ -163,74 +164,7 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, onClose, onSa
     return r.ok ? { ...c, estimate: r.value } : r.reason === 'empty' ? { ...c, estimate: undefined } : c
   })), [work, est])
 
-  // ---------- treegrid keyboard (0007 §10) ----------
-  const gridRef = useRef<HTMLTableElement>(null)
-  const lastCell = useRef<HTMLElement | null>(null)
-  const widgetsOf = (cell: Element) => [...cell.querySelectorAll<HTMLElement>('input, select, button')]
-
-  // One tab stop: the last focused cell (or the first). Controls inside cells are reached with Enter.
-  useEffect(() => {
-    const grid = gridRef.current
-    if (!grid) return
-    const cells = [...grid.querySelectorAll<HTMLElement>('tbody td, tbody th')]
-    const current = lastCell.current && grid.contains(lastCell.current) ? lastCell.current : cells[0]
-    for (const c of cells) {
-      c.tabIndex = c === current ? 0 : -1
-      for (const w of widgetsOf(c)) w.tabIndex = -1
-    }
-  })
-
-  function onGridKey(e: React.KeyboardEvent<HTMLTableElement>) {
-    const t = e.target as HTMLElement
-    const cell = t.closest('td, th') as HTMLElement | null
-    if (!cell || !cell.closest('tbody')) return
-    const inText = t !== cell && (t.tagName === 'SELECT' || (t.tagName === 'INPUT' && !['checkbox', 'radio'].includes((t as HTMLInputElement).type)))
-    if (e.key === 'Escape' && t !== cell) { e.preventDefault(); e.stopPropagation(); cell.focus(); return }
-    if (inText) return
-    if (t === cell && (e.key === 'Enter' || e.key === 'F2')) {
-      const w = widgetsOf(cell)[0]
-      if (w) { e.preventDefault(); w.focus() }
-      return
-    }
-    if (t === cell && e.key === ' ') {
-      const box = cell.querySelector<HTMLInputElement>('input[type=checkbox]')
-      if (box) { e.preventDefault(); box.click() }
-      return
-    }
-    const row = cell.parentElement as HTMLTableRowElement
-    const rows = [...(row.parentElement as HTMLTableSectionElement).rows]
-    const r = rows.indexOf(row)
-    const col = [...row.cells].indexOf(cell as HTMLTableCellElement)
-    const go = (ri: number, ci: number) => {
-      const target = rows[Math.max(0, Math.min(rows.length - 1, ri))]
-      const c = target.cells[Math.max(0, Math.min(target.cells.length - 1, ci))]
-      lastCell.current = c
-      c.focus()
-    }
-    const id = Number(row.dataset.id)
-    const isOpen = row.getAttribute('aria-expanded')
-    switch (e.key) {
-      case 'ArrowDown': go(r + 1, col); break
-      case 'ArrowUp': go(r - 1, col); break
-      case 'ArrowRight':
-        if (col === 0 && isOpen === 'false') toggleRow(id)
-        else go(r, col + 1)
-        break
-      case 'ArrowLeft':
-        if (col === 0 && isOpen === 'true') toggleRow(id)
-        else if (col === 0) {
-          // Move to the parent row.
-          const level = Number(row.getAttribute('aria-level'))
-          const p = rows.slice(0, r).reverse().find(x => Number(x.getAttribute('aria-level')) < level)
-          if (p) go(rows.indexOf(p), 0)
-        } else go(r, col - 1)
-        break
-      case 'Home': go(e.ctrlKey ? 0 : r, 0); break
-      case 'End': go(e.ctrlKey ? rows.length - 1 : r, 99); break
-      default: return
-    }
-    e.preventDefault()
-  }
+  const grid = useTreegrid(toggleRow)
 
   const rows: ReactNode[] = []
   const addRows = (n: CatNode) => {
@@ -365,8 +299,7 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, onClose, onSa
         <p className="status" role="status">{status}</p>
 
         <div className="table-box setup-table-box">
-          <table className="table setup-table" role="treegrid" aria-labelledby="setup-heading" aria-describedby="setup-help setup-key setup-keys"
-            ref={gridRef} onKeyDown={onGridKey} onFocus={e => { const c = (e.target as HTMLElement).closest('td, th'); if (c && c.closest('tbody')) lastCell.current = c as HTMLElement }}>
+          <table className="table setup-table" aria-labelledby="setup-heading" aria-describedby="setup-help setup-key setup-keys" {...grid}>
             <thead>
               <tr>
                 <th scope="col">Item</th>
