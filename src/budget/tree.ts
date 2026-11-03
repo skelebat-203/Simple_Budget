@@ -80,7 +80,8 @@ export function estimateFor(c: Category, months: number): number {
  * a Month total is 1, its week columns split that 1 by days so they sum to
  * the total, a Week is WEEK_MONTHS, an Annual month is 1. Missing = 1 month.
  */
-export interface Period { label: string; from: string; to: string; days: number; months?: number }
+/** `fullLabel`: unabbreviated accessible name for the column header when `label` is abbreviated. */
+export interface Period { label: string; fullLabel?: string; from: string; to: string; days: number; months?: number }
 
 /** Local-date YYYY-MM-DD (toISOString would shift to UTC). */
 export const isoDate = (d: Date) =>
@@ -90,8 +91,9 @@ const addDays = (d: Date, n: number) => { const x = new Date(d); x.setDate(x.get
 const short = (d: Date) => d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 /** Adds the year to a title date when it isn't the current year (v0.4 review). */
 const yearIfOther = (d: Date): Intl.DateTimeFormatOptions => d.getFullYear() === new Date().getFullYear() ? {} : { year: 'numeric' }
+const long = (d: Date) => d.toLocaleDateString(undefined, { month: 'long', day: 'numeric' })
 const span = (from: Date, to: Date): Period =>
-  ({ label: `${short(from)} – ${short(to)}`, from: isoDate(from), to: isoDate(to), days: Math.round((to.getTime() - from.getTime()) / 864e5) + 1 })
+  ({ label: `${short(from)} – ${short(to)}`, fullLabel: `${long(from)} to ${long(to)}`, from: isoDate(from), to: isoDate(to), days: Math.round((to.getTime() - from.getTime()) / 864e5) + 1 })
 
 /** Calendar settings (0007 §1): week start day (0 = Sunday) and month boundaries. */
 export interface Calendar { weekStart: number; monthBoundary: MonthBoundary }
@@ -118,18 +120,18 @@ export function periodsFor(range: Range, today: Date, cal: Calendar = DEFAULT_CA
     // One column per day from the week start, plus the week total.
     const columns = Array.from({ length: 7 }, (_, i) => {
       const d = addDays(s, i)
-      return { ...span(d, d), months: WEEK_MONTHS / 7, label: d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }) }
+      return { ...span(d, d), months: WEEK_MONTHS / 7, label: d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }), fullLabel: d.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }) }
     })
-    return { columns, total: { ...span(s, addDays(s, 6)), months: WEEK_MONTHS, label: 'Total' }, title: `Week of ${s.toLocaleDateString(undefined, { month: 'short', day: 'numeric', ...yearIfOther(s) })}` }
+    return { columns, total: { ...span(s, addDays(s, 6)), months: WEEK_MONTHS, label: 'Total', fullLabel: undefined }, title: `Week of ${s.toLocaleDateString(undefined, { month: 'short', day: 'numeric', ...yearIfOther(s) })}` }
   }
   if (range === 'annual') {
     // Calendar months, so no day falls in two columns.
     const y = today.getFullYear()
     const columns = Array.from({ length: 12 }, (_, m) => {
       const p = span(new Date(y, m, 1), new Date(y, m + 1, 0))
-      return { ...p, months: 1, label: new Date(y, m, 1).toLocaleDateString(undefined, { month: 'short' }) }
+      return { ...p, months: 1, label: new Date(y, m, 1).toLocaleDateString(undefined, { month: 'short' }), fullLabel: new Date(y, m, 1).toLocaleDateString(undefined, { month: 'long' }) }
     })
-    return { columns, total: { ...span(new Date(y, 0, 1), new Date(y, 11, 31)), months: 12, label: 'Total' }, title: String(y) }
+    return { columns, total: { ...span(new Date(y, 0, 1), new Date(y, 11, 31)), months: 12, label: 'Total', fullLabel: undefined }, title: String(y) }
   }
   let monthOf = new Date(today.getFullYear(), today.getMonth(), 1)
   // Whole weeks: days before this month's first week start belong to last month's period.
@@ -157,7 +159,7 @@ export function periodsFor(range: Range, today: Date, cal: Calendar = DEFAULT_CA
   const all = span(first, last)
   // The month's estimate is the typed monthly amount; week columns share it by days.
   for (const c of columns) c.months = c.days / all.days
-  return { columns, total: { ...all, months: 1, label: 'Total' }, title }
+  return { columns, total: { ...all, months: 1, label: 'Total', fullLabel: undefined }, title }
 }
 
 /** Local Date from YYYY-MM-DD. */

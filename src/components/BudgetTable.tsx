@@ -376,7 +376,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
             {range !== 'day' && range !== 'annual' && showEstimates && (
               <tr>
                 <td />
-                {periods.map(p => <th key={p.label} scope="colgroup" colSpan={colSpan}>{p.label}</th>)}
+                {periods.map(p => <th key={p.label} scope="colgroup" colSpan={colSpan} aria-label={p.fullLabel}>{p.label}</th>)}
                 {actionCol && <td />}
               </tr>
             )}
@@ -384,7 +384,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
               <th scope="col" className="name">Item</th>
               {range === 'annual' || (range !== 'day' && !showEstimates)
                 // One value per period (Annual, or estimates hidden): each period heads its own column (0007 §10).
-                ? periods.map(p => <th key={p.label} scope="col" className="num">{p.label}</th>)
+                ? periods.map(p => <th key={p.label} scope="col" className="num" aria-label={p.fullLabel}>{p.label}</th>)
                 : periods.map(p => (
                   <Fragment key={p.label}>
                     {showEstimates && <th scope="col" className="num">Est.</th>}
