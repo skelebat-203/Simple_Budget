@@ -163,6 +163,7 @@ export const displayName = (n: CatNode) => (n.depth >= 2 && n.parent ? `${n.cat.
 export function childColor(parent: CatNode): string {
   const root = rootOf(parent).cat.name
   if (root === 'Income') return 'blue'
+  if (root === 'Taxes') return 'red'
   if (root === 'Savings') return 'lighter-green'
   return parent.parent ? 'even-lighter-orange' : 'lighter-orange'
 }

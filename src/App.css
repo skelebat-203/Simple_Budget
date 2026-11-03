@@ -187,7 +187,7 @@
 .reorder { display: inline-flex; align-items: center; gap: var(--space-xs); }
 .reorder .input { width: auto; }
 .btn.danger { background: var(--color-alert); border-color: var(--color-alert); color: var(--color-primary-foreground); }
-.row-actions { text-align: left; }
+.table .row-actions { text-align: left; }
 /* 44×44 touch target around a table checkbox. */
 .hit { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; cursor: pointer; }
 .row-meta { display: block; font-size: var(--font-size-sm); color: var(--color-text); font-weight: var(--font-weight-normal); }
@@ -295,3 +295,10 @@
   body { background: color-mix(in srgb, var(--color-primary-background), white 90%); }
   .main { background: var(--color-background-page); min-height: 100dvh; }
 }
+
+/* Budget setup table ends 24px above the sticky footer (0007 §10). */
+.dialog.setup .setup-table-box { max-height: calc(100dvh - var(--footer-h, 5rem) - 24px); }
+@media (max-height: 480px) { .dialog.setup .setup-table-box { max-height: calc(100dvh - 24px); } }
+
+/* Table outline in the existing secondary color (0007 §10). */
+.table { border: 1px solid var(--color-secondary-background); }

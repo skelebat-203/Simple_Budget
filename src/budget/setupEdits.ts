@@ -40,7 +40,8 @@ function attach(cats: Cat[], child: Cat, parentId: number): { cats: Cat[]; moved
   let order = others.length
   let rest = cats.filter(c => c.id !== child.id)
   let movedFrom: string | undefined
-  if (parent.parent && others.length === 0 && parent.cat.estimate != null) {
+  // Subcategories, and top-level rows that hold their own estimate (Taxes).
+  if ((parent.parent || !parent.cat.computed) && others.length === 0 && parent.cat.estimate != null) {
     const p = parent.cat
     const held = { estimate: p.estimate, frequency: p.frequency, autopay: p.autopay, selected: p.selected }
     rest = patch(rest, p.id, { estimate: undefined, frequency: undefined, autopay: undefined })

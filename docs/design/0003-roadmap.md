@@ -63,6 +63,7 @@ tracked as a later-version item.
 - Historical navigation (prev/next date range): a date `nav` above the tables (0007 §9.5)
 - Estimate scaling math: replace day-based scaling (monthly ÷ 30.44 × days) so monthly-style estimates show the typed amount per month (`docs/audits/security/security-v0.2.md` 3.4)
 - Multi-column form layout for large screens (1280px breakpoint, 0007 §10)
+- Rename subcategories and items from the Week and Month tables, with a confirmation dialog: "This will change the name of all instances of {old name} to {new name} across the application." (Confirm / Cancel)
 - Budget setup Create row visual redesign (keep one per category with Add to; current layout works but is cluttered)
 - Estimate toggle (default on)
 - Expand/collapse category/subcategory rows + persisted state

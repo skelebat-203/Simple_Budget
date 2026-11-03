@@ -73,7 +73,7 @@ export const categoryRepo = {
       const order = siblings.reduce((m, c) => Math.max(m, (c.order ?? -1) + 1), 0)
       const name = cleanName(cat.name)
       const parent = cat.parentId == null ? undefined : await db.categories.get(cat.parentId)
-      const moves = !!parent && parent.parentId != null && siblings.length === 0 && parent.estimate != null
+      const moves = !!parent && (parent.parentId != null || !parent.computed) && siblings.length === 0 && parent.estimate != null
       if (!moves) return { id: await db.categories.add({ ...cat, name, order }) }
       const held = { estimate: parent.estimate, frequency: parent.frequency, autopay: parent.autopay, selected: parent.selected || undefined }
       await db.categories.update(parent.id!, { estimate: undefined, frequency: undefined, autopay: undefined })

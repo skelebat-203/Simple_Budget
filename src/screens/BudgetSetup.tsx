@@ -31,6 +31,15 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, onClose, onSa
 }) {
   const ref = useRef<HTMLDialogElement>(null)
   const headingRef = useRef<HTMLHeadingElement>(null)
+  const footerRef = useRef<HTMLDivElement>(null)
+  // The setup table ends 24px above the sticky footer: expose the footer's height to CSS.
+  useEffect(() => {
+    const f = footerRef.current, d = ref.current
+    if (!f || !d) return
+    const ro = new ResizeObserver(() => d.style.setProperty('--footer-h', `${f.offsetHeight}px`))
+    ro.observe(f)
+    return () => ro.disconnect()
+  }, [])
   const bannerRef = useRef<HTMLDivElement>(null)
   const [original] = useState(() => cats.filter((c): c is Cat => typeof c.id === 'number'))
   const [work, setWork] = useState<Cat[]>(original)
@@ -229,7 +238,8 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, onClose, onSa
     rows.push(setupRow(n))
     if (!expanded.has(n.cat.id)) return
     n.children.forEach(addRows)
-    if (!n.parent && n.cat.computed) rows.push(createRow(n))
+    // Every category gets a Create row, Taxes included (0007 §10).
+    if (!n.parent) rows.push(createRow(n))
   }
   roots.forEach(addRows)
 
@@ -418,7 +428,7 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, onClose, onSa
 
         {saveError && <p className="error" role="alert">{saveError}</p>}
       </div>
-      <div className="dialog-footer">
+      <div className="dialog-footer" ref={footerRef}>
         <Button type="button" className="secondary" onClick={onClose}>Cancel</Button>
         <Button type="button" onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Save'}</Button>
       </div>
