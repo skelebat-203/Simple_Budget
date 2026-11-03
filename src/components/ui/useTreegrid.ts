@@ -34,7 +34,8 @@ export function useCollapsed(): [Set<number>, (id: number) => void] {
   return [collapsed, toggle]
 }
 
-const widgetsOf = (cell: Element) => [...cell.querySelectorAll<HTMLElement>('input, select, button')]
+/** Expand/collapse buttons are always Tab stops (0008 §1), so they aren't managed here. */
+const widgetsOf = (cell: Element) => [...cell.querySelectorAll<HTMLElement>('input, select, button:not(.expander)')]
 
 /**
  * Keyboard support for a `role="treegrid"` table (0007 §10). Body rows carry

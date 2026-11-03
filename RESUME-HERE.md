@@ -6,12 +6,12 @@ Design: `0004-table-design.md` (table), `0006-prototype.html` (v0.2 UI), `0007-v
 ## v0.5 plan of action
 Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per completed-work commit; trailer `Plan-Step: v0.5/N`). The final step bumps to v0.6.0. UI steps need human approval (`0005-ui-ux-review-checklist.md`). Baseline: v0.5.0; v0.4 complete (`docs/audits/security/security-v0.4.md`, `docs/audits/a11y/a11y-v0.4.md`). Data: Dexie v8 (`src/storage/structure.ts`). Testing: headless Chromium via host flatpak + puppeteer-core; scripts in the session scratchpad.
 
-1. **Table expanders as buttons** (v0.5/1) — every expand/collapse control is a `<button>` with `aria-expanded`, holding a decorative icon and the row name.
+1. **Table expanders as buttons** ✅ (v0.5.2) (v0.5/1) — every expand/collapse control is a `<button>` with `aria-expanded`, holding a decorative icon and the row name.
    - Source: roadmap v0.5 "Table fixes"; `0008` §1
    - Files: `src/components/BudgetTable.tsx`, `src/screens/BudgetSetup.tsx`, `src/App.css`
    - Verify: Tab reaches each expander; Enter/Space toggles; accessible name = row name only; all five tables
    - Deps: none
-2. **Budget setup without its own shortcuts** (v0.5/2) — remove arrow/Home/End/Enter/F2/Escape handling in Budget setup; every field is a Tab stop; keep `treegrid`, `aria-level`, `aria-expanded`.
+2. **Budget setup without its own shortcuts** ✅ (v0.5.2) (v0.5/2) — remove arrow/Home/End/Enter/F2/Escape handling in Budget setup; every field is a Tab stop; keep `treegrid`, `aria-level`, `aria-expanded`.
    - Source: `0008` §2 (supersedes Budget setup part of `0007` §10)
    - Files: `src/screens/BudgetSetup.tsx`, `src/components/ui/useTreegrid.ts`
    - Verify: no roving tabindex left; Budget Day/Week/Month/Annual keep the `0007` §10 model; screen reader table keys checked in step 11 (stop and ask if they break)

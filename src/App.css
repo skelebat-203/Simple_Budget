@@ -142,10 +142,6 @@
 .row.depth-2 .name { padding-left: calc(var(--space-md) * 3); }
 .row.net { background: color-mix(in srgb, var(--color-cat-highlight-blue), white 85%); }
 
-.expander { background: none; border: 0; padding: 0; font: inherit; color: inherit; cursor: pointer; min-height: 44px; }
-.expander::before { content: "▾ "; }
-.expander[aria-expanded="false"]::before { content: "▸ "; }
-
 /* Category colors */
 .clr-blue { color: var(--color-cat-blue); }
 .clr-red { color: var(--color-cat-red); }
@@ -241,7 +237,9 @@
 .setup-table .row.depth-2 .name { padding-left: calc(var(--space-md) * 3); }
 .setup-table .row.create .create-row { padding-left: calc(var(--space-md) * 1); }
 .setup-table .row.create .label { color: inherit; }
-.twisty { display: inline-flex; width: 1.25rem; justify-content: center; cursor: pointer; }
+.twisty { display: inline-flex; width: 1.25rem; justify-content: center; }
+.expander { display: inline-flex; align-items: center; gap: var(--space-xs); min-height: 2.75rem; padding: 0 var(--space-xs); border: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.expander:hover { text-decoration: underline; }
 
 /* Month boundaries: large selectable boxes, side by side. */
 .choice-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: var(--space-sm); width: 100%; }

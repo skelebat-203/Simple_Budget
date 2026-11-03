@@ -5,6 +5,7 @@ import { cleanName, moneyError, NAME_MAX, parseMoney, slug } from '../budget/val
 import { budgetItemRepo, categoryRepo, NameTakenError, RowInUseError } from '../storage/repository'
 import { Button, ConfirmDialog } from './ui'
 import { useCollapsed, useTreegrid } from './ui/useTreegrid'
+import { Expander } from './ui/Expander'
 import { ActionsMenu, type MenuAction } from './ui/ActionsMenu'
 
 /** Open row action: Add value / Delete (Week, Month, §9.2) or Rename (all but Day, §9.3, v0.4 step 8). */
@@ -314,11 +315,13 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
         {...(preview ? {} : { 'data-id': n.cat.id, 'aria-level': n.depth + 1, 'aria-expanded': expandable(n) ? open : undefined })}>
         <th scope="row" className={`name clr-${n.cat.color}`}>
           <span className="name-line">
-            {expandable(n) && !preview && (
-              // Mouse affordance; keyboard users expand with Right/Left (treegrid).
-              <span className="twisty" aria-hidden="true" onClick={() => toggle(n.cat.id)}>{open ? '▾' : '▸'}</span>
-            )}
-            {rowEdit?.id === n.cat.id && rowEdit.kind === 'rename' ? null : <span>{label}</span>}
+            {(() => {
+              const renaming = rowEdit?.id === n.cat.id && rowEdit.kind === 'rename'
+              if (renaming) return null
+              return expandable(n) && !preview
+                ? <Expander open={open} onToggle={() => toggle(n.cat.id)} id={domId('expand', n)}>{label}</Expander>
+                : <span>{label}</span>
+            })()}
             {renameControls(n)}
           </span>
           {(range === 'week' || range === 'month') && !isTotal(n) && (n.cat.dueDate || n.cat.autopay) && (

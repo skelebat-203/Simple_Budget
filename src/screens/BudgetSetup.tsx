@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Button, ErrorSummary, focusFirstError, type FieldError } from '../components/ui'
-import { useTreegrid } from '../components/ui/useTreegrid'
+import { Expander } from '../components/ui/Expander'
 import { BudgetTable } from '../components/BudgetTable'
 import { saveSetup } from '../storage/repository'
 import { cleanName, dateBounds, moneyError, NAME_MAX, parseMoney, slug } from '../budget/validate'
@@ -178,8 +178,6 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, onClose, onSa
     return r.ok ? { ...c, estimate: r.value } : r.reason === 'empty' ? { ...c, estimate: undefined } : c
   })), [work, est])
 
-  const grid = useTreegrid(toggleRow)
-
   const rows: ReactNode[] = []
   const addRows = (n: CatNode) => {
     if (n.cat.name === 'Net Income') return
@@ -205,10 +203,6 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, onClose, onSa
         data-id={n.cat.id} aria-level={n.depth + 1} aria-expanded={expandable ? expanded.has(n.cat.id) : undefined}>
         <th scope="row" id={nameId} className={`name clr-${n.cat.color}`}>
           <span className="name-line">
-            {expandable && (
-              // Mouse affordance; keyboard users expand with Right/Left (treegrid).
-              <span className="twisty" aria-hidden="true" onClick={() => toggleRow(n.cat.id)}>{expanded.has(n.cat.id) ? '▾' : '▸'}</span>
-            )}
             {(n.parent || !n.cat.computed) && (
               <label className="hit">
                 <input type="checkbox" className="checkbox" id={domId('select', n)}
@@ -217,7 +211,9 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, onClose, onSa
                   onChange={e => setWork(edit.setSelected(work, n.cat.id, e.target.checked))} />
               </label>
             )}
-            <span>{label}</span>
+            {expandable
+              ? <Expander open={expanded.has(n.cat.id)} onToggle={() => toggleRow(n.cat.id)} id={domId('expand', n)}>{label}</Expander>
+              : <span>{label}</span>}
           </span>
         </th>
         <td>
@@ -325,7 +321,7 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, onClose, onSa
         <p className="status" role="status">{status}</p>
 
         <div className="table-box setup-table-box">
-          <table className="table setup-table" aria-labelledby="setup-heading" aria-describedby="setup-help setup-key setup-keys" {...grid}>
+          <table className="table setup-table" aria-labelledby="setup-heading" role="treegrid" aria-describedby="setup-help setup-key">
             <thead>
               <tr>
                 <th scope="col">Item</th>
@@ -341,7 +337,6 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, onClose, onSa
         </div>
         {/* Help sits outside the scroll box so it doesn't scroll sideways (v0.4 review). */}
         <p id="setup-key" className="help">A subcategory with items shows the sum of its items’ monthly estimates.</p>
-        <p id="setup-keys" className="help">Keyboard: arrow keys move between cells; Right and Left open and close a row; Enter edits a cell; Escape returns to the cell.</p>
 
         {/* Settings sit side by side from 1280px, in DOM (reading and tab) order (0007 §10). */}
         <div className="form-grid setup-settings">
