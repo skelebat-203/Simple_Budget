@@ -184,12 +184,14 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, onClose, onSa
     const sibs = n.parent?.children ?? roots
     const i = sibs.indexOf(n)
     const label = n.cat.name
+    // Categories always expand (they hold a Create row), Taxes included (v0.4 step 10).
+    const expandable = n.children.length > 0 || !n.parent
     return (
-      <tr key={n.cat.id} className={`row depth-${n.depth}${n.children.length ? ' group' : ''}`}
-        data-id={n.cat.id} aria-level={n.depth + 1} aria-expanded={n.children.length ? expanded.has(n.cat.id) : undefined}>
+      <tr key={n.cat.id} className={`row depth-${n.depth}${expandable ? ' group' : ''}`}
+        data-id={n.cat.id} aria-level={n.depth + 1} aria-expanded={expandable ? expanded.has(n.cat.id) : undefined}>
         <th scope="row" id={nameId} className={`name clr-${n.cat.color}`}>
           <span className="name-line">
-            {n.children.length > 0 && (
+            {expandable && (
               // Mouse affordance; keyboard users expand with Right/Left (treegrid).
               <span className="twisty" aria-hidden="true" onClick={() => toggleRow(n.cat.id)}>{expanded.has(n.cat.id) ? '▾' : '▸'}</span>
             )}
@@ -265,22 +267,31 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, onClose, onSa
     const base = `create-${slug(root.cat.name)}`
     const c = create[root.cat.id] ?? { name: '', parent: root.cat.id }
     const err = errors[base]
+    const empty = !c.name.trim()
     const set = (p: Partial<typeof c>) => setCreate(x => ({ ...x, [root.cat.id]: { ...c, ...p } }))
     return (
       <tr key={`create-${root.cat.id}`} className={`row create depth-1 clr-${root.cat.color}`} aria-level={2}>
         <td colSpan={6}>
           <div className="create-row">
-            <label className="label" htmlFor={base}>Create in {root.cat.name}</label>
-            <input id={base} className="input" maxLength={NAME_MAX} value={c.name}
-              aria-invalid={!!err || undefined} aria-describedby={err ? `${base}-error_msg` : undefined}
-              onChange={e => set({ name: e.target.value })}
-              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addRow(root) } }} />
-            <label className="label" htmlFor={`${base}-parent`}>Add to</label>
-            <select id={`${base}-parent`} className="input" value={c.parent} onChange={e => set({ parent: Number(e.target.value) })}>
-              {[root, ...root.children].map(t => <option key={t.cat.id} value={t.cat.id}>{t.cat.name}</option>)}
-            </select>
-            <Button type="button" className="secondary" aria-disabled={!c.name.trim() || undefined} aria-describedby={base}
-              onClick={() => addRow(root)}>Add</Button>
+            <div className="create-field">
+              <label className="label" htmlFor={base}>Create in {root.cat.name}</label>
+              <input id={base} className="input" maxLength={NAME_MAX} value={c.name}
+                aria-invalid={!!err || undefined} aria-describedby={err ? `${base}-error_msg` : undefined}
+                onChange={e => set({ name: e.target.value })}
+                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addRow(root) } }} />
+            </div>
+            <div className="create-field">
+              <label className="label" htmlFor={`${base}-parent`}>Add to</label>
+              <select id={`${base}-parent`} className="input" value={c.parent} onChange={e => set({ parent: Number(e.target.value) })}>
+                {[root, ...root.children].map(t => <option key={t.cat.id} value={t.cat.id}>{t.cat.name}</option>)}
+              </select>
+            </div>
+            {/* While disabled, Add shows and is described by a tooltip on hover or focus (v0.4 step 10). */}
+            <span className="tip-wrap">
+              <Button type="button" className="secondary" id={`${base}-add`} aria-disabled={empty || undefined}
+                aria-describedby={empty ? `${base}-tooltip` : base} onClick={() => addRow(root)}>Add</Button>
+              {empty && <span id={`${base}-tooltip`} role="tooltip" className="tooltip">First enter a value in ‘Create in {root.cat.name}’</span>}
+            </span>
             {err && <p id={`${base}-error_msg`} className="error">{err}</p>}
           </div>
         </td>

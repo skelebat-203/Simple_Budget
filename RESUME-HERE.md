@@ -77,11 +77,12 @@ Covers every v0.4 roadmap item. Each completed step bumps the last version segme
    - Verify: state survives reload; closing a row in Month shows it closed in Day, Week and Annual.
    - Deps: none.
 
-10. **Budget setup updates** (v0.4.10) — Create row visual redesign (still one per category with Add to); Taxes as an expander like other categories; Add button tooltip "First enter a value in 'Create in {subcategory name}'".
+10. ✅ **Budget setup updates** (v0.4.10) — Create row visual redesign (still one per category with Add to); Taxes as an expander like other categories; Add button tooltip "First enter a value in 'Create in {subcategory name}'".
     - Source: roadmap v0.4.
     - Files: `src/screens/BudgetSetup.tsx`, `src/App.css`.
     - Verify: human approves the Create row design; tooltip reachable by keyboard and announced.
     - Deps: step 2.
+    - Built 2026-11-02; Create row design pending human approval.
 
 11. **Multi-column form layout** (v0.4.11) — 1280px breakpoint.
     - Source: roadmap v0.4; 0007 §10.

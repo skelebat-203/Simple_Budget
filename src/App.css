@@ -302,3 +302,31 @@
 
 /* Table outline in the existing secondary color (0007 §10). */
 .table { border: 1px solid var(--color-secondary-background); }
+
+/* --- Budget setup Create row (v0.4 step 10) ---
+   One per category: a tinted strip with a category-color accent, small labels over the
+   fields, and Add aligned with the inputs. Wraps to two lines on small screens. */
+.setup-table .row.create td { padding-block: var(--space-sm); }
+.setup-table .row.create .create-row {
+  display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-sm) var(--space-md);
+  margin-left: calc(var(--space-md) * 1); padding: var(--space-sm) var(--space-md);
+  border-left: 4px solid currentColor; border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-secondary-background), white 94%);
+}
+.create-field { display: flex; flex-direction: column; gap: 2px; }
+.create-field:first-child { flex: 1 1 12rem; max-width: 18rem; }
+.setup-table .create-row .create-field .label { align-self: auto; font-size: var(--font-size-sm); color: var(--color-foreground-page); }
+.setup-table .create-row .create-field .input { flex: none; width: 100%; }
+.setup-table .create-row .create-field select.input { width: auto; min-width: 9rem; }
+
+/* Tooltip on the disabled Add button: shown on hover or keyboard focus, hoverable itself. */
+.tip-wrap { position: relative; display: inline-flex; }
+.tooltip {
+  position: absolute; z-index: 5; top: calc(100% + 6px); right: 0; width: max-content; max-width: 16rem;
+  padding: var(--space-xs) var(--space-sm); border-radius: var(--radius-sm); white-space: normal;
+  background: var(--color-foreground-page); color: var(--color-background-page); font-size: var(--font-size-sm);
+  visibility: hidden;
+}
+.tip-wrap:hover .tooltip, .tip-wrap:focus-within .tooltip { visibility: visible; }
+/* Keep the Create row in view when the table scrolls sideways; it wraps within the screen width. */
+.setup-table .row.create .create-row { position: sticky; left: 0; max-width: min(40rem, calc(100vw - 6rem)); }
