@@ -119,6 +119,8 @@ export function AddBudget({ roots, onSaved }: {
     <section className="panel" aria-labelledby="add-heading">
       <h2 id="add-heading" className="section-title">Add purchase</h2>
       <ErrorSummary ref={bannerRef} errors={toList(errors)} />
+      {/* Two columns from 1280px; fields keep their DOM (reading and tab) order (0007 §10). */}
+      <div className="form-grid">
       <div className="field">
         <label className="label" htmlFor="item">Item <span aria-hidden="true">*</span></label>
         <p id="item-help" className="help">Shows your selected items. Type to search every item, or type a new name to add it.</p>
@@ -161,6 +163,7 @@ export function AddBudget({ roots, onSaved }: {
         <DatePicker id="date" value={date} min={bounds.min} max={bounds.max} aria-invalid={!!errors.date || undefined}
           aria-describedby={describe('date')} onChange={e => setDate(e.target.value)} />
         {errors.date && <p id="date-error_msg" className="error">{errors.date}</p>}
+      </div>
       </div>
       <div className="actions actions-end">
         <p className="status" role="status">{status}</p>

@@ -84,7 +84,7 @@ Covers every v0.4 roadmap item. Each completed step bumps the last version segme
     - Deps: step 2.
     - Built 2026-11-02; Create row design pending human approval.
 
-11. **Multi-column form layout** (v0.4.11) — 1280px breakpoint.
+11. ✅ **Multi-column form layout** (v0.4.11) — 1280px breakpoint.
     - Source: roadmap v0.4; 0007 §10.
     - Files: `src/screens/AddBudget.tsx`, `src/screens/BudgetSetup.tsx`, `src/App.css`.
     - Verify: screenshots at 1279/1280px and 400px; reading/tab order unchanged.

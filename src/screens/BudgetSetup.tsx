@@ -327,6 +327,8 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, onClose, onSa
           <p id="setup-keys" className="help">Keyboard: arrow keys move between cells; Right and Left open and close a row; Enter edits a cell; Escape returns to the cell.</p>
         </div>
 
+        {/* Settings sit side by side from 1280px, in DOM (reading and tab) order (0007 §10). */}
+        <div className="form-grid setup-settings">
         <div className="field">
           <label className="label" htmlFor="week_start">Week starts on</label>
           <select id="week_start" className="input narrow" value={weekStart} onChange={e => setWeekStart(Number(e.target.value))}>
@@ -363,6 +365,7 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, onClose, onSa
             ))}
           </ul>
         </fieldset>
+        </div>
 
         <section className="preview" aria-labelledby="preview-heading">
           <h3 id="preview-heading" className="section-title">Preview</h3>

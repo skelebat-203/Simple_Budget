@@ -330,3 +330,13 @@
 .tip-wrap:hover .tooltip, .tip-wrap:focus-within .tooltip { visibility: visible; }
 /* Keep the Create row in view when the table scrolls sideways; it wraps within the screen width. */
 .setup-table .row.create .create-row { position: sticky; left: 0; max-width: min(40rem, calc(100vw - 6rem)); }
+
+/* --- Multi-column forms at the large breakpoint (v0.4 step 11, 0007 §10) ---
+   Grid auto-placement keeps the visual order the same as the DOM (reading/tab) order. */
+.form-grid { display: flex; flex-direction: column; gap: var(--space-md); }
+.form-grid.setup-settings { gap: var(--space-lg); }
+@media (min-width: 1280px) {
+  .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-md) var(--space-lg); align-items: start; }
+  .form-grid > .field { max-width: none; }
+  .form-grid.setup-settings { grid-template-columns: minmax(12rem, auto) minmax(0, 1fr) auto; }
+}
