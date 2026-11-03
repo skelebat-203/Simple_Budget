@@ -31,13 +31,13 @@ export function Budget({ roots, items, range, onRangeChange, calendar, onChanged
             </Button>
           ))}
         </div>
-        <label className="check">
-          <input type="checkbox" checked={showEstimates && rangeHasEstimates(range)} aria-disabled={!rangeHasEstimates(range) || undefined}
-            aria-describedby="estimates-help"
-            onChange={e => { if (rangeHasEstimates(range)) setShowEstimates(e.target.checked) }} />
-          Show estimates
-        </label>
-        <p id="estimates-help" className="help">Estimates show in Week and Month. Day and Annual show what you recorded.</p>
+        {/* Estimates exist only in Week and Month, so the toggle shows only there (0004, roadmap v0.4). */}
+        {rangeHasEstimates(range) && (
+          <label className="check">
+            <input type="checkbox" checked={showEstimates} onChange={e => setShowEstimates(e.target.checked)} />
+            Show estimates
+          </label>
+        )}
       </div>
       <BudgetTable roots={roots} items={items} range={range} showEstimates={showEstimates} calendar={calendar} onChanged={onChanged} />
     </section>

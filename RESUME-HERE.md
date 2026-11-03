@@ -47,7 +47,7 @@ Covers every v0.4 roadmap item. Each completed step bumps the last version segme
    - Verify: purchases land on the right day for each week-start setting; totals match the old Week view.
    - Deps: step 3.
 
-5. **Estimate toggle scope** (v0.4.5) — toggle shown on Week and Month only (default on); removed from Day and Annual.
+5. ✅ **Estimate toggle scope** (v0.4.5) — toggle shown on Week and Month only (default on); removed from Day and Annual.
    - Source: roadmap v0.4.
    - Files: `src/screens/Budget.tsx`.
    - Verify: toggle present/absent per range; default on.
