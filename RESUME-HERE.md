@@ -35,7 +35,7 @@ Covers every v0.4 roadmap item. Each completed step bumps the last version segme
    - Verify: screenshots at 400px and 1280px; no overflow.
    - Deps: none.
 
-3. **Estimate scaling math** (v0.4.3) — replace day-based scaling (monthly ÷ 30.44 × days) so a monthly estimate shows the typed amount per month; define Week and Annual results from that.
+3. ✅ **Estimate scaling math** (v0.4.3) — replace day-based scaling (monthly ÷ 30.44 × days) so a monthly estimate shows the typed amount per month; define Week and Annual results from that.
    - Source: roadmap v0.4; security-v0.2 3.4.
    - Files: `src/budget/tree.ts` (`PER_MONTH`, scaling fn), `src/screens/BudgetSetup.tsx` (`MONTH` preview).
    - Verify: $100/month shows $100 in every Month view; $120 quarterly shows $40/month; Annual total = 12 × monthly.

@@ -61,18 +61,26 @@ export const frequenciesFor = (n: CatNode) => inBillGroup(n)
   ? [...FREQUENCIES, { value: 'quarter' as const, label: 'Quarterly' }, { value: 'annual' as const, label: 'Annual' }]
   : FREQUENCIES
 
-/** Occurrences per month. Day-based scaling below stays until v0.4 (security-v0.2 3.4). */
-export const PER_MONTH: Record<Frequency, number> = { day: 30.44, week: 52 / 12, biweek: 26 / 12, bimonthly: 2, month: 1, quarter: 1 / 3, annual: 1 / 12 }
+/** Occurrences per month (security-v0.2 3.4: a month is one month, never days ÷ 30.44). */
+export const PER_MONTH: Record<Frequency, number> = { day: 365 / 12, week: 52 / 12, biweek: 26 / 12, bimonthly: 2, month: 1, quarter: 1 / 3, annual: 1 / 12 }
 
-/** Estimate for one node over `days` days. No recurrence = monthly. */
-export function estimateFor(c: Category, days: number): number {
+/** Months in one week: a week is 1/52 of a year, so $120 quarterly ≈ $9.23 a week (0007 §3). */
+export const WEEK_MONTHS = 12 / 52
+
+/** Estimate for one node over `months` months. No recurrence = monthly. */
+export function estimateFor(c: Category, months: number): number {
   if (!c.selected || !c.estimate) return 0
-  return (c.estimate * PER_MONTH[c.frequency ?? 'month'] * days) / 30.44
+  return c.estimate * PER_MONTH[c.frequency ?? 'month'] * months
 }
 
 // ---------- periods ----------
 
-export interface Period { label: string; from: string; to: string; days: number }
+/**
+ * A table column. `months` is the share of a month its estimate covers:
+ * a Month total is 1, its week columns split that 1 by days so they sum to
+ * the total, a Week is WEEK_MONTHS, an Annual month is 1. Missing = 1 month.
+ */
+export interface Period { label: string; from: string; to: string; days: number; months?: number }
 
 /** Local-date YYYY-MM-DD (toISOString would shift to UTC). */
 export const isoDate = (d: Date) =>
@@ -99,20 +107,20 @@ export function periodsFor(range: Range, today: Date, cal: Calendar = DEFAULT_CA
   if (range === 'day') {
     const d = isoDate(today)
     const label = today.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })
-    return { columns: [{ label, from: d, to: d, days: 1 }], total: null, title: label }
+    return { columns: [{ label, from: d, to: d, days: 1, months: WEEK_MONTHS / 7 }], total: null, title: label }
   }
   if (range === 'week') {
     const s = weekStartOf(today, cal.weekStart)
-    return { columns: [span(s, addDays(s, 6))], total: null, title: `Week of ${short(s)}` }
+    return { columns: [{ ...span(s, addDays(s, 6)), months: WEEK_MONTHS }], total: null, title: `Week of ${short(s)}` }
   }
   if (range === 'annual') {
     // Calendar months, so no day falls in two columns.
     const y = today.getFullYear()
     const columns = Array.from({ length: 12 }, (_, m) => {
       const p = span(new Date(y, m, 1), new Date(y, m + 1, 0))
-      return { ...p, label: new Date(y, m, 1).toLocaleDateString(undefined, { month: 'short' }) }
+      return { ...p, months: 1, label: new Date(y, m, 1).toLocaleDateString(undefined, { month: 'short' }) }
     })
-    return { columns, total: { ...span(new Date(y, 0, 1), new Date(y, 11, 31)), label: 'Total' }, title: String(y) }
+    return { columns, total: { ...span(new Date(y, 0, 1), new Date(y, 11, 31)), months: 12, label: 'Total' }, title: String(y) }
   }
   let monthOf = new Date(today.getFullYear(), today.getMonth(), 1)
   // Whole weeks: days before this month's first week start belong to last month's period.
@@ -137,7 +145,10 @@ export function periodsFor(range: Range, today: Date, cal: Calendar = DEFAULT_CA
     columns.push(span(s, e))
     s = addDays(e, 1)
   }
-  return { columns, total: { ...span(first, last), label: 'Total' }, title }
+  const all = span(first, last)
+  // The month's estimate is the typed monthly amount; week columns share it by days.
+  for (const c of columns) c.months = c.days / all.days
+  return { columns, total: { ...all, months: 1, label: 'Total' }, title }
 }
 
 /** Day and Annual tables show actuals only (0007 §7.2, §7.4). */
@@ -151,7 +162,7 @@ export function actualFor(n: CatNode, p: Period, items: BudgetItem[]): number {
 
 /** Estimate for the period: a total sums its children; any other row uses its own (0007 §2.1). */
 export const estimateTotal = (n: CatNode, p: Period): number =>
-  n.children.length ? n.children.reduce((a, c) => a + estimateTotal(c, p), 0) : estimateFor(n.cat, p.days)
+  n.children.length ? n.children.reduce((a, c) => a + estimateTotal(c, p), 0) : estimateFor(n.cat, p.months ?? 1)
 
 export const formatAmount = (n: number) =>
   n === 0 ? '' : (n < 0 ? '−' : '') + Math.abs(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
