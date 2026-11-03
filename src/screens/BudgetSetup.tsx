@@ -381,7 +381,7 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, onClose, onSa
         <p id="setup-help" className="help">If you’d like to skip ahead just select “Save” at the bottom of the screen. Income, Tax, Emergency fund, Charity, and a few other items have been preselected for you.</p>
         <p className="status" role="status">{status}</p>
 
-        <div className="table-box">
+        <div className="table-box setup-table-box">
           <table className="table setup-table" role="treegrid" aria-labelledby="setup-heading" aria-describedby="setup-help setup-key setup-keys"
             ref={gridRef} onKeyDown={onGridKey} onFocus={e => { const c = (e.target as HTMLElement).closest('td, th'); if (c && c.closest('tbody')) lastCell.current = c as HTMLElement }}>
             <thead>

@@ -263,3 +263,28 @@
 .choice-button:has(:checked) { background: var(--color-primary-background); color: var(--color-primary-foreground); }
 .choice-button:has(:focus-visible) { outline: 3px solid var(--color-info); outline-offset: 2px; }
 .setup-table .name-line { flex-wrap: nowrap; white-space: nowrap; }
+
+/* --- Screens menu (small/medium, 0007 §10) --- */
+.menu-wrap { position: relative; align-self: flex-start; }
+.menu-current { font-weight: var(--font-weight-normal); }
+.menu {
+  position: absolute; z-index: 20; inset: 100% auto auto 0; min-width: 14rem; margin: var(--space-xs) 0 0; padding: var(--space-xs) 0;
+  list-style: none; background: var(--color-background-page); border: 1px solid var(--color-secondary-background);
+  border-radius: var(--radius-sm); box-shadow: 0 6px 18px rgb(0 0 0 / 0.15);
+}
+.menu-item { display: flex; align-items: center; min-height: 44px; padding: var(--space-sm) var(--space-md); cursor: pointer; }
+.menu-item:focus, .menu-item:hover { background: var(--color-border); outline: none; }
+.menu-item:focus-visible { outline: 3px solid var(--color-info); outline-offset: -3px; }
+.menu-item[aria-checked="true"] { font-weight: var(--font-weight-bold); }
+.menu-item[aria-checked="true"]::after { content: "\00a0(current)"; font-weight: var(--font-weight-normal); }
+
+/* Tables never taller than the screen less 24px, so there is always room to scroll past them
+   and their sideways scrollbar stays in view (0007 §10). The setup table always; others below 1280px. */
+.setup-table-box { max-height: calc(100dvh - 24px); overflow: auto; }
+.setup-table thead th { position: sticky; top: 0; z-index: 1; }
+@media (max-width: 1279.98px) {
+  .table-box { max-height: calc(100dvh - 24px); overflow: auto; }
+  .ranges { display: grid; grid-template-columns: 1fr 1fr; }
+  /* Budget setup: full screen, no margin around the dialog. */
+  .dialog.setup { width: 100%; max-width: 100%; height: 100%; max-height: 100%; margin: 0; border-radius: 0; }
+}

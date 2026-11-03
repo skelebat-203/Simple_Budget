@@ -338,7 +338,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
       <table className="table budget-table" aria-labelledby={`${idBase}-heading ${idBase}-caption`} aria-describedby={`${idBase}-key`}>
         <caption id={`${idBase}-caption`} tabIndex={-1}>{title}</caption>
         <thead>
-          {range !== 'day' && range !== 'year' && (
+          {range !== 'day' && range !== 'year' && showEstimates && (
             <tr>
               <td />
               {periods.map(p => <th key={p.label} scope="colgroup" colSpan={colSpan}>{p.label}</th>)}
@@ -347,8 +347,8 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
           )}
           <tr>
             <th scope="col" className="name">Item</th>
-            {range === 'year'
-              // Annual shows actuals only, so each month heads its own column (0007 §10).
+            {range === 'year' || (range !== 'day' && !showEstimates)
+              // One value per period (Annual, or estimates hidden): each period heads its own column (0007 §10).
               ? periods.map(p => <th key={p.label} scope="col" className="num">{p.label}</th>)
               : periods.map(p => (
                 <Fragment key={p.label}>

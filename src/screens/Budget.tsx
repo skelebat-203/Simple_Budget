@@ -24,7 +24,7 @@ export function Budget({ roots, items, range, onRangeChange, calendar, onChanged
     <section className="panel wide" aria-labelledby="budget-heading">
       <h2 id="budget-heading" className="section-title">Budget</h2>
       <div className="toolbar">
-        <div className="toggle-group" role="group" aria-label="Range">
+        <div className="toggle-group ranges" role="group" aria-label="Range">
           {RANGES.map(r => (
             <Button key={r.value} type="button" className="toggle" aria-pressed={range === r.value} onClick={() => onRangeChange(r.value)}>
               {r.label}
