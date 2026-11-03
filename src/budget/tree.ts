@@ -99,7 +99,8 @@ export const DEFAULT_CALENDAR: Calendar = { weekStart: 0, monthBoundary: 'weeks'
 export const weekStartOf = (d: Date, weekStart: number) => addDays(d, -((d.getDay() - weekStart + 7) % 7))
 
 /**
- * Columns for a range. Week = the week containing today. Month = one column
+ * Columns for a range. Week = one column per day of the week containing
+ * today, plus a total. Month = one column
  * per week plus a total: whole weeks from the first week start on or after
  * the 1st, or (calendar) weeks clipped to the month.
  */
@@ -111,7 +112,12 @@ export function periodsFor(range: Range, today: Date, cal: Calendar = DEFAULT_CA
   }
   if (range === 'week') {
     const s = weekStartOf(today, cal.weekStart)
-    return { columns: [{ ...span(s, addDays(s, 6)), months: WEEK_MONTHS }], total: null, title: `Week of ${short(s)}` }
+    // One column per day from the week start, plus the week total.
+    const columns = Array.from({ length: 7 }, (_, i) => {
+      const d = addDays(s, i)
+      return { ...span(d, d), months: WEEK_MONTHS / 7, label: d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }) }
+    })
+    return { columns, total: { ...span(s, addDays(s, 6)), months: WEEK_MONTHS, label: 'Total' }, title: `Week of ${short(s)}` }
   }
   if (range === 'annual') {
     // Calendar months, so no day falls in two columns.

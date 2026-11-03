@@ -41,7 +41,7 @@ Covers every v0.4 roadmap item. Each completed step bumps the last version segme
    - Verify: $100/month shows $100 in every Month view; $120 quarterly shows $40/month; Annual total = 12 × monthly.
    - Deps: step 1.
 
-4. **Week table by day** (v0.4.4) — Week columns broken down per day (week start from Settings).
+4. ✅ **Week table by day** (v0.4.4) — Week columns broken down per day (week start from Settings).
    - Source: roadmap v0.4.
    - Files: `src/budget/tree.ts` (`periodsFor`), `src/components/BudgetTable.tsx`.
    - Verify: purchases land on the right day for each week-start setting; totals match the old Week view.
