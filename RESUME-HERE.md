@@ -53,7 +53,7 @@ Covers every v0.4 roadmap item. Each completed step bumps the last version segme
    - Verify: toggle present/absent per range; default on.
    - Deps: step 4.
 
-6. **Historical navigation** (v0.4.6) — date `nav` above the tables with prev/next date range for every range.
+6. ✅ **Historical navigation** (v0.4.6) — date `nav` above the tables with prev/next date range for every range.
    - Source: roadmap v0.4; 0007 §9.5.
    - Files: `src/screens/Budget.tsx`, `src/budget/tree.ts`.
    - Verify: prev/next across month and year boundaries under both month-boundary settings; keyboard + screen reader labels.

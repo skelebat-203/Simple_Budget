@@ -157,6 +157,16 @@ export function periodsFor(range: Range, today: Date, cal: Calendar = DEFAULT_CA
   return { columns, total: { ...all, months: 1, label: 'Total' }, title }
 }
 
+/** Local Date from YYYY-MM-DD. */
+export const parseIso = (iso: string) => { const [y, m, d] = iso.split('-').map(Number); return new Date(y, m - 1, d) }
+
+/** A date in the range before (-1) or after (1) the one containing `anchor` (0007 §9.5). */
+export function shiftRange(range: Range, anchor: Date, cal: Calendar, dir: -1 | 1): Date {
+  const { columns, total } = periodsFor(range, anchor, cal)
+  const all = total ?? columns[0]
+  return addDays(parseIso(dir < 0 ? all.from : all.to), dir)
+}
+
 /** Day and Annual tables show actuals only (0007 §7.2, §7.4). */
 export const rangeHasEstimates = (r: Range) => r === 'week' || r === 'month'
 

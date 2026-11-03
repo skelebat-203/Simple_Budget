@@ -23,8 +23,10 @@ function loadCollapsed(): Set<number> {
  * 0/1/2, category colors, computed rows, only rows with an amount, and
  * expand/collapse state kept across range changes and restarts.
  */
-export function BudgetTable({ roots, items, range, showEstimates: wantEstimates, calendar, idBase = 'budget', preview = false, onChanged }: {
+export function BudgetTable({ roots, items, range, showEstimates: wantEstimates, calendar, date, idBase = 'budget', preview = false, onChanged }: {
   roots: CatNode[]
+  /** A day in the range to show (0007 §9.5 date nav). Default: today. */
+  date?: Date
   /** Data changed from a table action (0007 §9); reload. */
   onChanged?: () => void
   /** Prefix for this table's ids; the heading it's named by is `{idBase}-heading`. */
@@ -39,7 +41,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
   const showEstimates = wantEstimates && rangeHasEstimates(range)
   const [collapsed, setCollapsed] = useState(loadCollapsed)
   const [today] = useState(() => new Date())
-  const { columns, total, title } = periodsFor(range, today, calendar)
+  const { columns, total, title } = periodsFor(range, date ?? today, calendar)
   const periods = total ? [...columns, total] : columns
 
   const actions = !preview && !!onChanged
