@@ -3,6 +3,7 @@ import { AddBudget } from './screens/AddBudget'
 import { Budget } from './screens/Budget'
 import { BudgetSetup } from './screens/BudgetSetup'
 import { RewardLayer } from './rewards/RewardLayer'
+import { Onboarding } from './screens/Onboarding'
 import { Backup } from './components/Backup'
 import { Notices, type NoticeState } from './components/Notices'
 import { Tabs } from './components/ui'
@@ -22,6 +23,10 @@ function App() {
   const [rewardsEnabled, setRewardsEnabled] = useState(true)
   const [notificationsEnabled, setNotificationsEnabled] = useState(false)
   const [setupOpen, setSetupOpen] = useState(false)
+  const [onboardOpen, setOnboardOpen] = useState(false)
+  const [loaded, setLoaded] = useState({ settings: false, items: false })
+  const [onboarded, setOnboarded] = useState(true)
+  const [dismissed, setDismissed] = useState(false)
   const [notices, setNotices] = useState<NoticeState>({})
   const note = useCallback((p: Partial<NoticeState>) => setNotices(n => ({ ...n, ...p })), [])
 
@@ -30,13 +35,14 @@ function App() {
     .then(c => { setCats(c); note({ skipped: skipped.items + skipped.categories }) })
     .catch(() => note({ loadError: LOAD_ERROR })), [note])
   const reloadItems = useCallback(() => budgetItemRepo.list()
-    .then(i => { setItems(i); note({ skipped: skipped.items + skipped.categories }) })
+    .then(i => { setItems(i); setLoaded(l => ({ ...l, items: true })); note({ skipped: skipped.items + skipped.categories }) })
     .catch(() => note({ loadError: LOAD_ERROR })), [note])
 
   const reloadSettings = useCallback(() => settingsRepo.get()
     .then(s => {
       const r = s.defaultRange ?? 'day'
       setRange(r); setDefaultRange(r)
+      setOnboarded(!!s.onboarded); setLoaded(l => ({ ...l, settings: true }))
       setRewardsEnabled(s.rewardsEnabled); setNotificationsEnabled(s.notificationsEnabled)
       setCalendar({ weekStart: s.weekStart ?? 0, monthBoundary: s.monthBoundary ?? 'weeks' })
     })
@@ -47,6 +53,15 @@ function App() {
     reloadItems()
     reloadSettings()
   }, [reloadCats, reloadItems, reloadSettings])
+
+  /** First run: no purchases and the questionnaire not yet finished or skipped (0008 §8). */
+  const autoOnboard = loaded.settings && loaded.items && !onboarded && items.length === 0 && !dismissed
+  const showOnboarding = onboardOpen || autoOnboard
+
+  async function skipOnboarding() {
+    setOnboardOpen(false); setDismissed(true)
+    try { await settingsRepo.update({ onboarded: true }); setOnboarded(true) } catch { /* asked again next time */ }
+  }
 
   // Ask the browser to keep this app's data (security-v0.2 6.1).
   useEffect(() => {
@@ -78,7 +93,13 @@ function App() {
 
   return (
     <main className="main">
-      <h1 className="title">Simple Budget</h1>
+      <div className="title-row">
+        <h1 className="title">Simple Budget</h1>
+        <button type="button" className="help-btn" id="help-button" aria-label="Help: open the setup questions"
+          onClick={() => setOnboardOpen(true)}>
+          <span aria-hidden="true">?</span>
+        </button>
+      </div>
       <RewardLayer enabled={rewardsEnabled} />
       <Notices state={notices} onDismissPersist={dismissPersist} />
       <Tabs label="Sections" actions={[{ id: 'setup-budget', label: 'Setup Budget', onSelect: () => setSetupOpen(true) }]} tabs={[
@@ -88,6 +109,10 @@ function App() {
       <Backup onRestored={() => {
         reloadCats(); reloadItems(); reloadSettings()
       }} />
+      {showOnboarding && (
+        <Onboarding cats={cats} firstRun={autoOnboard && !onboardOpen} onClose={() => setOnboardOpen(false)} onSkip={skipOnboarding}
+          onDone={() => { setOnboardOpen(false); setDismissed(true); setOnboarded(true); reloadCats() }} />
+      )}
       {setupOpen && (
         <BudgetSetup
           cats={cats}

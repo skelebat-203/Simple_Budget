@@ -397,3 +397,19 @@ nav .btn.icon:hover:not(:disabled) { background: var(--color-border); }
   .reward { animation: reward-fade 1.8s linear forwards; }
   @keyframes reward-fade { 0%, 80% { opacity: 1; } 100% { opacity: 0; } }
 }
+
+/* --- Help button and onboarding (0008 §8) --- */
+.title-row { display: flex; align-items: center; gap: var(--space-md); }
+.title-row .title { margin: 0; }
+.help-btn { width: 2.75rem; height: 2.75rem; border-radius: 50%; border: 2px solid var(--color-primary-background); background: var(--color-background-page);
+  color: var(--color-primary-background); font: inherit; font-weight: var(--font-weight-bold); font-size: var(--font-size-lg); cursor: pointer; }
+.help-btn:hover { background: var(--color-border); }
+.multi { display: flex; flex-direction: column; gap: var(--space-sm); width: 100%; }
+.multi .option[aria-selected="true"] { background: transparent; }
+.multi .option.active, .multi .option:hover { background: var(--color-border); }
+.multi .option.checked { font-weight: var(--font-weight-bold); }
+.multi .option { padding-left: var(--space-md); }
+.multi .listbox { max-height: 16rem; overflow: auto; }
+.chips { display: flex; flex-wrap: wrap; gap: var(--space-xs); }
+.chip { display: inline-flex; align-items: center; gap: var(--space-xs); border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: 0 0 0 var(--space-sm); }
+.dialog.onboarding { width: min(40rem, calc(100% - 2 * var(--space-md))); }

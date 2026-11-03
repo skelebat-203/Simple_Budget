@@ -47,9 +47,9 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
    - Files: `src/screens/AddBudget.tsx`, `src/components/BudgetTable.tsx`, new `src/rewards/`, `src/App.css`
    - Verify: plays on save only; off when toggled off; respects `prefers-reduced-motion`; doesn't steal focus or cover Save
    - Deps: 7; decided 2026-11-03: placeholder cute image + animation + chime behind hooks (`REWARDS`, `fireReward()`), final design after user testing (`0008` §7)
-9. **Onboarding questionnaire** (v0.5/9) — first-run flow: pay frequency; categories Yes/No → multi-select with autocomplete over preloaded categories + "add your own"; selections populate the tables.
+9. **Onboarding questionnaire** ✅ (v0.5.6) (v0.5/9) — first-run flow: pay frequency; categories Yes/No → multi-select with autocomplete over preloaded categories + "add your own"; selections populate the tables.
    - Source: roadmap v0.5; `0004-table-design.md` Onboarding
-   - Files: new `src/screens/Onboarding.tsx`, new `src/components/ui/MultiSelect.tsx`, `src/App.tsx`, `src/storage/seed.ts`, `src/storage/preselected.ts`, `src/storage/repository.ts`, `src/components/ui/ItemSelector.tsx`
+   - Files: new `src/screens/Onboarding.tsx`, new `src/components/ui/MultiSelect.tsx`, `src/App.tsx`, `src/App.tsx`, `src/storage/repository.ts`, `src/App.css`
    - Verify: shows on empty DB only; combobox keyboard pattern; custom names validated; tables populated
    - Deps: 7 (Settings shape); decided 2026-11-03: skippable; reopened by a ? help button next to the heading; pay frequency = Income items' Recurrence (`0008` §8)
 10. **Abbreviation audit** (v0.5/10) — find abbreviations in visible text and accessible names ("Est.", "Act.", short dates); spell out or give full accessible names.
@@ -70,7 +70,7 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
 - **C — Settings, rewards, onboarding** (steps 7, 8, 9; storage, App, AddBudget, new screens): after A step 3 lands (shared `structure.ts`/`db.ts` Dexie bump), then sequential.
 - **D — Abbreviation audit** (step 10): after A, B, C.
 - **Reviews** (steps 11–13): main session with the user.
-- Status: ✅ A · ✅ B · ☐ C · ☐ D · ☐ reviews
+- Status: ✅ A · ✅ B · ✅ C · ☐ D · ☐ reviews
 
 ## Rules
 - Each completed item: commit + version bump (per `.claude/CLAUDE.md` "Version numbering").
