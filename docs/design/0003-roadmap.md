@@ -56,7 +56,7 @@ tracked as a later-version item.
   - Day (actuals only) and Annual tables (0007 §7)
 - ✅ UI/UX review (human approval, four review rounds; changes in 0007 §10)
 - ✅ Accessibility pass (Lighthouse 100 on 12 states; keyboard and screen reader tests passed; `docs/audits/a11y/a11y-v0.3.md`)
-- Security review
+- ✅ Security review (`docs/audits/security/security-v0.3.md`, approved): backup restore rejects looping or too-deep category trees, restore type checks, clear delete errors → transition to v0.4.0
 
 ## v0.4 — Week/Month/Year + navigation
 - Week/Month/Year table views (date-spanning columns, per-period Est./Act.)
