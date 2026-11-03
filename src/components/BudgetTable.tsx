@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react'
 import type { BudgetItem, Range } from '../storage/db'
-import { actualFor, domId, estimateTotal, isoDate, formatAmount, isTotal, periodsFor, rangeHasEstimates, repeatedNames, spokenName, type Calendar, type CatNode, type Period } from '../budget/tree'
+import { actualFor, ancestors, domId, estimateTotal, isoDate, formatAmount, isTotal, periodsFor, rangeHasEstimates, repeatedNames, scheduleText, spokenName, type Calendar, type CatNode, type Period } from '../budget/tree'
 import { cleanName, moneyError, NAME_MAX, parseMoney, slug } from '../budget/validate'
 import { budgetItemRepo, categoryRepo, NameTakenError, RowInUseError } from '../storage/repository'
 import { Button, ConfirmDialog } from './ui'
@@ -47,6 +47,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
   const actionCol = actions && range !== 'annual'
   const repeated = repeatedNames(roots)
   const say = (n: CatNode) => spokenName(n, repeated)
+  const payWord = (n: CatNode) => (ancestors(n)[0] ?? n).cat.name === 'Income' ? 'Pay' : 'Due'
   const [confirm, setConfirm] = useState<number | null>(null)
   /** Row with an open action: Add value or Delete (Week/Month, §9.2). */
   const [rowEdit, setRowEdit] = useState<{ id: number; kind: Kind } | null>(null)
@@ -324,9 +325,9 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
             })()}
             {renameControls(n)}
           </span>
-          {(range === 'week' || range === 'month') && !isTotal(n) && (n.cat.dueDate || n.cat.autopay) && (
+          {(range === 'week' || range === 'month') && !isTotal(n) && (scheduleText(n.cat, payWord(n)) || n.cat.autopay) && (
             <span className="row-meta">
-              {[n.cat.dueDate && `Due ${new Date(n.cat.dueDate + 'T00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`, n.cat.autopay && 'autopay'].filter(Boolean).join(', ')}
+              {[scheduleText(n.cat, payWord(n)), n.cat.autopay && 'autopay'].filter(Boolean).join(', ')}
             </span>
           )}
         </th>

@@ -37,6 +37,8 @@ function validCategory(r: unknown): r is Category {
     && (x.frequency === undefined || FREQS.has(x.frequency))
     && (x.order === undefined || Number.isInteger(x.order))
     && (x.dueDate === undefined || (typeof x.dueDate === 'string' && DATE_RE.test(x.dueDate)))
+    && (x.dueWeekday === undefined || (Number.isInteger(x.dueWeekday) && x.dueWeekday >= 0 && x.dueWeekday <= 6))
+    && [x.dueDay, x.dueDay2].every(d => d === undefined || d === 'last' || (Number.isInteger(d) && (d as number) >= 1 && (d as number) <= 27))
     && ['autopay', 'selected', 'computed'].every(k => x[k as keyof Category] === undefined || typeof x[k as keyof Category] === 'boolean')
 }
 

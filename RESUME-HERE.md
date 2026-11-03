@@ -16,15 +16,16 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
    - Files: `src/screens/BudgetSetup.tsx`, `src/components/ui/useTreegrid.ts`
    - Verify: no roving tabindex left; Budget Day/Week/Month/Annual keep the `0007` §10 model; screen reader table keys checked in step 11 (stop and ask if they break)
    - Deps: 1
-3. **Due date control by recurrence** (v0.5/3) — Budget setup shows the control from the `0008` §3.2 table; changing recurrence clears a due date that no longer fits; stored on `Category` (Dexie bump if the shape changes).
+3. **Due date control by recurrence** ✅ (v0.5.3) (v0.5/3) — Budget setup shows the control from the `0008` §3.2 table; changing recurrence clears a due date that no longer fits; stored on `Category` (Dexie bump if the shape changes).
    - Source: `0008` §3.2
-   - Files: `src/screens/BudgetSetup.tsx`, `src/budget/setupEdits.ts`, `src/budget/validate.ts`, `src/storage/structure.ts`, `src/storage/db.ts`, `src/storage/repository.ts`
+   - Files: `src/screens/BudgetSetup.tsx`, `src/budget/tree.ts`, `src/storage/db.ts`, `src/storage/repository.ts` (new optional fields `dueWeekday`, `dueDay`, `dueDay2`; no Dexie version bump, none are indexed)
    - Verify: each recurrence shows the right control and option ranges; save + reload keeps the value; build + lint
    - Deps: 2; decided 2026-11-03: Every 2 weeks uses a date picker "Next pay date"/"Next due date"; column heading renamed "Schedule" (`0008` §3.2)
-4. **Due date placement in tables** (v0.5/4) — an estimate with recurrence and due date puts its full amount on the expected day/week/month and that period's total; without a due date it spreads as v0.4.
+4. **Due date placement in tables** ✅ (v0.5.3) (v0.5/4) — an estimate with recurrence and due date puts its full amount on the expected day/week/month and that period's total; without a due date it spreads as v0.4.
    - Source: `0008` §3.1
    - Files: `src/budget/tree.ts`, `src/components/BudgetTable.tsx`
    - Verify: fixed-date cases incl. "Last" in Feb (28/29) and 31-day months, quarterly/annual dates, custom month boundaries; computed rows (`0004-table-design.md`) count each amount once
+   - Note: Annual and Day show no estimates (`0007` §7.2, §7.4), so the Annual part of `0008` §3.1 has no visible effect yet; the placement code is period-based and works if Annual ever shows estimates. Bi-monthly places payments only when both days are set; otherwise it spreads.
    - Deps: 3; decided 2026-11-03: the estimate is per payment (bi-monthly puts the full estimate on each payment day)
 5. **Period borders** (v0.5/5) — solid border between periods and before Total in Week, Month, Annual; none between Est. and Act.
    - Source: `0008` §4

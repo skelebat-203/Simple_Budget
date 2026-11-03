@@ -46,9 +46,22 @@ export interface Category {
   estimate?: number
   frequency?: Frequency
   autopay?: boolean
-  /** Payment due date, YYYY-MM-DD (display/editing: roadmap v0.3). */
+  /**
+   * Schedule (0008 §3.2). Which fields apply depends on `frequency`; changing the
+   * frequency clears the ones that no longer fit (`scheduleClears` in tree.ts).
+   * `dueDate`: date of the next payment, YYYY-MM-DD (Every 2 weeks, Quarterly, Annual).
+   */
   dueDate?: string
+  /** Weekly: weekday of the payment, 0 = Sunday … 6 = Saturday. */
+  dueWeekday?: number
+  /** Monthly: day of the month (1–27 or 'last'). Bi-monthly: 1st payment (1–15). */
+  dueDay?: DueDay
+  /** Bi-monthly: 2nd payment (16–27 or 'last'). */
+  dueDay2?: DueDay
 }
+
+/** Day of the month a payment is due; 'last' is the month's last day. */
+export type DueDay = number | 'last'
 
 export interface Settings {
   id?: number

@@ -4,17 +4,17 @@ import { Expander } from '../components/ui/Expander'
 import { BudgetTable } from '../components/BudgetTable'
 import { saveSetup } from '../storage/repository'
 import { cleanName, dateBounds, moneyError, NAME_MAX, parseMoney, slug } from '../budget/validate'
-import type { BudgetItem, Category, DefaultRange, Frequency, MonthBoundary } from '../storage/db'
+import type { BudgetItem, Category, DefaultRange, DueDay, Frequency, MonthBoundary } from '../storage/db'
 import {
-  buildTree, domId, estimateTotal, flatten, formatAmount, frequenciesFor, isTotal, repeatedNames, spokenName,
-  subtree, type Calendar, type Cat, type CatNode,
+  buildTree, ancestors, dayChoices, domId, estimateTotal, flatten, formatAmount, frequenciesFor, isTotal, repeatedNames, scheduleClears,
+  scheduleKind, spokenName, subtree, WEEKDAYS, type Calendar, type Cat, type CatNode,
 } from '../budget/tree'
 import * as edit from '../budget/setupEdits'
 
 const RANGES: { value: DefaultRange; label: string }[] = [
   { value: 'day', label: 'Day' }, { value: 'week', label: 'Week' }, { value: 'month', label: 'Month' },
 ]
-const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+const DAYS = WEEKDAYS
 const BOUNDARIES: { value: MonthBoundary; label: string }[] = [
   { value: 'weeks', label: 'Whole weeks (each month starts and ends on a full week)' },
   { value: 'calendar', label: 'Calendar month (the 1st to the last day)' },
@@ -146,10 +146,10 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, onClose, onSa
     const errs: Record<string, string> = {}
     let final = work
     for (const n of flatten(roots)) {
-      if (isTotal(n)) { final = edit.patch(final, n.cat.id, { estimate: undefined, frequency: undefined, autopay: undefined, dueDate: undefined }); continue }
+      if (isTotal(n)) { final = edit.patch(final, n.cat.id, { estimate: undefined, frequency: undefined, autopay: undefined, dueDate: undefined, dueWeekday: undefined, dueDay: undefined, dueDay2: undefined }); continue }
       const due = n.cat.dueDate
       if (due && (!/^\d{4}-\d{2}-\d{2}$/.test(due) || due < bounds.min || due > bounds.max)) {
-        errs[domId('due_date', n)] = `Invalid: Due date for ${say(n)} use a date from ${bounds.min} to ${bounds.max}`
+        errs[domId('due_date', n)] = `Invalid: ${dateLabel(n)} for ${say(n)} use a date from ${bounds.min} to ${bounds.max}`
       }
       const text = estText(n.cat).trim()
       if (text === '') { final = edit.patch(final, n.cat.id, { estimate: undefined }); continue }
@@ -233,7 +233,7 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, onClose, onSa
               <span aria-hidden="true">per</span>
               <select className="input" id={domId('recurrence', n)} aria-label={`Recurrence for ${say(n)}`}
                 value={n.cat.frequency ?? 'month'}
-                onChange={e => setWork(edit.patch(work, n.cat.id, { frequency: e.target.value as Frequency }))}>
+                onChange={e => setWork(edit.patch(work, n.cat.id, { frequency: e.target.value as Frequency, ...scheduleClears(n.cat, e.target.value as Frequency) }))}>
                 {frequenciesFor(n).map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
               </select>
             </span>
@@ -247,18 +247,7 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, onClose, onSa
             </label>
           )}
         </td>
-        <td>
-          {!total && (() => {
-            const dueId = domId('due_date', n)
-            return <>
-              <input type="date" className="input" id={dueId} min={bounds.min} max={bounds.max} value={n.cat.dueDate ?? ''}
-                aria-label={`Due date for ${say(n)}`} aria-invalid={!!errors[dueId] || undefined}
-                aria-describedby={errors[dueId] ? `${dueId}-error_msg` : undefined}
-                onChange={e => setWork(edit.patch(work, n.cat.id, { dueDate: e.target.value || undefined }))} />
-              {errors[dueId] && <p id={`${dueId}-error_msg`} className="error">{errors[dueId]}</p>}
-            </>
-          })()}
-        </td>
+        <td>{!total && scheduleCell(n)}</td>
         <td>
           {n.parent && (
             <span className="reorder">
@@ -271,6 +260,57 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, onClose, onSa
         </td>
       </tr>
     )
+  }
+
+  /** "Next pay date" for Income, "Next due date" for Savings and Expenses (0008 §3.2). */
+  function dateLabel(n: CatNode) { return `Next ${(ancestors(n)[0] ?? n).cat.name === 'Income' ? 'pay' : 'due'} date` }
+
+  /** Schedule column: the control for the row's recurrence (0008 §3.2). */
+  function scheduleCell(n: CatNode) {
+    const kind = scheduleKind(n.cat.frequency ?? 'month')
+    if (kind === 'none') return null
+    const set = (p: Partial<Cat>) => setWork(edit.patch(work, n.cat.id, p))
+    const word = (ancestors(n)[0] ?? n).cat.name === 'Income' ? 'Pay' : 'Due'
+    const dayOpt = (d: DueDay) => <option key={d} value={String(d)}>{d === 'last' ? 'Last' : d}</option>
+    const toDay = (v: string): DueDay | undefined => v === '' ? undefined : v === 'last' ? 'last' : Number(v)
+    const field = (label: string, control: ReactNode) => (
+      <span className="sched-field"><span className="sched-label" aria-hidden="true">{label}</span>{control}</span>
+    )
+    const daySelect = (key: 'dueDay' | 'dueDay2', label: string, choices: DueDay[]) => {
+      const id = domId(key === 'dueDay' ? 'due_day' : 'due_day2', n)
+      return field(label,
+        <select className="input" id={id} aria-label={`${label} for ${say(n)}`} value={String(n.cat[key] ?? '')}
+          onChange={e => set({ [key]: toDay(e.target.value) })}>
+          <option value="">Not set</option>
+          {choices.map(dayOpt)}
+        </select>)
+    }
+    if (kind === 'weekday') {
+      const id = domId('due_weekday', n)
+      return field(`${word} day of week`,
+        <select className="input" id={id} aria-label={`${word} day of week for ${say(n)}`} value={n.cat.dueWeekday ?? ''}
+          onChange={e => set({ dueWeekday: e.target.value === '' ? undefined : Number(e.target.value) })}>
+          <option value="">Not set</option>
+          {WEEKDAYS.map((d, i) => <option key={d} value={i}>{d}</option>)}
+        </select>)
+    }
+    if (kind === 'day') return daySelect('dueDay', `${word} day of month`, dayChoices(1, 27, true))
+    if (kind === 'two-days') {
+      return (
+        <span className="sched-pair">
+          {daySelect('dueDay', '1st payment', dayChoices(1, 15, false))}
+          {daySelect('dueDay2', '2nd payment', dayChoices(16, 27, true))}
+        </span>
+      )
+    }
+    const dueId = domId('due_date', n)
+    return field(dateLabel(n), <>
+      <input type="date" className="input" id={dueId} min={bounds.min} max={bounds.max} value={n.cat.dueDate ?? ''}
+        aria-label={`${dateLabel(n)} for ${say(n)}`} aria-invalid={!!errors[dueId] || undefined}
+        aria-describedby={errors[dueId] ? `${dueId}-error_msg` : undefined}
+        onChange={e => set({ dueDate: e.target.value || undefined })} />
+      {errors[dueId] && <p id={`${dueId}-error_msg`} className="error">{errors[dueId]}</p>}
+    </>)
   }
 
   function createRow(root: CatNode) {
@@ -328,7 +368,7 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, onClose, onSa
                 <th scope="col" id="setup-est-col">Estimated spending</th>
                 <th scope="col">Recurrence</th>
                 <th scope="col">Autopay</th>
-                <th scope="col">Due date</th>
+                <th scope="col">Schedule</th>
                 <th scope="col">Move</th>
               </tr>
             </thead>
