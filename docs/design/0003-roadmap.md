@@ -77,7 +77,7 @@ tracked as a later-version item.
 - Estimate toggle for the Week and Month tables (default on)
 - Expand/collapse category/subcategory rows + persisted state
 - ✅ UI/UX review (approved)
-- Accessibility pass
+- ✅ Accessibility pass (Lighthouse 100 on 15 states; keyboard and screen reader tests passed; `docs/audits/a11y/a11y-v0.4.md`)
 - Security review
 
 ## v0.5 — Rewards, settings, onboarding

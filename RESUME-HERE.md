@@ -101,7 +101,7 @@ Covers every v0.4 roadmap item. Each completed step bumps the last version segme
 - ✅ (v0.4.16) Only Income, Taxes, Savings, Expenses (and Net Income) are locked from rename; other computed rows can be renamed. Verified: already so (only top-level rows lack Rename); no code change.
 
 12. ✅ **UI/UX review** (v0.4.18, approved 2026-11-03) — human approval per `0005-ui-ux-review-checklist.md`.
-13. **Accessibility pass** (v0.4.13) — Lighthouse + keyboard + screen reader; report in `docs/audits/a11y/a11y-v0.4.md`.
+13. ✅ **Accessibility pass** (v0.4.19, passed 2026-11-03) — Lighthouse + keyboard + screen reader; report in `docs/audits/a11y/a11y-v0.4.md`.
 14. **Security review** (→ v0.5.0) — `docs/audits/security/security-v0.4.md`, human approval.
 
 ## Rules
