@@ -66,6 +66,9 @@ tracked as a later-version item.
 - Table row actions: when a row has more than one action button, put them in an actions menu so rows line up
 - Rename subcategories and items from the Week and Month tables, with a confirmation dialog: "This will change the name of all instances of {old name} to {new name} across the application." (Confirm / Cancel)
 - Budget setup Create row visual redesign (keep one per category with Add to; current layout works but is cluttered)
+- Budget setup: make Taxes an expander in the table, like the other categories
+- Remove the border around the edit-name buttons
+- Budget setup "Add" buttons: tooltip "First enter a value in 'Create in {subcategory name}'"
 - Estimate toggle (default on)
 - Expand/collapse category/subcategory rows + persisted state
 - UI/UX review (human approval)
