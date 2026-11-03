@@ -76,7 +76,7 @@ tracked as a later-version item.
 - ✅ Refactor "Year" to "Annual" (UI labels, code, design docs)
 - Estimate toggle for the Week and Month tables (default on)
 - Expand/collapse category/subcategory rows + persisted state
-- UI/UX review (human approval)
+- ✅ UI/UX review (approved)
 - Accessibility pass
 - Security review
 
