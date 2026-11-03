@@ -94,7 +94,7 @@ Covers every v0.4 roadmap item. Each completed step bumps the last version segme
 - Approved as built: Create row design, tooltip curly quotes + placement, Taxes starts open, settings in one row at 1280px, toolbar height change, wrapping nav at 400px, nav limits (2000-01-01 to +1 year), menu scroll near the bottom, Budget setup keeps its own unsaved expand state. Commit `246bb88` (0.4.5 in package.json) stays as is.
 - ✅ (v0.4.12) Nav (step 6): Day/Week titles show the year when not the current year; Go to date becomes a popover (native `popover`).
 - ✅ (v0.4.12) No part of the toolbar or popover outside the visible frame at any supported width.
-- ☐ Help text moves outside the table's scroll box.
+- ✅ (v0.4.13) Help text moves outside the table's scroll box.
 - ☐ Add tooltip: Escape dismisses hover-shown tooltip (WCAG 1.4.13).
 - ☐ Generic `Dialog` component (content + buttons injected); ConfirmDialog built on it. Cancel left, Confirm right; focus starts on the `role="dialog"` container.
 - ☐ Annual rename also uses the confirm dialog. Cancel closes the rename form.

@@ -368,36 +368,39 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
 
   const colSpan = showEstimates ? 2 : 1
   return (
-    <div className="table-box">
-      <table className="table budget-table" aria-labelledby={`${idBase}-heading ${idBase}-caption`}
-        aria-describedby={preview ? `${idBase}-key` : `${idBase}-key ${idBase}-keys`} ref={gridRef} {...gridProps}>
-        <caption id={`${idBase}-caption`}>{title}</caption>
-        <thead>
-          {range !== 'day' && range !== 'annual' && showEstimates && (
+    <div className="table-wrap">
+      {/* Only the table scrolls sideways; the help text below stays in the page width (v0.4 review). */}
+      <div className="table-box">
+        <table className="table budget-table" aria-labelledby={`${idBase}-heading ${idBase}-caption`}
+          aria-describedby={preview ? `${idBase}-key` : `${idBase}-key ${idBase}-keys`} ref={gridRef} {...gridProps}>
+          <caption id={`${idBase}-caption`}>{title}</caption>
+          <thead>
+            {range !== 'day' && range !== 'annual' && showEstimates && (
+              <tr>
+                <td />
+                {periods.map(p => <th key={p.label} scope="colgroup" colSpan={colSpan}>{p.label}</th>)}
+                {actionCol && <td />}
+              </tr>
+            )}
             <tr>
-              <td />
-              {periods.map(p => <th key={p.label} scope="colgroup" colSpan={colSpan}>{p.label}</th>)}
-              {actionCol && <td />}
+              <th scope="col" className="name">Item</th>
+              {range === 'annual' || (range !== 'day' && !showEstimates)
+                // One value per period (Annual, or estimates hidden): each period heads its own column (0007 §10).
+                ? periods.map(p => <th key={p.label} scope="col" className="num">{p.label}</th>)
+                : periods.map(p => (
+                  <Fragment key={p.label}>
+                    {showEstimates && <th scope="col" className="num">Est.</th>}
+                    <th scope="col" className="num">Act.</th>
+                  </Fragment>
+                ))}
+              {actionCol && <th scope="col" className="name">Actions</th>}
             </tr>
-          )}
-          <tr>
-            <th scope="col" className="name">Item</th>
-            {range === 'annual' || (range !== 'day' && !showEstimates)
-              // One value per period (Annual, or estimates hidden): each period heads its own column (0007 §10).
-              ? periods.map(p => <th key={p.label} scope="col" className="num">{p.label}</th>)
-              : periods.map(p => (
-                <Fragment key={p.label}>
-                  {showEstimates && <th scope="col" className="num">Est.</th>}
-                  <th scope="col" className="num">Act.</th>
-                </Fragment>
-              ))}
-            {actionCol && <th scope="col" className="name">Actions</th>}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.length ? rows : <tr aria-level={1}><td className="empty" colSpan={1 + periods.length * colSpan + (actionCol ? 1 : 0)}>Nothing recorded for this range yet.</td></tr>}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {rows.length ? rows : <tr aria-level={1}><td className="empty" colSpan={1 + periods.length * colSpan + (actionCol ? 1 : 0)}>Nothing recorded for this range yet.</td></tr>}
+          </tbody>
+        </table>
+      </div>
       <p id={`${idBase}-key`} className="help">Only rows with an amount appear. Every row totals the rows under it.{range === 'day' && ' Each purchase is listed under its item.'}</p>
       {!preview && <p id={`${idBase}-keys`} className="help">Keyboard: arrow keys move between cells; Right and Left open and close a row; Enter reaches a cell’s buttons; Escape returns to the cell.</p>}
       {actions && (range === 'week' || range === 'month') && (

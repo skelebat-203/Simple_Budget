@@ -323,9 +323,10 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, onClose, onSa
             </thead>
             <tbody>{rows}</tbody>
           </table>
-          <p id="setup-key" className="help">A subcategory with items shows the sum of its items’ monthly estimates.</p>
-          <p id="setup-keys" className="help">Keyboard: arrow keys move between cells; Right and Left open and close a row; Enter edits a cell; Escape returns to the cell.</p>
         </div>
+        {/* Help sits outside the scroll box so it doesn't scroll sideways (v0.4 review). */}
+        <p id="setup-key" className="help">A subcategory with items shows the sum of its items’ monthly estimates.</p>
+        <p id="setup-keys" className="help">Keyboard: arrow keys move between cells; Right and Left open and close a row; Enter edits a cell; Escape returns to the cell.</p>
 
         {/* Settings sit side by side from 1280px, in DOM (reading and tab) order (0007 §10). */}
         <div className="form-grid setup-settings">
