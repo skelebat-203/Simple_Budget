@@ -6,7 +6,7 @@ Design: `0004-table-design.md` (table), `0006-prototype.html` (v0.2 UI), `0007-v
 ## Current state
 - Version: v0.3.14. v0.2 complete (security review approved, `docs/audits/security/security-v0.2.md`).
 - Data: Dexie v7 (Income group, stored sibling `order`, `computed` only on top-level rows; see `src/storage/structure.ts`). Amounts link to categories by `categoryId`; estimate fields live on `Category`. `needsReview` removed (0007 §8.4).
-- Next: step 15 below (accessibility pass).
+- Next: step 15 — Lighthouse 100 on 12 states and scripted keyboard/focus checks done (`docs/audits/a11y/a11y-v0.3.md`); waiting on the human screen reader test.
 - Testing: headless Chromium via host flatpak + puppeteer-core; scripts in the session scratchpad.
 
 ## v0.3 plan of action
