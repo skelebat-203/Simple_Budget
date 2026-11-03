@@ -65,7 +65,7 @@ Covers every v0.4 roadmap item. Each completed step bumps the last version segme
    - Verify: keyboard (Enter/arrows/Escape, focus return); columns align.
    - Deps: step 2.
 
-8. **Rename from Week and Month** (v0.4.8) — rename subcategories and items, with confirm dialog: "This will change the name of all instances of {old name} to {new name} across the application." (Confirm / Cancel). Reuses the Annual rename.
+8. ✅ **Rename from Week and Month** (v0.4.8) — rename subcategories and items, with confirm dialog: "This will change the name of all instances of {old name} to {new name} across the application." (Confirm / Cancel). Reuses the Annual rename.
    - Source: roadmap v0.4.
    - Files: `src/components/BudgetTable.tsx`, `src/storage/repository.ts`.
    - Verify: Cancel changes nothing; Confirm renames everywhere; dialog focus trap + return.

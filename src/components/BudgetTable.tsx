@@ -6,8 +6,9 @@ import { budgetItemRepo, categoryRepo, RowInUseError } from '../storage/reposito
 import { Button } from './ui'
 import { useTreegrid } from './ui/useTreegrid'
 import { ActionsMenu, type MenuAction } from './ui/ActionsMenu'
+import { ConfirmDialog } from './ui/ConfirmDialog'
 
-/** Open row action: Add value / Delete (Week, Month, §9.2) or Rename (Annual, §9.3). */
+/** Open row action: Add value / Delete (Week, Month, §9.2) or Rename (all but Day, §9.3, v0.4 step 8). */
 type Kind = 'add' | 'delete' | 'rename'
 const fieldOf: Record<Kind, string> = { add: 'add_value', delete: 'delete_row', rename: 'rename_value' }
 const buttonOf: Record<Kind, string> = { add: 'add', delete: 'delete_row', rename: 'rename' }
@@ -57,13 +58,19 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
   const [fieldError, setFieldError] = useState('')
   const [status, setStatus] = useState('')
   const [error, setError] = useState('')
+  /** Week/Month rename waiting on the confirm dialog (v0.4 step 8). */
+  const [pending, setPending] = useState<{ n: CatNode; name: string } | null>(null)
   const focusAfter = useRef<string | null>(null)
+  const focusTries = useRef(0)
   useEffect(() => {
     if (!focusAfter.current) return
     // GRID: focus the table's first cell (e.g. after the last purchase in a list is deleted).
     const el = focusAfter.current === GRID ? grid.ref.current?.querySelector<HTMLElement>('tbody th, tbody td') : document.getElementById(focusAfter.current)
+    // A renamed row gets a new id only after the reload renders it, so wait a few renders for it.
+    if (!el && ++focusTries.current < 4) return
     el?.focus()
     focusAfter.current = null
+    focusTries.current = 0
   })
 
   // Day: each purchase is its own row under its item (0007 §9.1).
@@ -107,6 +114,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
   function menuActions(n: CatNode): (MenuAction & { kind: Kind })[] {
     const list: (MenuAction & { kind: Kind })[] = []
     if (!isTotal(n) && n.cat.name !== 'Net Income') list.push({ kind: 'add', id: domId('add', n), label: 'Add value', onSelect: () => openRow(n, 'add') })
+    if (n.parent) list.push({ kind: 'rename', id: domId('rename', n), label: 'Rename', onSelect: () => openRow(n, 'rename') })
     if (n.parent) list.push({ kind: 'delete', id: domId('delete_row', n), label: 'Delete', onSelect: () => tryDelete(n) })
     return list
   }
@@ -116,14 +124,25 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
     const fail = (msg: string) => { setFieldError(msg); focusAfter.current = domId('rename_value', n) }
     if (!name) return fail(`Error: Name for ${say(n)} cannot be empty`)
     if (n.parent!.children.some(c => c !== n && slug(c.cat.name) === slug(name))) return fail(`Invalid: Name “${name}” already exists in ${n.parent!.cat.name}`)
+    if (name === n.cat.name) return closeRow(n, 'rename')
+    // Week/Month ask first: the name changes everywhere (v0.4 step 8).
+    if (range !== 'annual') { setPending({ n, name }); return }
+    await commitRename(n, name)
+  }
+
+  async function commitRename(n: CatNode, name: string) {
+    setPending(null)
     try {
       await categoryRepo.rename(n.cat.id, name)
     } catch {
       setError(`Error: ${n.cat.name} wasn’t renamed. Try again.`)
+      focusAfter.current = domId('rename_value', n)
       return
     }
     setStatus(`Renamed ${say(n)} to ${name}.`)
     closeRow(n, 'rename')
+    // The row's ids carry its name: focus the control under the new name.
+    focusAfter.current = focusAfter.current!.replace(`-${slug(n.cat.name)}-${n.cat.id}`, `-${slug(name)}-${n.cat.id}`)
     onChanged?.()
   }
 
@@ -173,11 +192,12 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
     openRow(n, 'delete')
   }
 
-  /** Annual name cell: the name with a pencil Rename button, or the rename form (0007 §9.3, §10). */
+  /** Name cell: the rename form, or (Annual) the name's pencil Rename button (0007 §9.3, §10; Week/Month: v0.4 step 8). */
   function renameControls(n: CatNode): ReactNode {
-    if (!actions || range !== 'annual' || !n.parent) return null
+    if (!actions || range === 'day' || !n.parent) return null
     const id = domId('rename_value', n)
     if (rowEdit?.id !== n.cat.id || rowEdit.kind !== 'rename') {
+      if (range !== 'annual') return null
       return (
         <Button type="button" className="secondary icon" id={domId('rename', n)} aria-label={`Rename ${say(n)}`}
           onClick={() => openRow(n, 'rename')}>
@@ -393,6 +413,13 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
         <p id={`${idBase}-add-help`} className="help">Add value records a new amount on that item, dated {addDate}. Use a minus sign to subtract, e.g. -12.50. A row can be deleted when it has no items and at most one purchase.</p>
       )}
       {actions && <p className="status" role="status">{status}</p>}
+      {pending && (
+        <ConfirmDialog id={`${idBase}-rename_confirm`} title={`Rename ${pending.n.cat.name}?`}
+          onConfirm={() => commitRename(pending.n, pending.name)}
+          onCancel={() => { setPending(null); focusAfter.current = domId('rename_value', pending.n) }}>
+          This will change the name of all instances of {pending.n.cat.name} to {pending.name} across the application.
+        </ConfirmDialog>
+      )}
       {error && <p className="error" role="alert">{error}</p>}
     </div>
   )

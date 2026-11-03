@@ -361,3 +361,7 @@
 /* --- Row actions menu (v0.4 step 7): opens leftward so it stays inside the table box. --- */
 .actions-menu { display: inline-block; }
 .actions-menu .menu { inset: 100% 0 auto auto; min-width: 10rem; text-align: left; }
+
+/* --- Confirm dialog (v0.4 step 8): Cancel left, Confirm right (0007 §4.2). --- */
+.dialog.confirm-dialog { width: min(32rem, calc(100% - 2 * var(--space-md))); }
+.confirm-actions { justify-content: space-between; }
