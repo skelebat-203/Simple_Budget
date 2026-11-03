@@ -14,10 +14,9 @@ const itemColorUnder = (root: CatNode) =>
   childColor({ cat: { ...root.cat, id: -1, name: '' }, depth: 1, parent: root, children: [] })
 
 /** Add purchase (0007 §4, §9): Item, Amount, Date; a typed new item adds Category, Where? and Use in future. */
-export function AddBudget({ roots, onSaved, onOpenSetup }: {
+export function AddBudget({ roots, onSaved }: {
   roots: CatNode[]
   onSaved: () => void
-  onOpenSetup: () => void
 }) {
   const [target, setTarget] = useState<CatNode | null>(null)
   const [itemText, setItemText] = useState({ text: '', matches: 0 })
@@ -118,10 +117,7 @@ export function AddBudget({ roots, onSaved, onOpenSetup }: {
 
   return (
     <section className="panel" aria-labelledby="add-heading">
-      <div className="panel-head">
-        <h2 id="add-heading" className="section-title">Add purchase</h2>
-        <Button type="button" className="secondary" onClick={onOpenSetup}>Set estimates</Button>
-      </div>
+      <h2 id="add-heading" className="section-title">Add purchase</h2>
       <ErrorSummary ref={bannerRef} errors={toList(errors)} />
       <div className="field">
         <label className="label" htmlFor="item">Item <span aria-hidden="true">*</span></label>

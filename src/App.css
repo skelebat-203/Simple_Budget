@@ -3,7 +3,8 @@
 
 /* --- Layout (mobile-first, single-column forms) --- */
 .main {
-  max-width: 800px;
+  /* Breakpoints (0007 §10): small 320, medium 640, large 1280. Every screen shares this width. */
+  max-width: 1280px;
   margin: 0 auto;
   padding: var(--space-md);
   display: flex;
@@ -13,8 +14,9 @@
 .title { font-size: var(--font-size-xl); color: var(--color-primary-background); }
 .section-title { font-size: var(--font-size-lg); }
 
-.panel { display: flex; flex-direction: column; gap: var(--space-md); max-width: 480px; width: 100%; margin: 0 auto; }
-.panel.wide { max-width: none; }
+.panel { display: flex; flex-direction: column; gap: var(--space-md); width: 100%; }
+/* Forms stay single column; fields keep a readable width (multi-column forms: v0.4). */
+.panel .field { max-width: 40rem; }
 .panel-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-sm); flex-wrap: wrap; }
 .field { display: flex; flex-direction: column; gap: var(--space-xs); }
 .actions { display: flex; align-items: center; gap: var(--space-md); flex-wrap: wrap; }
@@ -26,7 +28,9 @@
 
 /* --- Tabs (0007 §6) --- */
 .tabs { display: flex; flex-direction: column; gap: var(--space-lg); }
-.tablist { display: flex; gap: var(--space-xs); border-bottom: 2px solid var(--color-secondary-background); flex-wrap: wrap; }
+.tab-row { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-sm); flex-wrap: wrap; border-bottom: 2px solid var(--color-secondary-background); }
+.tab-row > .btn { margin-bottom: var(--space-xs); }
+.tablist { display: flex; gap: var(--space-xs); flex-wrap: wrap; }
 .tab {
   min-height: 44px; padding: var(--space-sm) var(--space-md);
   background: var(--color-background-page); color: var(--color-primary-background);
@@ -133,7 +137,8 @@
 
 .row.depth-0 .name { font-weight: var(--font-weight-bold); font-size: var(--font-size-lg); }
 .row.depth-1 .name { padding-left: calc(var(--space-md) * 2); }
-.row.depth-1.group .name { font-weight: var(--font-weight-bold); }
+.row.depth-1 .name { font-weight: var(--font-weight-bold); }
+.row.purchase.depth-1 .name { font-weight: var(--font-weight-normal); }
 .row.depth-2 .name { padding-left: calc(var(--space-md) * 3); }
 .row.net { background: color-mix(in srgb, var(--color-cat-highlight-blue), white 85%); }
 
@@ -192,6 +197,8 @@
 .row.purchase.depth-1 .name { padding-left: calc(var(--space-md) * 2); }
 .row.purchase.depth-2 .name { padding-left: calc(var(--space-md) * 3); }
 .row.purchase.depth-3 .name { padding-left: calc(var(--space-md) * 4); }
+.btn.icon { padding: 0; display: inline-flex; align-items: center; justify-content: center; }
+.name-line { display: inline-flex; align-items: center; gap: var(--space-sm); flex-wrap: wrap; }
 .btn.small { padding: var(--space-xs) var(--space-sm); }
 .input.narrow { width: auto; max-width: 16rem; }
 .preview { display: flex; flex-direction: column; gap: var(--space-sm); }
@@ -212,6 +219,9 @@
 .pre { display: inline-flex; align-items: center; gap: var(--space-xs); }
 .pre .input { width: auto; }
 
+@media (min-width: 1280px) {
+  .main { padding: var(--space-xl); }
+}
 @media (min-width: 640px) {
   .main { padding: var(--space-lg); }
   .dialog-body { padding: var(--space-lg); }
@@ -221,3 +231,35 @@
 .banner { display: flex; flex-direction: column; gap: var(--space-sm); }
 .banner-warn { border-color: var(--color-info); background: color-mix(in srgb, var(--color-info), white 92%); }
 .banner-warn .banner-title { color: var(--color-foreground-page); }
+
+/* --- Budget setup treegrid (0007 §10) --- */
+.dialog-body, .dialog-body > .table-box { min-width: 0; max-width: 100%; }
+.setup-table thead th { font-weight: var(--font-weight-bold); text-align: center; }
+.setup-table .row.depth-0 > th, .setup-table .row.depth-0 > td { border-top: 3px solid var(--color-secondary-background); }
+.setup-table td:focus, .setup-table th:focus { outline: 3px solid var(--color-info); outline-offset: -3px; }
+.setup-table .row.depth-1 .name { padding-left: calc(var(--space-md) * 1); }
+.setup-table .row.depth-2 .name { padding-left: calc(var(--space-md) * 3); }
+.setup-table .row.create .create-row { padding-left: calc(var(--space-md) * 1); }
+.setup-table .row.create .label { color: inherit; }
+.twisty { display: inline-flex; width: 1.25rem; justify-content: center; cursor: pointer; }
+
+/* Month boundaries: large selectable boxes, side by side. */
+.choice-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: var(--space-sm); width: 100%; }
+.choice-card {
+  display: flex; gap: var(--space-sm); align-items: flex-start; height: 100%;
+  padding: var(--space-md); border: 2px solid var(--color-border); border-radius: var(--radius-md); cursor: pointer;
+}
+.choice-card input { width: 22px; height: 22px; flex: none; accent-color: var(--color-primary-background); }
+.choice-card:has(:checked) { border-color: var(--color-primary-background); background: color-mix(in srgb, var(--color-primary-background), white 92%); }
+.choice-card:has(:focus-visible) { outline: 3px solid var(--color-info); outline-offset: 2px; }
+
+/* Default display range: radios shown as buttons. */
+.choice-buttons { display: flex; gap: var(--space-sm); flex-wrap: wrap; }
+.choice-button {
+  display: inline-flex; align-items: center; justify-content: center; min-height: 44px; min-width: 44px;
+  padding: var(--space-sm) var(--space-md); border: 2px solid var(--color-primary-background); border-radius: var(--radius-md);
+  color: var(--color-primary-background); font-weight: var(--font-weight-bold); cursor: pointer;
+}
+.choice-button:has(:checked) { background: var(--color-primary-background); color: var(--color-primary-foreground); }
+.choice-button:has(:focus-visible) { outline: 3px solid var(--color-info); outline-offset: 2px; }
+.setup-table .name-line { flex-wrap: nowrap; white-space: nowrap; }

@@ -94,15 +94,19 @@ export const categoryRepo = {
   async rename(id: number, name: string) { return db.categories.update(id, { name: cleanName(name) }) },
   async remove(id: number) { return db.categories.delete(id) },
   /**
-   * Delete a subcategory or item (0007 §9.2). Refused for top-level rows, rows
-   * with items, and rows with purchases, checked inside the transaction.
+   * Delete a subcategory or item (0007 §9.2, §10). Refused for top-level rows,
+   * rows with items, and rows with more than one purchase, checked inside the
+   * transaction; a single purchase is deleted with the row.
    */
   async removeEmpty(id: number) {
     await db.transaction('rw', db.categories, db.budgetItems, async () => {
       const c = await db.categories.get(id)
       if (!c || c.parentId == null) throw new Error('Top-level rows can’t be deleted')
       if (await db.categories.where('parentId').equals(id).count()) throw new Error('Row has items')
-      if (await db.budgetItems.where('categoryId').equals(id).count()) throw new Error('Row has purchases')
+      const bought = db.budgetItems.where('categoryId').equals(id)
+      // A row with a single purchase can go, taking that purchase with it (0007 §10).
+      if (await bought.count() > 1) throw new Error('Row has purchases')
+      await bought.delete()
       await db.categories.delete(id)
     })
   },

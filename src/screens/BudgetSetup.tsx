@@ -40,6 +40,10 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, onClose, onSa
   const [weekStart, setWeekStart] = useState(calendar.weekStart)
   const [boundary, setBoundary] = useState(calendar.monthBoundary)
   const [create, setCreate] = useState<Record<number, { name: string; parent: number }>>({})
+  /** Expanded rows; categories start open, subcategories collapsed (0007 §10). */
+  const [expanded, setExpanded] = useState<Set<number>>(() => new Set(original.filter(c => c.parentId == null).map(c => c.id)))
+  const expand = (id: number) => setExpanded(x => new Set(x).add(id))
+  const toggleRow = (id: number) => setExpanded(x => { const n = new Set(x); if (n.has(id)) n.delete(id); else n.add(id); return n })
   const [moveTarget, setMoveTarget] = useState<Record<number, number>>({})
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [status, setStatus] = useState('')
@@ -97,6 +101,7 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, onClose, onSa
     }
     const r = edit.create(flush(work, parent.cat.id), name, parent.cat.id)
     setWork(r.cats)
+    expand(parent.cat.id)
     setCreate(x => ({ ...x, [root.cat.id]: { name: '', parent: c.parent } }))
     setErrors(e => { const rest = { ...e }; delete rest[key]; return rest })
     setStatus(r.movedFrom
@@ -123,6 +128,7 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, onClose, onSa
     }
     const r = edit.moveTo(flush(work, target.cat.id), n.cat.id, target.cat.id)
     setWork(r.cats)
+    expand(target.cat.id)
     setStatus(`Moved ${say(n)} to ${target.cat.name}.` + (r.movedFrom ? ` Your ${r.movedFrom} estimate moved to ${r.movedFrom} › Miscellaneous.` : ''))
     const moved = flatten(buildTree(r.cats)).find(x => x.cat.id === n.cat.id)
     if (moved) setFocusId(domId('move_to', moved))
@@ -165,10 +171,80 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, onClose, onSa
     return r.ok ? { ...c, estimate: r.value } : r.reason === 'empty' ? { ...c, estimate: undefined } : c
   })), [work, est])
 
+  // ---------- treegrid keyboard (0007 §10) ----------
+  const gridRef = useRef<HTMLTableElement>(null)
+  const lastCell = useRef<HTMLElement | null>(null)
+  const widgetsOf = (cell: Element) => [...cell.querySelectorAll<HTMLElement>('input, select, button')]
+
+  // One tab stop: the last focused cell (or the first). Controls inside cells are reached with Enter.
+  useEffect(() => {
+    const grid = gridRef.current
+    if (!grid) return
+    const cells = [...grid.querySelectorAll<HTMLElement>('tbody td, tbody th')]
+    const current = lastCell.current && grid.contains(lastCell.current) ? lastCell.current : cells[0]
+    for (const c of cells) {
+      c.tabIndex = c === current ? 0 : -1
+      for (const w of widgetsOf(c)) w.tabIndex = -1
+    }
+  })
+
+  function onGridKey(e: React.KeyboardEvent<HTMLTableElement>) {
+    const t = e.target as HTMLElement
+    const cell = t.closest('td, th') as HTMLElement | null
+    if (!cell || !cell.closest('tbody')) return
+    const inText = t !== cell && (t.tagName === 'SELECT' || (t.tagName === 'INPUT' && !['checkbox', 'radio'].includes((t as HTMLInputElement).type)))
+    if (e.key === 'Escape' && t !== cell) { e.preventDefault(); e.stopPropagation(); cell.focus(); return }
+    if (inText) return
+    if (t === cell && (e.key === 'Enter' || e.key === 'F2')) {
+      const w = widgetsOf(cell)[0]
+      if (w) { e.preventDefault(); w.focus() }
+      return
+    }
+    if (t === cell && e.key === ' ') {
+      const box = cell.querySelector<HTMLInputElement>('input[type=checkbox]')
+      if (box) { e.preventDefault(); box.click() }
+      return
+    }
+    const row = cell.parentElement as HTMLTableRowElement
+    const rows = [...(row.parentElement as HTMLTableSectionElement).rows]
+    const r = rows.indexOf(row)
+    const col = [...row.cells].indexOf(cell as HTMLTableCellElement)
+    const go = (ri: number, ci: number) => {
+      const target = rows[Math.max(0, Math.min(rows.length - 1, ri))]
+      const c = target.cells[Math.max(0, Math.min(target.cells.length - 1, ci))]
+      lastCell.current = c
+      c.focus()
+    }
+    const id = Number(row.dataset.id)
+    const isOpen = row.getAttribute('aria-expanded')
+    switch (e.key) {
+      case 'ArrowDown': go(r + 1, col); break
+      case 'ArrowUp': go(r - 1, col); break
+      case 'ArrowRight':
+        if (col === 0 && isOpen === 'false') toggleRow(id)
+        else go(r, col + 1)
+        break
+      case 'ArrowLeft':
+        if (col === 0 && isOpen === 'true') toggleRow(id)
+        else if (col === 0) {
+          // Move to the parent row.
+          const level = Number(row.getAttribute('aria-level'))
+          const p = rows.slice(0, r).reverse().find(x => Number(x.getAttribute('aria-level')) < level)
+          if (p) go(rows.indexOf(p), 0)
+        } else go(r, col - 1)
+        break
+      case 'Home': go(e.ctrlKey ? 0 : r, 0); break
+      case 'End': go(e.ctrlKey ? rows.length - 1 : r, 99); break
+      default: return
+    }
+    e.preventDefault()
+  }
+
   const rows: ReactNode[] = []
   const addRows = (n: CatNode) => {
     if (n.cat.name === 'Net Income') return
     rows.push(setupRow(n))
+    if (!expanded.has(n.cat.id)) return
     n.children.forEach(addRows)
     if (!n.parent && n.cat.computed) rows.push(createRow(n))
   }
@@ -180,21 +256,28 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, onClose, onSa
     const estId = domId('estimate', n)
     const sibs = n.parent?.children ?? roots
     const i = sibs.indexOf(n)
-    const label = total ? `${n.cat.name} *` : n.cat.name
+    const label = n.cat.name
     const targets = edit.canMoveTo(n) ? edit.moveTargets(n) : []
     return (
-      <tr key={n.cat.id} className={`row depth-${n.depth}${n.children.length ? ' group' : ''}`}>
-        <td>
-          {(n.parent || !n.cat.computed) && (
-<label className="hit">
-            <input type="checkbox" className="checkbox" id={domId('select', n)}
-              aria-label={n.children.length ? `Select all ${say(n)} items` : `Select ${say(n)}`}
-              checked={isChecked(n)} ref={el => { if (el) el.indeterminate = isMixed(n) }}
-              onChange={e => setWork(edit.setSelected(work, n.cat.id, e.target.checked))} />
-            </label>
-          )}
-        </td>
-        <th scope="row" id={nameId} className={`name clr-${n.cat.color}`}>{label}</th>
+      <tr key={n.cat.id} className={`row depth-${n.depth}${n.children.length ? ' group' : ''}`}
+        data-id={n.cat.id} aria-level={n.depth + 1} aria-expanded={n.children.length ? expanded.has(n.cat.id) : undefined}>
+        <th scope="row" id={nameId} className={`name clr-${n.cat.color}`}>
+          <span className="name-line">
+            {n.children.length > 0 && (
+              // Mouse affordance; keyboard users expand with Right/Left (treegrid).
+              <span className="twisty" aria-hidden="true" onClick={() => toggleRow(n.cat.id)}>{expanded.has(n.cat.id) ? '▾' : '▸'}</span>
+            )}
+            {(n.parent || !n.cat.computed) && (
+              <label className="hit">
+                <input type="checkbox" className="checkbox" id={domId('select', n)}
+                  aria-label={n.children.length ? `Select all ${say(n)} items` : `Select ${say(n)}`}
+                  checked={isChecked(n)} ref={el => { if (el) el.indeterminate = isMixed(n) }}
+                  onChange={e => setWork(edit.setSelected(work, n.cat.id, e.target.checked))} />
+              </label>
+            )}
+            <span>{label}</span>
+          </span>
+        </th>
         <td>
           {total
             ? n.parent && <span>{formatAmount(estimateTotal(n, MONTH)) || '0.00'} <span className="help">per month</span></span>
@@ -267,8 +350,8 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, onClose, onSa
     const err = errors[base]
     const set = (p: Partial<typeof c>) => setCreate(x => ({ ...x, [root.cat.id]: { ...c, ...p } }))
     return (
-      <tr key={`create-${root.cat.id}`} className="row create">
-        <td colSpan={7}>
+      <tr key={`create-${root.cat.id}`} className={`row create depth-1 clr-${root.cat.color}`} aria-level={2}>
+        <td colSpan={6}>
           <div className="create-row">
             <label className="label" htmlFor={base}>Create in {root.cat.name}</label>
             <input id={base} className="input" maxLength={NAME_MAX} value={c.name}
@@ -299,11 +382,11 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, onClose, onSa
         <p className="status" role="status">{status}</p>
 
         <div className="table-box">
-          <table className="table setup-table" aria-labelledby="setup-heading" aria-describedby="setup-help setup-key">
+          <table className="table setup-table" role="treegrid" aria-labelledby="setup-heading" aria-describedby="setup-help setup-key setup-keys"
+            ref={gridRef} onKeyDown={onGridKey} onFocus={e => { const c = (e.target as HTMLElement).closest('td, th'); if (c && c.closest('tbody')) lastCell.current = c as HTMLElement }}>
             <thead>
               <tr>
-                <th scope="col">Select</th>
-                <th scope="col" className="name">Item name</th>
+                <th scope="col">Item</th>
                 <th scope="col" id="setup-est-col">Estimated spending</th>
                 <th scope="col">Recurrence</th>
                 <th scope="col">Autopay</th>
@@ -313,7 +396,8 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, onClose, onSa
             </thead>
             <tbody>{rows}</tbody>
           </table>
-          <p id="setup-key" className="help">Rows marked * total their items; their estimate is the sum of their items’ monthly estimates.</p>
+          <p id="setup-key" className="help">A subcategory with items shows the sum of its items’ monthly estimates.</p>
+          <p id="setup-keys" className="help">Keyboard: arrow keys move between cells; Right and Left open and close a row; Enter edits a cell; Escape returns to the cell.</p>
         </div>
 
         <div className="field">
@@ -325,13 +409,13 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, onClose, onSa
 
         <fieldset className="fieldset" role="radiogroup" aria-labelledby="month_boundary-legend">
           <legend id="month_boundary-legend" className="legend">Month boundaries</legend>
-          <ul className="plain-list">
+          <ul className="plain-list choice-cards">
             {BOUNDARIES.map(b => (
               <li key={b.value}>
-                <label className="check">
+                <label className="choice-card">
                   <input type="radio" name="month_boundary" id={`month_boundary-${b.value}`} value={b.value}
                     checked={boundary === b.value} onChange={() => setBoundary(b.value)} />
-                  {b.label}
+                  <span>{b.label}</span>
                 </label>
               </li>
             ))}
@@ -340,11 +424,11 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, onClose, onSa
 
         <fieldset className="fieldset" role="radiogroup" aria-labelledby="default_range-legend">
           <legend id="default_range-legend" className="legend">Default display range</legend>
-          <ul className="plain-list">
+          <ul className="plain-list choice-buttons">
             {RANGES.map(r => (
               <li key={r.value}>
-                <label className="check">
-                  <input type="radio" name="default_range" id={`default_range-${r.value}`} value={r.value}
+                <label className="choice-button">
+                  <input type="radio" className="sr-only" name="default_range" id={`default_range-${r.value}`} value={r.value}
                     checked={range === r.value} onChange={() => setRange(r.value)} />
                   {r.label}
                 </label>

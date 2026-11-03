@@ -62,6 +62,7 @@ tracked as a later-version item.
 - Week/Month/Year table views (date-spanning columns, per-period Est./Act.)
 - Historical navigation (prev/next date range): a date `nav` above the tables (0007 §9.5)
 - Estimate scaling math: replace day-based scaling (monthly ÷ 30.44 × days) so monthly-style estimates show the typed amount per month (`docs/audits/security/security-v0.2.md` 3.4)
+- Multi-column form layout for large screens (1280px breakpoint, 0007 §10)
 - Estimate toggle (default on)
 - Expand/collapse category/subcategory rows + persisted state
 - UI/UX review (human approval)

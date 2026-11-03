@@ -92,8 +92,8 @@ export const weekStartOf = (d: Date, weekStart: number) => addDays(d, -((d.getDa
 
 /**
  * Columns for a range. Week = the week containing today. Month = one column
- * per week plus a total: whole weeks from the week holding the 1st to the
- * week holding the last day, or (calendar) weeks clipped to the month.
+ * per week plus a total: whole weeks from the first week start on or after
+ * the 1st, or (calendar) weeks clipped to the month.
  */
 export function periodsFor(range: Range, today: Date, cal: Calendar = DEFAULT_CALENDAR): { columns: Period[]; total: Period | null; title: string } {
   if (range === 'day') {
@@ -114,12 +114,21 @@ export function periodsFor(range: Range, today: Date, cal: Calendar = DEFAULT_CA
     })
     return { columns, total: { ...span(new Date(y, 0, 1), new Date(y, 11, 31)), label: 'Total' }, title: String(y) }
   }
-  const title = today.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
-  let first = new Date(today.getFullYear(), today.getMonth(), 1)
-  let last = new Date(today.getFullYear(), today.getMonth() + 1, 0)
+  let monthOf = new Date(today.getFullYear(), today.getMonth(), 1)
+  // Whole weeks: days before this month's first week start belong to last month's period.
   if (cal.monthBoundary === 'weeks') {
-    first = weekStartOf(first, cal.weekStart)
-    last = addDays(weekStartOf(last, cal.weekStart), 6)
+    const s0 = weekStartOf(monthOf, cal.weekStart)
+    const start = s0 < monthOf ? addDays(s0, 7) : s0
+    if (today < start) monthOf = new Date(today.getFullYear(), today.getMonth() - 1, 1)
+  }
+  const title = monthOf.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
+  let first = new Date(monthOf.getFullYear(), monthOf.getMonth(), 1)
+  let last = new Date(monthOf.getFullYear(), monthOf.getMonth() + 1, 0)
+  if (cal.monthBoundary === 'weeks') {
+    // First week-start day on or after the 1st; ends the day before next month's start (0007 §1.2).
+    const startOf = (y: number, m: number) => { const d = new Date(y, m, 1); const s = weekStartOf(d, cal.weekStart); return s < d ? addDays(s, 7) : s }
+    first = startOf(monthOf.getFullYear(), monthOf.getMonth())
+    last = addDays(startOf(monthOf.getFullYear(), monthOf.getMonth() + 1), -1)
   }
   const columns: Period[] = []
   for (let s = first; s <= last;) {

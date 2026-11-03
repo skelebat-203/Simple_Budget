@@ -41,6 +41,8 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
   const periods = total ? [...columns, total] : columns
 
   const actions = !preview && !!onChanged
+  /** Annual edits names in the name cell, so it has no Actions column (0007 §10). */
+  const actionCol = actions && range !== 'year'
   const repeated = repeatedNames(roots)
   const say = (n: CatNode) => spokenName(n, repeated)
   const [confirm, setConfirm] = useState<number | null>(null)
@@ -140,42 +142,53 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
     onChanged?.()
   }
 
+  const withOne = (n: CatNode) => {
+    const p = items.find(i => i.categoryId === n.cat.id)
+    return p ? ` and its purchase of ${formatAmount(p.amount) || '0.00'}` : ''
+  }
+
   function tryDelete(n: CatNode) {
-    const why = n.children.length ? 'delete its items first' : items.some(i => i.categoryId === n.cat.id) ? 'delete its purchases first' : ''
+    const why = n.children.length ? 'delete its items first'
+      : items.filter(i => i.categoryId === n.cat.id).length > 1 ? 'it has more than one purchase; delete them in the Day table first' : ''
     if (why) { setStatus(`${say(n)} can’t be deleted yet: ${why}.`); return }
     openRow(n, 'delete')
+  }
+
+  /** Annual name cell: the name with a pencil Rename button, or the rename form (0007 §9.3, §10). */
+  function renameControls(n: CatNode): ReactNode {
+    if (!actions || range !== 'year' || !n.parent) return null
+    const id = domId('rename_value', n)
+    if (rowEdit?.id !== n.cat.id || rowEdit.kind !== 'rename') {
+      return (
+        <Button type="button" className="secondary icon" id={domId('rename', n)} aria-label={`Rename ${say(n)}`}
+          onClick={() => openRow(n, 'rename')}>
+          <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" width="18" height="18">
+            <path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zm17.71-10.21a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
+          </svg>
+        </Button>
+      )
+    }
+    return (
+      <>
+        <span className="inline-form">
+          <label className="sr-only" htmlFor={id}>New name for {say(n)}</label>
+          <input id={id} className="input" maxLength={NAME_MAX} value={value} autoComplete="off"
+            aria-invalid={!!fieldError || undefined} aria-describedby={fieldError ? `${id}-error_msg` : undefined}
+            onChange={e => setValue(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); rename(n) } else if (e.key === 'Escape') closeRow(n, 'rename') }} />
+          <Button type="button" className="small" onClick={() => rename(n)}>Save</Button>
+          <Button type="button" className="secondary small" onClick={() => closeRow(n, 'rename')}>Cancel</Button>
+        </span>
+        {fieldError && <p id={`${id}-error_msg`} className="error">{fieldError}</p>}
+      </>
+    )
   }
 
   /** Actions cell for a category row: Week/Month add value and delete (§9.2), Annual rename (§9.3). */
   function rowActions(n: CatNode): ReactNode {
     if (!actions) return null
     const kind = rowEdit?.id === n.cat.id ? rowEdit.kind : null
-    if (range === 'year') {
-      if (!n.parent) return <td />
-      const id = domId('rename_value', n)
-      if (kind !== 'rename') {
-        return (
-          <td className="row-actions">
-            <Button type="button" className="secondary small" id={domId('rename', n)} aria-label={`Rename ${say(n)}`}
-              onClick={() => openRow(n, 'rename')}>Rename</Button>
-          </td>
-        )
-      }
-      return (
-        <td className="row-actions">
-          <span className="inline-form">
-            <label className="sr-only" htmlFor={id}>New name for {say(n)}</label>
-            <input id={id} className="input" maxLength={NAME_MAX} value={value} autoComplete="off"
-              aria-invalid={!!fieldError || undefined} aria-describedby={fieldError ? `${id}-error_msg` : undefined}
-              onChange={e => setValue(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); rename(n) } else if (e.key === 'Escape') closeRow(n, 'rename') }} />
-            <Button type="button" className="small" onClick={() => rename(n)}>Save</Button>
-            <Button type="button" className="secondary small" onClick={() => closeRow(n, 'rename')}>Cancel</Button>
-          </span>
-          {fieldError && <p id={`${id}-error_msg`} className="error">{fieldError}</p>}
-        </td>
-      )
-    }
+    if (range === 'year') return null
     if (range !== 'week' && range !== 'month') return <td />
     if (kind === 'add') {
       const id = domId('add_value', n)
@@ -199,8 +212,8 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
     if (kind === 'delete') {
       return (
         <td className="row-actions">
-          <span className="confirm" role="group" aria-label={`Delete ${say(n)}?`}>
-            <span aria-hidden="true">Delete {n.cat.name}?</span>
+          <span className="confirm" role="group" aria-label={`Delete ${say(n)}${withOne(n)}?`}>
+            <span aria-hidden="true">Delete {n.cat.name}{withOne(n)}?</span>
             <Button type="button" className="danger small" id={`${del}-confirm`} onClick={() => deleteRow(n)}>Delete</Button>
             <Button type="button" className="secondary small" id={`${del}-cancel`} onClick={() => closeRow(n, 'delete')}>Cancel</Button>
           </span>
@@ -256,13 +269,16 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
     if (!hasAmount(n)) return
     const kids = n.children.filter(hasAmount)
     const open = preview || !collapsed.has(n.cat.id)
-    const label = isTotal(n) ? `${n.cat.name} *` : n.cat.name
+    const label = n.cat.name
     rows.push(
       <tr key={n.cat.id} className={`row depth-${n.depth}${n.children.length ? ' group' : ''}`}>
         <th scope="row" className={`name clr-${n.cat.color}`}>
-          {kids.length > 0 && !preview
-            ? <button type="button" className="expander" aria-expanded={open} onClick={() => toggle(n.cat.id)}>{label}</button>
-            : label}
+          <span className="name-line">
+            {rowEdit?.id === n.cat.id && rowEdit.kind === 'rename' ? null : kids.length > 0 && !preview
+              ? <button type="button" className="expander" aria-expanded={open} onClick={() => toggle(n.cat.id)}>{label}</button>
+              : label}
+            {renameControls(n)}
+          </span>
           {(range === 'week' || range === 'month') && !isTotal(n) && (n.cat.dueDate || n.cat.autopay) && (
             <span className="row-meta">
               {[n.cat.dueDate && `Due ${new Date(n.cat.dueDate + 'T00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`, n.cat.autopay && 'autopay'].filter(Boolean).join(', ')}
@@ -284,7 +300,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
         <tr key={`p${i.id}`} className={`row purchase depth-${n.depth + 1}`}>
           <th scope="row" className="name">{purchaseLabel(i)}</th>
           <td className={`num${i.amount < 0 ? ' neg' : ''}`}>{formatAmount(i.amount) || '0.00'}</td>
-          {actions && (
+          {actionCol && (
             <td className="row-actions">
               {asking
                 ? <span className="confirm" role="group" aria-label={`Delete the ${say(n)} purchase of ${formatAmount(i.amount) || '0.00'}?`}>
@@ -308,9 +324,9 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
     if (periods.some(p => { const v = netIncome(p); return v.act !== 0 || (showEstimates && v.est !== 0) })) {
       rows.push(
         <tr key={r.cat.id} className="row depth-0 net">
-          <th scope="row" className={`name clr-${r.cat.color}`}>Net Income *</th>
+          <th scope="row" className={`name clr-${r.cat.color}`}>Net Income</th>
           {cells(netIncome)}
-          {actions && <td />}
+          {actionCol && <td />}
         </tr>,
       )
     }
@@ -322,31 +338,34 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
       <table className="table budget-table" aria-labelledby={`${idBase}-heading ${idBase}-caption`} aria-describedby={`${idBase}-key`}>
         <caption id={`${idBase}-caption`} tabIndex={-1}>{title}</caption>
         <thead>
-          {range !== 'day' && (
+          {range !== 'day' && range !== 'year' && (
             <tr>
               <td />
               {periods.map(p => <th key={p.label} scope="colgroup" colSpan={colSpan}>{p.label}</th>)}
-              {actions && <td />}
+              {actionCol && <td />}
             </tr>
           )}
           <tr>
             <th scope="col" className="name">Item</th>
-            {periods.map(p => (
-              <Fragment key={p.label}>
-                {showEstimates && <th scope="col" className="num">Est.</th>}
-                <th scope="col" className="num">Act.</th>
-              </Fragment>
-            ))}
-            {actions && <th scope="col" className="name">Actions</th>}
+            {range === 'year'
+              // Annual shows actuals only, so each month heads its own column (0007 §10).
+              ? periods.map(p => <th key={p.label} scope="col" className="num">{p.label}</th>)
+              : periods.map(p => (
+                <Fragment key={p.label}>
+                  {showEstimates && <th scope="col" className="num">Est.</th>}
+                  <th scope="col" className="num">Act.</th>
+                </Fragment>
+              ))}
+            {actionCol && <th scope="col" className="name">Actions</th>}
           </tr>
         </thead>
         <tbody>
-          {rows.length ? rows : <tr><td className="empty" colSpan={1 + periods.length * colSpan + (actions ? 1 : 0)}>Nothing recorded for this range yet.</td></tr>}
+          {rows.length ? rows : <tr><td className="empty" colSpan={1 + periods.length * colSpan + (actionCol ? 1 : 0)}>Nothing recorded for this range yet.</td></tr>}
         </tbody>
       </table>
-      <p id={`${idBase}-key`} className="help">Only rows with an amount appear. Rows marked * are totals.{range === 'day' && ' Each purchase is listed under its item.'}</p>
+      <p id={`${idBase}-key`} className="help">Only rows with an amount appear. Every row totals the rows under it.{range === 'day' && ' Each purchase is listed under its item.'}</p>
       {actions && (range === 'week' || range === 'month') && (
-        <p id={`${idBase}-add-help`} className="help">Add value records a new amount on that item, dated {addDate}. Use a minus sign to subtract, e.g. -12.50. Rows can be deleted once they have no purchases.</p>
+        <p id={`${idBase}-add-help`} className="help">Add value records a new amount on that item, dated {addDate}. Use a minus sign to subtract, e.g. -12.50. A row can be deleted when it has no items and at most one purchase.</p>
       )}
       {actions && <p className="status" role="status">{status}</p>}
       {error && <p className="error" role="alert">{error}</p>}

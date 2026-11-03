@@ -5,9 +5,10 @@ export interface Tab { id: string; label: string; panel: ReactNode }
 /**
  * ARIA tabs pattern (0007 §6): one panel shows at a time; Left/Right arrows
  * move between tabs and select them, Home/End jump to the first/last. Hidden
- * panels stay mounted so a half-filled form keeps its values.
+ * panels stay mounted so a half-filled form keeps its values. `aside` sits on
+ * the tab list row, outside the tab list (e.g. a button that opens a dialog).
  */
-export function Tabs({ label, tabs }: { label: string; tabs: Tab[] }) {
+export function Tabs({ label, tabs, aside }: { label: string; tabs: Tab[]; aside?: ReactNode }) {
   const [current, setCurrent] = useState(tabs[0].id)
   const refs = useRef<Record<string, HTMLButtonElement | null>>({})
 
@@ -26,7 +27,8 @@ export function Tabs({ label, tabs }: { label: string; tabs: Tab[] }) {
 
   return (
     <div className="tabs">
-      <div role="tablist" aria-label={label} className="tablist">
+      <div className="tab-row">
+        <div role="tablist" aria-label={label} className="tablist">
         {tabs.map((t, i) => (
           <button key={t.id} type="button" role="tab" id={`tab-${t.id}`} className="tab"
             ref={el => { refs.current[t.id] = el }}
@@ -36,6 +38,8 @@ export function Tabs({ label, tabs }: { label: string; tabs: Tab[] }) {
             {t.label}
           </button>
         ))}
+        </div>
+        {aside}
       </div>
       {tabs.map(t => (
         <div key={t.id} role="tabpanel" id={`tabpanel-${t.id}`} aria-labelledby={`tab-${t.id}`}
