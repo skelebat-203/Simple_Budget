@@ -286,12 +286,14 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
   const hasAmount = (n: CatNode) =>
     periods.some(p => { const v = values(n, p); return v.act !== 0 || (showEstimates && v.est !== 0) })
 
+  /** Week, Month and Annual: a solid border starts each period, Total included (0008 §4). */
+  const start = range === 'day' ? '' : ' period-start'
   const cells = (get: (p: Period) => { est: number; act: number }) => periods.map(p => {
     const v = get(p)
     return (
       <Fragment key={p.from + p.label}>
-        {showEstimates && <td className="num">{formatAmount(v.est)}</td>}
-        <td className={`num${v.act < 0 ? ' neg' : ''}`}>{formatAmount(v.act)}</td>
+        {showEstimates && <td className={`num${start}`}>{formatAmount(v.est)}</td>}
+        <td className={`num${showEstimates ? '' : start}${v.act < 0 ? ' neg' : ''}`}>{formatAmount(v.act)}</td>
       </Fragment>
     )
   })
@@ -390,7 +392,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
             {range !== 'day' && range !== 'annual' && showEstimates && (
               <tr>
                 <td />
-                {periods.map(p => <th key={p.label} scope="colgroup" colSpan={colSpan} aria-label={p.fullLabel}>{p.label}</th>)}
+                {periods.map(p => <th key={p.label} scope="colgroup" className={start.trim()} colSpan={colSpan} aria-label={p.fullLabel}>{p.label}</th>)}
                 {actionCol && <td />}
               </tr>
             )}
@@ -398,11 +400,11 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
               <th scope="col" className="name">Item</th>
               {range === 'annual' || (range !== 'day' && !showEstimates)
                 // One value per period (Annual, or estimates hidden): each period heads its own column (0007 §10).
-                ? periods.map(p => <th key={p.label} scope="col" className="num" aria-label={p.fullLabel}>{p.label}</th>)
+                ? periods.map(p => <th key={p.label} scope="col" className={`num${start}`} aria-label={p.fullLabel}>{p.label}</th>)
                 : periods.map(p => (
                   <Fragment key={p.label}>
-                    {showEstimates && <th scope="col" className="num">Est.</th>}
-                    <th scope="col" className="num">Act.</th>
+                    {showEstimates && <th scope="col" className={`num${start}`}>Est.</th>}
+                    <th scope="col" className={`num${showEstimates ? '' : start}`}>Act.</th>
                   </Fragment>
                 ))}
               {actionCol && <th scope="col" className="name">Actions</th>}

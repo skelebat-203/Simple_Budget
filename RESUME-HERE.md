@@ -27,7 +27,7 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
    - Verify: fixed-date cases incl. "Last" in Feb (28/29) and 31-day months, quarterly/annual dates, custom month boundaries; computed rows (`0004-table-design.md`) count each amount once
    - Note: Annual and Day show no estimates (`0007` §7.2, §7.4), so the Annual part of `0008` §3.1 has no visible effect yet; the placement code is period-based and works if Annual ever shows estimates. Bi-monthly places payments only when both days are set; otherwise it spreads.
    - Deps: 3; decided 2026-11-03: the estimate is per payment (bi-monthly puts the full estimate on each payment day)
-5. **Period borders** (v0.5/5) — solid border between periods and before Total in Week, Month, Annual; none between Est. and Act.
+5. **Period borders** ✅ (v0.5.4) (v0.5/5) — solid border between periods and before Total in Week, Month, Annual; none between Est. and Act.
    - Source: `0008` §4
    - Files: `src/App.css`, `src/components/BudgetTable.tsx`
    - Verify: computed styles + screenshots at 320/640/1024px, both themes; 3:1 contrast
@@ -70,7 +70,7 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
 - **C — Settings, rewards, onboarding** (steps 7, 8, 9; storage, App, AddBudget, new screens): after A step 3 lands (shared `structure.ts`/`db.ts` Dexie bump), then sequential.
 - **D — Abbreviation audit** (step 10): after A, B, C.
 - **Reviews** (steps 11–13): main session with the user.
-- Status: ☐ A · ✅ B · ☐ C · ☐ D · ☐ reviews
+- Status: ✅ A · ✅ B · ☐ C · ☐ D · ☐ reviews
 
 ## Rules
 - Each completed item: commit + version bump (per `.claude/CLAUDE.md` "Version numbering").
