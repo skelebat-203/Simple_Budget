@@ -83,6 +83,7 @@ tracked as a later-version item.
 ## v0.5 — Rewards, settings, onboarding
 - Rewards animation + `rewardsEnabled` toggle
 - `notificationsEnabled` toggle
+- Abbreviation audit: find abbreviations in visible text and accessible names (e.g. "Est.", "Act.", short dates); give each a full accessible name or spell it out
 - Onboarding questionnaire (pay frequency, category opt-in multi-select with autocomplete)
 - UI/UX review (human approval)
 - Accessibility pass
