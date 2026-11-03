@@ -78,7 +78,7 @@ tracked as a later-version item.
 - Expand/collapse category/subcategory rows + persisted state
 - ✅ UI/UX review (approved)
 - ✅ Accessibility pass (Lighthouse 100 on 15 states; keyboard and screen reader tests passed; `docs/audits/a11y/a11y-v0.4.md`)
-- Security review
+- ✅ Security review (`docs/audits/security/security-v0.4.md`, approved): rename re-checked when it saves; estimate scaling (v0.2 3.4) fixed → transition to v0.5.0
 
 ## v0.5 — Rewards, settings, onboarding
 - Rewards animation + `rewardsEnabled` toggle
