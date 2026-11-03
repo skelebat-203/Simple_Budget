@@ -357,3 +357,7 @@
 ::-webkit-scrollbar-thumb:hover { background: var(--color-primary-background); }
 /* Contain sr-only labels inside table cells so they can't widen the page. */
 .table-box { position: relative; }
+
+/* --- Row actions menu (v0.4 step 7): opens leftward so it stays inside the table box. --- */
+.actions-menu { display: inline-block; }
+.actions-menu .menu { inset: 100% 0 auto auto; min-width: 10rem; text-align: left; }

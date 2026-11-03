@@ -59,7 +59,7 @@ Covers every v0.4 roadmap item. Each completed step bumps the last version segme
    - Verify: prev/next across month and year boundaries under both month-boundary settings; keyboard + screen reader labels.
    - Deps: steps 4 and 5.
 
-7. **Row actions menu** (v0.4.7) — rows with more than one action get one actions menu (menu button pattern) so rows line up.
+7. ✅ **Row actions menu** (v0.4.7) — rows with more than one action get one actions menu (menu button pattern) so rows line up.
    - Source: roadmap v0.4.
    - Files: `src/components/BudgetTable.tsx`, new `src/components/ui/ActionsMenu.tsx`.
    - Verify: keyboard (Enter/arrows/Escape, focus return); columns align.

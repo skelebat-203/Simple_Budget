@@ -5,6 +5,7 @@ import { cleanName, moneyError, NAME_MAX, parseMoney, slug } from '../budget/val
 import { budgetItemRepo, categoryRepo, RowInUseError } from '../storage/repository'
 import { Button } from './ui'
 import { useTreegrid } from './ui/useTreegrid'
+import { ActionsMenu, type MenuAction } from './ui/ActionsMenu'
 
 /** Open row action: Add value / Delete (Week, Month, §9.2) or Rename (Annual, §9.3). */
 type Kind = 'add' | 'delete' | 'rename'
@@ -98,7 +99,16 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
   }
   function closeRow(n: CatNode, kind: Kind) {
     setRowEdit(null); setFieldError('')
-    focusAfter.current = domId(buttonOf[kind], n)
+    // Back to what opened it: the row's Actions menu button, or its single action button.
+    focusAfter.current = range !== 'annual' && menuActions(n).length > 1 ? domId('actions', n) : domId(buttonOf[kind], n)
+  }
+
+  /** Week/Month row actions (§9.2). More than one goes in an Actions menu so rows line up (v0.4 step 7). */
+  function menuActions(n: CatNode): (MenuAction & { kind: Kind })[] {
+    const list: (MenuAction & { kind: Kind })[] = []
+    if (!isTotal(n) && n.cat.name !== 'Net Income') list.push({ kind: 'add', id: domId('add', n), label: 'Add value', onSelect: () => openRow(n, 'add') })
+    if (n.parent) list.push({ kind: 'delete', id: domId('delete_row', n), label: 'Delete', onSelect: () => tryDelete(n) })
+    return list
   }
 
   async function rename(n: CatNode) {
@@ -229,18 +239,15 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
         </td>
       )
     }
+    const list = menuActions(n)
+    const one = list.length === 1 ? list[0] : null
     return (
       <td className="row-actions">
-        <span className="reorder">
-          {!isTotal(n) && n.cat.name !== 'Net Income' && (
-            <Button type="button" className="secondary small" id={domId('add', n)} aria-label={`Add value to ${say(n)}`}
-              onClick={() => openRow(n, 'add')}>Add value</Button>
-          )}
-          {n.parent && (
-            <Button type="button" className="secondary small" id={del} aria-label={`Delete ${say(n)}`}
-              onClick={() => tryDelete(n)}>Delete</Button>
-          )}
-        </span>
+        {list.length > 1 && <ActionsMenu id={domId('actions', n)} label={`Actions for ${say(n)}`} items={list} />}
+        {one && (
+          <Button type="button" className="secondary small" id={one.id} aria-label={`${one.label} ${one.kind === 'add' ? 'to ' : ''}${say(n)}`}
+            onClick={one.onSelect}>{one.label}</Button>
+        )}
       </td>
     )
   }
