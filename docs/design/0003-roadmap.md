@@ -55,7 +55,7 @@ tracked as a later-version item.
   - Tab navigation: Add budget item / Budget (0007 §6)
   - Day (actuals only) and Annual tables (0007 §7)
 - ✅ UI/UX review (human approval, four review rounds; changes in 0007 §10)
-- Accessibility pass
+- ✅ Accessibility pass (Lighthouse 100 on 12 states; keyboard and screen reader tests passed; `docs/audits/a11y/a11y-v0.3.md`)
 - Security review
 
 ## v0.4 — Week/Month/Year + navigation

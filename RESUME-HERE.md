@@ -4,9 +4,9 @@ Tracking file for current work status. Roadmap authority: `docs/design/0003-road
 Design: `0004-table-design.md` (table), `0006-prototype.html` (v0.2 UI), `0007-v0.3-design-updates.md` (v0.3 changes; wins on conflict).
 
 ## Current state
-- Version: v0.3.14. v0.2 complete (security review approved, `docs/audits/security/security-v0.2.md`).
+- Version: v0.3.15. v0.2 complete (security review approved, `docs/audits/security/security-v0.2.md`).
 - Data: Dexie v7 (Income group, stored sibling `order`, `computed` only on top-level rows; see `src/storage/structure.ts`). Amounts link to categories by `categoryId`; estimate fields live on `Category`. `needsReview` removed (0007 §8.4).
-- Next: step 15 — Lighthouse 100 on 12 states and scripted keyboard/focus checks done (`docs/audits/a11y/a11y-v0.3.md`); waiting on the human screen reader test.
+- Next: step 16 below (security review).
 - Testing: headless Chromium via host flatpak + puppeteer-core; scripts in the session scratchpad.
 
 ## v0.3 plan of action
@@ -94,7 +94,7 @@ Covers every v0.3 roadmap item. Each completed step bumps the last version segme
 14. ✅ **UI/UX review** (v0.3.14) — approved 2026-11-02 after four rounds (0007 §10); covers the UI of steps 2–13 — agent pre-check against `0005-ui-ux-review-checklist.md`, then human approval of all v0.3 UI.
     - Deps: steps 1–13.
 
-15. **Accessibility pass** (v0.3.15) — Lighthouse ≥ 90 on every new state, scripted keyboard and focus checks, human screen reader test.
+15. ✅ **Accessibility pass** (v0.3.15) — `docs/audits/a11y/a11y-v0.3.md` — Lighthouse ≥ 90 on every new state, scripted keyboard and focus checks, human screen reader test.
     - Deps: step 14.
 
 16. **Security review** (v0.4.0) — `docs/audits/security/security-v0.3.md`, NETWORKED matrix, all 8 domains; fix findings above Info.
