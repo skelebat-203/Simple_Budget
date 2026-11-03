@@ -29,7 +29,7 @@ Covers every v0.4 roadmap item. Each completed step bumps the last version segme
    - Verify: `grep -rn "year"` shows only intended hits (dates); upgrade tested on a seeded v7 database with yearly items and an Annual range; build + lint pass.
    - Deps: none.
 
-2. **Small UI fixes** (v0.4.2) — Save/Cancel in the edit control no longer overflow; no border on edit-name buttons; larger scroll bars.
+2. ✅ **Small UI fixes** (v0.4.2) — Save/Cancel in the edit control no longer overflow; no border on edit-name buttons; larger scroll bars.
    - Source: roadmap v0.4.
    - Files: `src/components/BudgetTable.tsx`, `src/App.css`.
    - Verify: screenshots at 400px and 1280px; no overflow.
