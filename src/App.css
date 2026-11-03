@@ -328,6 +328,7 @@
   visibility: hidden;
 }
 .tip-wrap:hover .tooltip, .tip-wrap:focus-within .tooltip { visibility: visible; }
+.tip-wrap.tip-off .tooltip { visibility: hidden; }
 /* Keep the Create row in view when the table scrolls sideways; it wraps within the screen width. */
 .setup-table .row.create .create-row { position: sticky; left: 0; max-width: min(40rem, calc(100vw - 6rem)); }
 

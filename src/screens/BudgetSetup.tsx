@@ -59,6 +59,20 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, onClose, onSa
   const [saveError, setSaveError] = useState('')
   const [saving, setSaving] = useState(false)
   const [bounds] = useState(() => dateBounds(new Date()))
+  /** Add tooltip dismissed with Escape until the pointer or focus leaves it (WCAG 1.4.13, v0.4 review). */
+  const [tipOff, setTipOff] = useState<string | null>(null)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return
+      const shown = [...document.querySelectorAll<HTMLElement>('.tip-wrap')].find(w => w.querySelector('.tooltip') && (w.matches(':hover') || w.matches(':focus-within')))
+      if (!shown || shown.dataset.tip === tipOff) return
+      // Only hide the tooltip: don't also close the dialog or leave the cell.
+      e.preventDefault(); e.stopPropagation()
+      setTipOff(shown.dataset.tip ?? null)
+    }
+    document.addEventListener('keydown', onKey, true)
+    return () => document.removeEventListener('keydown', onKey, true)
+  }, [tipOff])
   const focusAfter = useRef<string | null>(null)
   const setFocusId = (id: string) => { focusAfter.current = id }
 
@@ -287,7 +301,8 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, onClose, onSa
               </select>
             </div>
             {/* While disabled, Add shows and is described by a tooltip on hover or focus (v0.4 step 10). */}
-            <span className="tip-wrap">
+            <span className={`tip-wrap${tipOff === base ? ' tip-off' : ''}`} data-tip={base}
+              onMouseLeave={() => setTipOff(t => t === base ? null : t)} onBlur={() => setTipOff(t => t === base ? null : t)}>
               <Button type="button" className="secondary" id={`${base}-add`} aria-disabled={empty || undefined}
                 aria-describedby={empty ? `${base}-tooltip` : base} onClick={() => addRow(root)}>Add</Button>
               {empty && <span id={`${base}-tooltip`} role="tooltip" className="tooltip">First enter a value in ‘Create in {root.cat.name}’</span>}

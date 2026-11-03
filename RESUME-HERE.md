@@ -95,7 +95,7 @@ Covers every v0.4 roadmap item. Each completed step bumps the last version segme
 - ✅ (v0.4.12) Nav (step 6): Day/Week titles show the year when not the current year; Go to date becomes a popover (native `popover`).
 - ✅ (v0.4.12) No part of the toolbar or popover outside the visible frame at any supported width.
 - ✅ (v0.4.13) Help text moves outside the table's scroll box.
-- ☐ Add tooltip: Escape dismisses hover-shown tooltip (WCAG 1.4.13).
+- ✅ (v0.4.14) Add tooltip: Escape dismisses hover-shown tooltip (WCAG 1.4.13).
 - ☐ Generic `Dialog` component (content + buttons injected); ConfirmDialog built on it. Cancel left, Confirm right; focus starts on the `role="dialog"` container.
 - ☐ Annual rename also uses the confirm dialog. Cancel closes the rename form.
 - ☐ Only Income, Taxes, Savings, Expenses (and Net Income) are locked from rename; other computed rows can be renamed.
