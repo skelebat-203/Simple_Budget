@@ -4,14 +4,14 @@ export interface Tab { id: string; label: string; panel: ReactNode }
 /** A command shown beside the tabs (wide) or as a menu item (narrow), e.g. opening a dialog. */
 export interface TabAction { id: string; label: string; onSelect: () => void }
 
-const WIDE = '(min-width: 1280px)'
+const WIDE = '(min-width: 640px)'
 const subscribe = (cb: () => void) => { const m = matchMedia(WIDE); m.addEventListener('change', cb); return () => m.removeEventListener('change', cb) }
 const useWide = () => useSyncExternalStore(subscribe, () => matchMedia(WIDE).matches)
 
 /**
- * Screen switcher (0007 §6, §10). Large screens: ARIA tabs (Left/Right with
- * wrap, Home/End) with actions as buttons on the tab row. Small and medium
- * screens: a "Screens" menu button listing the screens and the actions.
+ * Screen switcher (0007 §6, §10). From 640px: ARIA tabs (Left/Right with
+ * wrap, Home/End) with actions as buttons on the tab row. Small screens:
+ * a "Screens" menu button listing the screens and the actions.
  * Hidden panels stay mounted so a half-filled form keeps its values.
  */
 export function Tabs({ label, tabs, actions = [] }: { label: string; tabs: Tab[]; actions?: TabAction[] }) {

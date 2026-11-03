@@ -44,7 +44,6 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, onClose, onSa
   const [expanded, setExpanded] = useState<Set<number>>(() => new Set(original.filter(c => c.parentId == null).map(c => c.id)))
   const expand = (id: number) => setExpanded(x => new Set(x).add(id))
   const toggleRow = (id: number) => setExpanded(x => { const n = new Set(x); if (n.has(id)) n.delete(id); else n.add(id); return n })
-  const [moveTarget, setMoveTarget] = useState<Record<number, number>>({})
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [status, setStatus] = useState('')
   const [saveError, setSaveError] = useState('')
@@ -116,22 +115,6 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, onClose, onSa
     setWork(edit.move(work, n.cat.id, delta))
     setStatus(`Moved ${say(n)} ${delta < 0 ? 'up' : 'down'}.`)
     setFocusId(domId(delta < 0 ? 'move_up' : 'move_down', n))
-  }
-
-  function moveUnder(n: CatNode) {
-    const to = moveTarget[n.cat.id]
-    const target = edit.moveTargets(n).find(t => t.cat.id === to)
-    if (!target || target.cat.id === n.cat.parentId) return
-    if (edit.nameTaken(work, target.cat.id, n.cat.name, n.cat.id)) {
-      setStatus(`${target.cat.name} already has ${n.cat.name}. Rename one first.`)
-      return
-    }
-    const r = edit.moveTo(flush(work, target.cat.id), n.cat.id, target.cat.id)
-    setWork(r.cats)
-    expand(target.cat.id)
-    setStatus(`Moved ${say(n)} to ${target.cat.name}.` + (r.movedFrom ? ` Your ${r.movedFrom} estimate moved to ${r.movedFrom} › Miscellaneous.` : ''))
-    const moved = flatten(buildTree(r.cats)).find(x => x.cat.id === n.cat.id)
-    if (moved) setFocusId(domId('move_to', moved))
   }
 
   async function save() {
@@ -257,7 +240,6 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, onClose, onSa
     const sibs = n.parent?.children ?? roots
     const i = sibs.indexOf(n)
     const label = n.cat.name
-    const targets = edit.canMoveTo(n) ? edit.moveTargets(n) : []
     return (
       <tr key={n.cat.id} className={`row depth-${n.depth}${n.children.length ? ' group' : ''}`}
         data-id={n.cat.id} aria-level={n.depth + 1} aria-expanded={n.children.length ? expanded.has(n.cat.id) : undefined}>
@@ -328,15 +310,6 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, onClose, onSa
                 aria-disabled={i === 0 || undefined} onClick={() => moveRow(n, -1)}><span aria-hidden="true">↑</span></Button>
               <Button type="button" className="secondary small" id={domId('move_down', n)} aria-label={`Move ${say(n)} down`}
                 aria-disabled={i === sibs.length - 1 || undefined} onClick={() => moveRow(n, 1)}><span aria-hidden="true">↓</span></Button>
-              {targets.length > 1 && <>
-                <select className="input" id={domId('move_to', n)} aria-label={`Move ${say(n)} to`}
-                  value={moveTarget[n.cat.id] ?? n.cat.parentId ?? ''}
-                  onChange={e => setMoveTarget(m => ({ ...m, [n.cat.id]: Number(e.target.value) }))}>
-                  {targets.map(t => <option key={t.cat.id} value={t.cat.id}>{t.cat.name}</option>)}
-                </select>
-                <Button type="button" className="secondary small" aria-label={`Move ${say(n)}`}
-                  aria-describedby={domId('move_to', n)} onClick={() => moveUnder(n)}>Move</Button>
-              </>}
             </span>
           )}
         </td>
@@ -391,7 +364,7 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, onClose, onSa
                 <th scope="col">Recurrence</th>
                 <th scope="col">Autopay</th>
                 <th scope="col">Due date</th>
-                <th scope="col">Order</th>
+                <th scope="col">Move</th>
               </tr>
             </thead>
             <tbody>{rows}</tbody>
@@ -413,7 +386,7 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, onClose, onSa
             {BOUNDARIES.map(b => (
               <li key={b.value}>
                 <label className="choice-card">
-                  <input type="radio" name="month_boundary" id={`month_boundary-${b.value}`} value={b.value}
+                  <input type="radio" className="sr-only" name="month_boundary" id={`month_boundary-${b.value}`} value={b.value}
                     checked={boundary === b.value} onChange={() => setBoundary(b.value)} />
                   <span>{b.label}</span>
                 </label>

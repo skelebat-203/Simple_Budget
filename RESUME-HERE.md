@@ -6,7 +6,7 @@ Design: `0004-table-design.md` (table), `0006-prototype.html` (v0.2 UI), `0007-v
 ## Current state
 - Version: v0.3.13. v0.2 complete (security review approved, `docs/audits/security/security-v0.2.md`).
 - Data: Dexie v7 (Income group, stored sibling `order`, `computed` only on top-level rows; see `src/storage/structure.ts`). Amounts link to categories by `categoryId`; estimate fields live on `Category`. `needsReview` removed (0007 §8.4).
-- Next: step 14 below — agent pre-check done (one fix: 44px hit area on setup table checkboxes); first human review returned changes (0007 §10), applied 2026-11-02; second round applied (Screens menu, table heights, setup scroll); waiting on re-review. Steps 10–12 replanned 2026-11-02 (0007 §9): edit/delete live in the tables. UI sign-off for each UI step is collected at step 14 (commits say "UI review pending").
+- Next: step 14 below — agent pre-check done (one fix: 44px hit area on setup table checkboxes); first human review returned changes (0007 §10), applied 2026-11-02; rounds 2–3 applied (Screens menu below 640px, table heights, 900px app width, Move-to removed); waiting on re-review. Steps 10–12 replanned 2026-11-02 (0007 §9): edit/delete live in the tables. UI sign-off for each UI step is collected at step 14 (commits say "UI review pending").
 - Testing: headless Chromium via host flatpak + puppeteer-core; scripts in the session scratchpad.
 
 ## v0.3 plan of action

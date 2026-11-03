@@ -3,8 +3,8 @@
 
 /* --- Layout (mobile-first, single-column forms) --- */
 .main {
-  /* Breakpoints (0007 §10): small 320, medium 640, large 1280. Every screen shares this width. */
-  max-width: 1280px;
+  /* Breakpoints (0007 §10): small 320, medium 640, large 1280. App width at most 900px. */
+  max-width: 900px;
   margin: 0 auto;
   padding: var(--space-md);
   display: flex;
@@ -279,12 +279,19 @@
 .menu-item[aria-checked="true"]::after { content: "\00a0(current)"; font-weight: var(--font-weight-normal); }
 
 /* Tables never taller than the screen less 24px, so there is always room to scroll past them
-   and their sideways scrollbar stays in view (0007 §10). The setup table always; others below 1280px. */
-.setup-table-box { max-height: calc(100dvh - 24px); overflow: auto; }
-.setup-table thead th { position: sticky; top: 0; z-index: 1; }
-@media (max-width: 1279.98px) {
-  .table-box { max-height: calc(100dvh - 24px); overflow: auto; }
+   and their sideways scrollbar stays in view (0007 §10). */
+.table-box { max-height: calc(100dvh - 24px); overflow: auto; }
+.table thead th { position: sticky; top: 0; z-index: 1; }
+@media (max-width: 639.98px) {
   .ranges { display: grid; grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 1279.98px) {
   /* Budget setup: full screen, no margin around the dialog. */
   .dialog.setup { width: 100%; max-width: 100%; height: 100%; max-height: 100%; margin: 0; border-radius: 0; }
+}
+
+/* Larger views: the app sits on a tinted page background (0007 §10). */
+@media (min-width: 900px) {
+  body { background: color-mix(in srgb, var(--color-primary-background), white 90%); }
+  .main { background: var(--color-background-page); min-height: 100dvh; }
 }

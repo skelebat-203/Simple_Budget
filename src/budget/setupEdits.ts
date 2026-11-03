@@ -1,6 +1,6 @@
 // Budget setup edits on a working copy of the categories (0007 §5). Nothing is
 // stored until Save; Cancel drops the copy. Unsaved rows get negative ids.
-import { buildTree, childColor, flatten, subtree, type Cat, type CatNode } from './tree'
+import { buildTree, childColor, flatten, subtree, type Cat } from './tree'
 import { slug } from './validate'
 
 let nextTempId = -1
@@ -66,21 +66,3 @@ export function move(cats: Cat[], id: number, delta: -1 | 1) {
   ;[ids[i], ids[j]] = [ids[j], ids[i]]
   return renumber(cats, ids)
 }
-
-/** Move an item under another row in the same category (§5.3). */
-export function moveTo(cats: Cat[], id: number, parentId: number) {
-  const n = nodeOf(cats, id)
-  if (n.cat.parentId === parentId) return { cats }
-  const oldSiblings = siblingsOf(cats, n.cat.parentId).map(s => s.cat.id).filter(x => x !== id)
-  return attach(renumber(cats, oldSiblings), n.cat, parentId)
-}
-
-/** Rows an item can move under: its category and that category's other rows (not other items' children). */
-export function moveTargets(n: CatNode): CatNode[] {
-  let root = n
-  while (root.parent) root = root.parent
-  return [root, ...root.children.filter(c => c !== n)]
-}
-
-/** Items can move; categories (top level) and rows that have items can't. */
-export const canMoveTo = (n: CatNode) => !!n.parent && n.children.length === 0
