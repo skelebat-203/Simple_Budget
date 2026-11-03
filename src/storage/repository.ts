@@ -118,7 +118,22 @@ export const categoryRepo = {
   async update(id: number, patch: Partial<Category>) {
     return db.categories.update(id, patch.name === undefined ? patch : { ...patch, name: cleanName(patch.name) })
   },
-  async rename(id: number, name: string) { return db.categories.update(id, { name: cleanName(name) }) },
+  /**
+   * Rename a subcategory or item. Checked inside the transaction, since the confirm
+   * dialog can stay open while another tab changes the tree (security-v0.4 3.1):
+   * the row must still exist and have a parent, and no sibling may have the name.
+   */
+  async rename(id: number, name: string) {
+    await db.transaction('rw', db.categories, async () => {
+      const c = await db.categories.get(id)
+      if (!c) throw new RowInUseError('it no longer exists.')
+      if (c.parentId == null) throw new RowInUseError('top-level rows can’t be renamed.')
+      const parent = await db.categories.get(c.parentId)
+      const sibs = await db.categories.where('parentId').equals(c.parentId).toArray()
+      if (sibs.some(s => s.id !== id && slug(s.name) === slug(name))) throw new NameTakenError(`“${cleanName(name)}” already exists in ${parent?.name ?? 'this category'}`)
+      await db.categories.update(id, { name: cleanName(name) })
+    })
+  },
   async remove(id: number) { return db.categories.delete(id) },
   /**
    * Delete a subcategory or item (0007 §9.2, §10). Refused for top-level rows,

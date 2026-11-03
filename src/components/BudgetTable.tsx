@@ -2,7 +2,7 @@ import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react'
 import type { BudgetItem, Range } from '../storage/db'
 import { actualFor, domId, estimateTotal, isoDate, formatAmount, isTotal, periodsFor, rangeHasEstimates, repeatedNames, spokenName, type Calendar, type CatNode, type Period } from '../budget/tree'
 import { cleanName, moneyError, NAME_MAX, parseMoney, slug } from '../budget/validate'
-import { budgetItemRepo, categoryRepo, RowInUseError } from '../storage/repository'
+import { budgetItemRepo, categoryRepo, NameTakenError, RowInUseError } from '../storage/repository'
 import { Button, ConfirmDialog } from './ui'
 import { useCollapsed, useTreegrid } from './ui/useTreegrid'
 import { ActionsMenu, type MenuAction } from './ui/ActionsMenu'
@@ -132,9 +132,19 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
     setPending(null)
     try {
       await categoryRepo.rename(n.cat.id, name)
-    } catch {
-      setError(`Error: ${n.cat.name} wasn’t renamed. Try again.`)
-      focusAfter.current = domId('rename_value', n)
+    } catch (err) {
+      if (err instanceof NameTakenError) {
+        // A sibling got this name after the check (another tab): keep the form open on the field.
+        setFieldError(`Invalid: Name ${err.message}`)
+        focusAfter.current = domId('rename_value', n)
+      } else if (err instanceof RowInUseError) {
+        setError(`Error: ${n.cat.name} wasn’t renamed because ${err.message}`)
+        closeRow(n, 'rename')
+        onChanged?.()
+      } else {
+        setError(`Error: ${n.cat.name} wasn’t renamed. Try again.`)
+        focusAfter.current = domId('rename_value', n)
+      }
       return
     }
     setStatus(`Renamed ${say(n)} to ${name}.`)
