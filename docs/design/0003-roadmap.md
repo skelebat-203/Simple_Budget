@@ -54,7 +54,7 @@ tracked as a later-version item.
   - Budget setup overlay redesign: combined table, reordering, preview table, Save/Cancel (0007 §5)
   - Tab navigation: Add budget item / Budget (0007 §6)
   - Day (actuals only) and Annual tables (0007 §7)
-- UI/UX review (human approval)
+- ✅ UI/UX review (human approval, four review rounds; changes in 0007 §10)
 - Accessibility pass
 - Security review
 
@@ -63,6 +63,7 @@ tracked as a later-version item.
 - Historical navigation (prev/next date range): a date `nav` above the tables (0007 §9.5)
 - Estimate scaling math: replace day-based scaling (monthly ÷ 30.44 × days) so monthly-style estimates show the typed amount per month (`docs/audits/security/security-v0.2.md` 3.4)
 - Multi-column form layout for large screens (1280px breakpoint, 0007 §10)
+- Table row actions: when a row has more than one action button, put them in an actions menu so rows line up
 - Rename subcategories and items from the Week and Month tables, with a confirmation dialog: "This will change the name of all instances of {old name} to {new name} across the application." (Confirm / Cancel)
 - Budget setup Create row visual redesign (keep one per category with Add to; current layout works but is cluttered)
 - Estimate toggle (default on)
