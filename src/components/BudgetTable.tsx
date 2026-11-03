@@ -3,10 +3,9 @@ import type { BudgetItem, Range } from '../storage/db'
 import { actualFor, domId, estimateTotal, isoDate, formatAmount, isTotal, periodsFor, rangeHasEstimates, repeatedNames, spokenName, type Calendar, type CatNode, type Period } from '../budget/tree'
 import { cleanName, moneyError, NAME_MAX, parseMoney, slug } from '../budget/validate'
 import { budgetItemRepo, categoryRepo, RowInUseError } from '../storage/repository'
-import { Button } from './ui'
+import { Button, ConfirmDialog } from './ui'
 import { useCollapsed, useTreegrid } from './ui/useTreegrid'
 import { ActionsMenu, type MenuAction } from './ui/ActionsMenu'
-import { ConfirmDialog } from './ui/ConfirmDialog'
 
 /** Open row action: Add value / Delete (Week, Month, §9.2) or Rename (all but Day, §9.3, v0.4 step 8). */
 type Kind = 'add' | 'delete' | 'rename'
@@ -54,7 +53,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
   const [fieldError, setFieldError] = useState('')
   const [status, setStatus] = useState('')
   const [error, setError] = useState('')
-  /** Week/Month rename waiting on the confirm dialog (v0.4 step 8). */
+  /** Rename waiting on the confirm dialog (all ranges, v0.4 step 8 + review). */
   const [pending, setPending] = useState<{ n: CatNode; name: string } | null>(null)
   const focusAfter = useRef<string | null>(null)
   const focusTries = useRef(0)
@@ -125,9 +124,8 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
     if (!name) return fail(`Error: Name for ${say(n)} cannot be empty`)
     if (n.parent!.children.some(c => c !== n && slug(c.cat.name) === slug(name))) return fail(`Invalid: Name “${name}” already exists in ${n.parent!.cat.name}`)
     if (name === n.cat.name) return closeRow(n, 'rename')
-    // Week/Month ask first: the name changes everywhere (v0.4 step 8).
-    if (range !== 'annual') { setPending({ n, name }); return }
-    await commitRename(n, name)
+    // Ask first: the name changes everywhere (v0.4 step 8; Annual too, v0.4 review).
+    setPending({ n, name })
   }
 
   async function commitRename(n: CatNode, name: string) {
@@ -410,7 +408,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
       {pending && (
         <ConfirmDialog id={`${idBase}-rename_confirm`} title={`Rename ${pending.n.cat.name}?`}
           onConfirm={() => commitRename(pending.n, pending.name)}
-          onCancel={() => { setPending(null); focusAfter.current = domId('rename_value', pending.n) }}>
+          onCancel={() => { setPending(null); closeRow(pending.n, 'rename') }}>
           This will change the name of all instances of {pending.n.cat.name} to {pending.name} across the application.
         </ConfirmDialog>
       )}

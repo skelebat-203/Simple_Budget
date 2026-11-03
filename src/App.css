@@ -365,7 +365,8 @@
 
 /* --- Confirm dialog (v0.4 step 8): Cancel left, Confirm right (0007 §4.2). --- */
 .dialog.confirm-dialog { width: min(32rem, calc(100% - 2 * var(--space-md))); }
-.confirm-actions { justify-content: space-between; }
+.dialog-actions { justify-content: space-between; }
+.dialog:focus-visible { outline: 3px solid var(--color-info); outline-offset: 2px; }
 
 /* --- Go to date popover (v0.4 review): native top-layer popover placed by script under the title button. --- */
 .popover {

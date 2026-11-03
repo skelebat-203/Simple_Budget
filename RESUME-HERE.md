@@ -92,13 +92,13 @@ Covers every v0.4 roadmap item. Each completed step bumps the last version segme
 
 **Review follow-ups** (human decisions 2026-11-02; versions sequential from v0.4.12 per CLAUDE.md "Version numbering"):
 - Approved as built: Create row design, tooltip curly quotes + placement, Taxes starts open, settings in one row at 1280px, toolbar height change, wrapping nav at 400px, nav limits (2000-01-01 to +1 year), menu scroll near the bottom, Budget setup keeps its own unsaved expand state. Commit `246bb88` (0.4.5 in package.json) stays as is.
-- ✅ (v0.4.12) Nav (step 6): Day/Week titles show the year when not the current year; Go to date becomes a popover (native `popover`).
+- ✅ (v0.4.12, v0.4.15) Nav (step 6): Day/Week titles show the year when not the current year; Go to date becomes a popover (native `popover`).
 - ✅ (v0.4.12) No part of the toolbar or popover outside the visible frame at any supported width.
 - ✅ (v0.4.13) Help text moves outside the table's scroll box.
 - ✅ (v0.4.14) Add tooltip: Escape dismisses hover-shown tooltip (WCAG 1.4.13).
-- ☐ Generic `Dialog` component (content + buttons injected); ConfirmDialog built on it. Cancel left, Confirm right; focus starts on the `role="dialog"` container.
-- ☐ Annual rename also uses the confirm dialog. Cancel closes the rename form.
-- ☐ Only Income, Taxes, Savings, Expenses (and Net Income) are locked from rename; other computed rows can be renamed.
+- ✅ (v0.4.16) Generic `Dialog` component (content + buttons injected); ConfirmDialog built on it. Cancel left, Confirm right; focus starts on the `role="dialog"` container.
+- ✅ (v0.4.16) Annual rename also uses the confirm dialog. Cancel closes the rename form.
+- ✅ (v0.4.16) Only Income, Taxes, Savings, Expenses (and Net Income) are locked from rename; other computed rows can be renamed. Verified: already so (only top-level rows lack Rename); no code change.
 
 12. **UI/UX review** (v0.4.12) — human approval per `0005-ui-ux-review-checklist.md`.
 13. **Accessibility pass** (v0.4.13) — Lighthouse + keyboard + screen reader; report in `docs/audits/a11y/a11y-v0.4.md`.
