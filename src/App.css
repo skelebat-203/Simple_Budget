@@ -365,3 +365,11 @@
 /* --- Confirm dialog (v0.4 step 8): Cancel left, Confirm right (0007 §4.2). --- */
 .dialog.confirm-dialog { width: min(32rem, calc(100% - 2 * var(--space-md))); }
 .confirm-actions { justify-content: space-between; }
+
+/* --- Go to date popover (v0.4 review): native top-layer popover placed by script under the title button. --- */
+.popover {
+  position: fixed; inset: auto; margin: 0; width: min(20rem, calc(100vw - 16px)); max-height: calc(100dvh - 16px); overflow: auto;
+  padding: var(--space-md); border: 1px solid var(--color-border); border-radius: var(--radius-sm);
+  background: var(--color-background-page); color: var(--color-foreground-page); box-shadow: 0 4px 16px rgb(0 0 0 / 0.2);
+}
+.popover:popover-open { display: flex; flex-direction: column; gap: var(--space-sm); }

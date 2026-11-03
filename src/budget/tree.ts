@@ -88,6 +88,8 @@ export const isoDate = (d: Date) =>
 
 const addDays = (d: Date, n: number) => { const x = new Date(d); x.setDate(x.getDate() + n); return x }
 const short = (d: Date) => d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+/** Adds the year to a title date when it isn't the current year (v0.4 review). */
+const yearIfOther = (d: Date): Intl.DateTimeFormatOptions => d.getFullYear() === new Date().getFullYear() ? {} : { year: 'numeric' }
 const span = (from: Date, to: Date): Period =>
   ({ label: `${short(from)} – ${short(to)}`, from: isoDate(from), to: isoDate(to), days: Math.round((to.getTime() - from.getTime()) / 864e5) + 1 })
 
@@ -108,7 +110,8 @@ export function periodsFor(range: Range, today: Date, cal: Calendar = DEFAULT_CA
   if (range === 'day') {
     const d = isoDate(today)
     const label = today.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })
-    return { columns: [{ label, from: d, to: d, days: 1, months: WEEK_MONTHS / 7 }], total: null, title: label }
+    const title = today.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', ...yearIfOther(today) })
+    return { columns: [{ label, from: d, to: d, days: 1, months: WEEK_MONTHS / 7 }], total: null, title }
   }
   if (range === 'week') {
     const s = weekStartOf(today, cal.weekStart)
@@ -117,7 +120,7 @@ export function periodsFor(range: Range, today: Date, cal: Calendar = DEFAULT_CA
       const d = addDays(s, i)
       return { ...span(d, d), months: WEEK_MONTHS / 7, label: d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }) }
     })
-    return { columns, total: { ...span(s, addDays(s, 6)), months: WEEK_MONTHS, label: 'Total' }, title: `Week of ${short(s)}` }
+    return { columns, total: { ...span(s, addDays(s, 6)), months: WEEK_MONTHS, label: 'Total' }, title: `Week of ${s.toLocaleDateString(undefined, { month: 'short', day: 'numeric', ...yearIfOther(s) })}` }
   }
   if (range === 'annual') {
     // Calendar months, so no day falls in two columns.
