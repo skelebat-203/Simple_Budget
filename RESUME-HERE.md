@@ -31,7 +31,7 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
    - Files: `src/App.css`, `src/components/BudgetTable.tsx`
    - Verify: computed styles + screenshots at 320/640/1024px, both themes; 3:1 contrast
    - Deps: 4 (same files)
-6. **Date navigation refinement** (v0.5/6) — chevron Previous/Next (names unchanged); range title opens the browser calendar directly, replacing the v0.4 popover.
+6. **Date navigation refinement** ✅ (v0.5.1) (v0.5/6) — chevron Previous/Next (names unchanged); range title opens the browser calendar directly, replacing the v0.4 popover.
    - Source: `0008` §5
    - Files: `src/screens/Budget.tsx`, `src/components/ui/DatePicker.tsx`, `src/App.css`
    - Verify: names "Previous/Next {unit}"; `showPicker()` opens the calendar with a fallback where unsupported; focus returns to the title
@@ -69,7 +69,7 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
 - **C — Settings, rewards, onboarding** (steps 7, 8, 9; storage, App, AddBudget, new screens): after A step 3 lands (shared `structure.ts`/`db.ts` Dexie bump), then sequential.
 - **D — Abbreviation audit** (step 10): after A, B, C.
 - **Reviews** (steps 11–13): main session with the user.
-- Status: ☐ A · ☐ B · ☐ C · ☐ D · ☐ reviews
+- Status: ☐ A · ✅ B · ☐ C · ☐ D · ☐ reviews
 
 ## Rules
 - Each completed item: commit + version bump (per `.claude/CLAUDE.md` "Version numbering").

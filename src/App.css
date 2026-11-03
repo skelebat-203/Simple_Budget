@@ -368,13 +368,10 @@
 .dialog-actions { justify-content: space-between; }
 .dialog:focus-visible { outline: 3px solid var(--color-info); outline-offset: 2px; }
 
-/* --- Go to date popover (v0.4 review): native top-layer popover placed by script under the title button. --- */
-.popover {
-  position: fixed; inset: auto; margin: 0; width: min(20rem, calc(100vw - 16px)); max-height: calc(100dvh - 16px); overflow: auto;
-  padding: var(--space-md); border: 1px solid var(--color-border); border-radius: var(--radius-sm);
-  background: var(--color-background-page); color: var(--color-foreground-page); box-shadow: 0 4px 16px rgb(0 0 0 / 0.2);
-}
-.popover:popover-open { display: flex; flex-direction: column; gap: var(--space-sm); }
-/* .field sets display, which would override the UA rule hiding a closed popover. */
-.popover:not(:popover-open) { display: none; }
+/* --- Date navigation (0008 §5): chevron buttons; the title opens the browser calendar. --- */
+nav .btn.icon { border-color: var(--color-primary-background); background: var(--color-background-page); min-width: 2.75rem; min-height: 2.75rem; }
+nav .btn.icon:hover:not(:disabled) { background: var(--color-border); }
+.date-nav-title { position: relative; display: inline-flex; }
+/* Invisible helper under the title button so the calendar opens beside it; not reachable by keyboard or pointer. */
+.date-helper { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; pointer-events: none; border: 0; padding: 0; }
 .table-wrap { display: flex; flex-direction: column; gap: var(--space-sm); min-width: 0; }
