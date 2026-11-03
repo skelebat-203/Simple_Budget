@@ -374,4 +374,6 @@
   background: var(--color-background-page); color: var(--color-foreground-page); box-shadow: 0 4px 16px rgb(0 0 0 / 0.2);
 }
 .popover:popover-open { display: flex; flex-direction: column; gap: var(--space-sm); }
+/* .field sets display, which would override the UA rule hiding a closed popover. */
+.popover:not(:popover-open) { display: none; }
 .table-wrap { display: flex; flex-direction: column; gap: var(--space-sm); min-width: 0; }
