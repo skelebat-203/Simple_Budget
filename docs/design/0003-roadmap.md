@@ -83,6 +83,8 @@ tracked as a later-version item.
 ## v0.5 — Rewards, settings, onboarding
 - Rewards animation + `rewardsEnabled` toggle
 - `notificationsEnabled` toggle
+- Table fixes (`0008` §1–4): expanders as real buttons (icon + name); Budget setup without its own keyboard shortcuts (treegrid role kept); due dates place the full amount on the expected day/week/month, with the due date control set by recurrence; borders between time periods in Week, Month and Annual
+- Date navigation refinement (`0008` §5): chevron Previous/Next; the range title opens the calendar directly
 - Abbreviation audit: find abbreviations in visible text and accessible names (e.g. "Est.", "Act.", short dates); give each a full accessible name or spell it out
 - Onboarding questionnaire (pay frequency, category opt-in multi-select with autocomplete)
 - UI/UX review (human approval)
