@@ -52,10 +52,11 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
    - Files: new `src/screens/Onboarding.tsx`, new `src/components/ui/MultiSelect.tsx`, `src/App.tsx`, `src/App.tsx`, `src/storage/repository.ts`, `src/App.css`
    - Verify: shows on empty DB only; combobox keyboard pattern; custom names validated; tables populated
    - Deps: 7 (Settings shape); decided 2026-11-03: skippable; reopened by a ? help button next to the heading; pay frequency = Income items' Recurrence (`0008` §8)
-10. **Abbreviation audit** (v0.5/10) — find abbreviations in visible text and accessible names ("Est.", "Act.", short dates); spell out or give full accessible names.
+10. **Abbreviation audit** ✅ (v0.5.7) (v0.5/10) — find abbreviations in visible text and accessible names ("Est.", "Act.", short dates); spell out or give full accessible names.
     - Source: roadmap v0.5
     - Files: all screens/components with visible text
     - Verify: scripted scan of every screen shows no unexplained abbreviations
+    - Result: Est./Act. headers read "Estimated"/"Actual" to screen readers; week title spells the month; seed items "Trad 401k" and "Gen. Self Care" spelled out (existing databases keep the old names; no migration, pre-alpha). Kept with full accessible names: short weekday/month column headings. Kept as proper names: 401k, 403b, IRA, HSA, FSA.
     - Deps: 1–9 (runs over finished UI)
 11. **UI/UX review** (v0.5/11) — human approval, `0005` checklist, all widths and themes.
     - Deps: 1–10
@@ -70,7 +71,7 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
 - **C — Settings, rewards, onboarding** (steps 7, 8, 9; storage, App, AddBudget, new screens): after A step 3 lands (shared `structure.ts`/`db.ts` Dexie bump), then sequential.
 - **D — Abbreviation audit** (step 10): after A, B, C.
 - **Reviews** (steps 11–13): main session with the user.
-- Status: ✅ A · ✅ B · ✅ C · ☐ D · ☐ reviews
+- Status: ✅ A · ✅ B · ✅ C · ✅ D · ☐ reviews
 
 ## Rules
 - Each completed item: commit + version bump (per `.claude/CLAUDE.md` "Version numbering").

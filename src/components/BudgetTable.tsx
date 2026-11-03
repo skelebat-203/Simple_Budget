@@ -405,8 +405,8 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
                 ? periods.map(p => <th key={p.label} scope="col" className={`num${start}`} aria-label={p.fullLabel}>{p.label}</th>)
                 : periods.map(p => (
                   <Fragment key={p.label}>
-                    {showEstimates && <th scope="col" className={`num${start}`}>Est.</th>}
-                    <th scope="col" className={`num${showEstimates ? '' : start}`}>Act.</th>
+                    {showEstimates && <th scope="col" className={`num${start}`}><span aria-hidden="true">Est.</span><span className="sr-only">Estimated</span></th>}
+                    <th scope="col" className={`num${showEstimates ? '' : start}`}><span aria-hidden="true">Act.</span><span className="sr-only">Actual</span></th>
                   </Fragment>
                 ))}
               {actionCol && <th scope="col" className="name">Actions</th>}

@@ -14,7 +14,7 @@ const TREE: SeedNode[] = [
   { name: 'Net Income', color: 'highlight-blue', computed: true },
   {
     name: 'Savings', color: 'green', computed: true,
-    children: items('lighter-green', ['General Maintenance', 'Emergency', 'Roth 401k', 'Trad 401k', 'Roth IRA', 'IRA', '403b', 'HSA', 'FSA']),
+    children: items('lighter-green', ['General Maintenance', 'Emergency', 'Roth 401k', 'Traditional 401k', 'Roth IRA', 'IRA', '403b', 'HSA', 'FSA']),
   },
   {
     name: 'Expenses', color: 'orange', computed: true,
@@ -23,7 +23,7 @@ const TREE: SeedNode[] = [
       { name: 'Gas', color: 'lighter-orange' },
       { name: 'Gifts', color: 'lighter-orange' },
       sub('Charity', ['Miscellaneous', 'United Way', 'Wikipedia', 'Library']),
-      sub('Incidentals', ['Coffee Shops', 'Treats', 'Snacks', 'Pet Stuff', 'Eat Food Out', 'Dates', 'Family Time', 'Clothing', 'Shoes', 'Gen. Self Care', 'Books', 'Alcohol', 'Hair Cuts', 'Decorations', 'Crafting', 'Miscellaneous']),
+      sub('Incidentals', ['Coffee Shops', 'Treats', 'Snacks', 'Pet Stuff', 'Eat Food Out', 'Dates', 'Family Time', 'Clothing', 'Shoes', 'General Self Care', 'Books', 'Alcohol', 'Hair Cuts', 'Decorations', 'Crafting', 'Miscellaneous']),
       sub('Medical', ['Miscellaneous']),
       sub('Insurance', ['Car', 'Life', 'Medical', 'Dental', 'Vision']),
       sub('Maintenance', ['Car', 'House', 'Lawn Mowing', 'Miscellaneous']),

@@ -93,7 +93,7 @@ Top-level categories, with computed rows marked `*` (calculated, not user-addabl
 - General Maintenance
 - Emergency
 - Roth 401k
-- Trad 401k
+- Traditional 401k
 - Roth IRA
 - IRA
 - 403b
@@ -139,7 +139,7 @@ itself. The same applies to Pay, Incidental Income and Taxes.
 - Family Time
 - Clothing
 - Shoes
-- Gen. Self Care
+- General Self Care
 - Books
 - Alcohol
 - Hair Cuts

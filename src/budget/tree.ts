@@ -228,7 +228,7 @@ export function periodsFor(range: Range, today: Date, cal: Calendar = DEFAULT_CA
       const d = addDays(s, i)
       return { ...span(d, d), months: WEEK_MONTHS / 7, label: d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }), fullLabel: d.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }) }
     })
-    return { columns, total: { ...span(s, addDays(s, 6)), months: WEEK_MONTHS, label: 'Total', fullLabel: undefined }, title: `Week of ${s.toLocaleDateString(undefined, { month: 'short', day: 'numeric', ...yearIfOther(s) })}` }
+    return { columns, total: { ...span(s, addDays(s, 6)), months: WEEK_MONTHS, label: 'Total', fullLabel: undefined }, title: `Week of ${s.toLocaleDateString(undefined, { month: 'long', day: 'numeric', ...yearIfOther(s) })}` }
   }
   if (range === 'annual') {
     // Calendar months, so no day falls in two columns.
