@@ -2,7 +2,7 @@ import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react'
 import type { BudgetItem, Range } from '../storage/db'
 import { actualFor, domId, estimateTotal, isoDate, formatAmount, isTotal, periodsFor, rangeHasEstimates, repeatedNames, spokenName, type Calendar, type CatNode, type Period } from '../budget/tree'
 import { cleanName, moneyError, NAME_MAX, parseMoney, slug } from '../budget/validate'
-import { budgetItemRepo, categoryRepo } from '../storage/repository'
+import { budgetItemRepo, categoryRepo, RowInUseError } from '../storage/repository'
 import { Button } from './ui'
 import { useTreegrid } from './ui/useTreegrid'
 
@@ -136,8 +136,11 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
   async function deleteRow(n: CatNode) {
     try {
       await categoryRepo.removeEmpty(n.cat.id)
-    } catch {
-      setError(`Error: ${n.cat.name} wasn’t deleted. Try again.`)
+    } catch (err) {
+      // Name the reason when the row changed since it was shown (e.g. a purchase added in another tab).
+      setError(err instanceof RowInUseError ? `Error: ${n.cat.name} wasn’t deleted because ${err.message}` : `Error: ${n.cat.name} wasn’t deleted. Try again.`)
+      setRowEdit(null)
+      onChanged?.()
       return
     }
     setRowEdit(null)

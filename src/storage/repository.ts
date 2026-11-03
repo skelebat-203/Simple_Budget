@@ -36,6 +36,31 @@ function validCategory(r: unknown): r is Category {
     && (x.estimate === undefined || isMoney(x.estimate))
     && (x.frequency === undefined || FREQS.has(x.frequency))
     && (x.order === undefined || Number.isInteger(x.order))
+    && (x.dueDate === undefined || (typeof x.dueDate === 'string' && DATE_RE.test(x.dueDate)))
+    && ['autopay', 'selected', 'computed'].every(k => x[k as keyof Category] === undefined || typeof x[k as keyof Category] === 'boolean')
+}
+
+/** Deepest level the app supports: category › subcategory › item (deep nesting: v0.6). */
+const MAX_DEPTH = 2
+
+/**
+ * Rows whose parent chain loops or runs deeper than MAX_DEPTH (security-v0.3
+ * 3.1). Walks iteratively, so a hostile chain can't exhaust the stack. A
+ * missing parent is treated as top level.
+ */
+export function badTreeRows(cats: Category[]): Set<number> {
+  const byId = new Map(cats.map(c => [c.id, c]))
+  const bad = new Set<number>()
+  for (const c of cats) {
+    let p = c.parentId, depth = 0
+    const seen = new Set([c.id])
+    while (p != null && byId.has(p)) {
+      if (seen.has(p) || ++depth > MAX_DEPTH) { bad.add(c.id!); break }
+      seen.add(p)
+      p = byId.get(p)!.parentId
+    }
+  }
+  return bad
 }
 
 /** Rows that failed a shape check on the last read; the app tells the user. */
@@ -84,7 +109,9 @@ export const categoryRepo = {
   },
   async list() {
     const rows = await db.categories.toArray()
-    const ok = rows.filter(validCategory)
+    const shaped = rows.filter(validCategory)
+    const bad = badTreeRows(shaped)
+    const ok = shaped.filter(c => !bad.has(c.id!))
     skipped.categories = rows.length - ok.length
     return ok
   },
@@ -101,16 +128,19 @@ export const categoryRepo = {
   async removeEmpty(id: number) {
     await db.transaction('rw', db.categories, db.budgetItems, async () => {
       const c = await db.categories.get(id)
-      if (!c || c.parentId == null) throw new Error('Top-level rows can’t be deleted')
-      if (await db.categories.where('parentId').equals(id).count()) throw new Error('Row has items')
+      if (!c || c.parentId == null) throw new RowInUseError('top-level rows can’t be deleted.')
+      if (await db.categories.where('parentId').equals(id).count()) throw new RowInUseError('it has items. Delete its items first.')
       const bought = db.budgetItems.where('categoryId').equals(id)
       // A row with a single purchase can go, taking that purchase with it (0007 §10).
-      if (await bought.count() > 1) throw new Error('Row has purchases')
+      if (await bought.count() > 1) throw new RowInUseError('it has more than one purchase. Delete them in the Day table first.')
       await bought.delete()
       await db.categories.delete(id)
     })
   },
 }
+
+/** Why a row can't be deleted, checked inside the delete transaction (security-v0.3 8.1). */
+export class RowInUseError extends Error {}
 
 /** A name already used by a sibling; the message finishes "Invalid: {field} …". */
 export class NameTakenError extends Error {}
@@ -226,9 +256,11 @@ export function checkBackup(data: unknown): Backup {
   if (!Array.isArray(b.categories) || !Array.isArray(b.budgetItems) || !Array.isArray(b.settings)) throw new BackupError('is incomplete. Export a new backup and try again.')
   if (!b.categories.every(c => validCategory(c) && Number.isInteger(c.id))) throw new BackupError('has a damaged category list. Export a new backup and try again.')
   const ids = new Set(b.categories.map(c => c.id))
+  if (ids.size !== b.categories.length) throw new BackupError('has a damaged category list. Export a new backup and try again.')
   if (!b.budgetItems.every(i => validItem(i) && ids.has(i.categoryId))) throw new BackupError('has damaged amounts. Export a new backup and try again.')
   // Backups made before the v7 structure (no stored order) get the same upgrade the database got.
   const cats = b.categories.some(c => c.order === undefined) ? toV7Structure(b.categories) : b.categories
+  if (badTreeRows(cats).size) throw new BackupError('has categories nested in a loop or more than three levels deep. Export a new backup and try again.')
   return {
     ...b,
     budgetItems: b.budgetItems.map(({ id, categoryId, amount, date, createdAt, updatedAt }) => ({ id, categoryId, amount, date, createdAt, updatedAt })),
