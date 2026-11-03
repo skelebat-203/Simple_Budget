@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Button, ErrorSummary, focusFirstError, type FieldError } from '../components/ui'
 import { Expander } from '../components/ui/Expander'
 import { BudgetTable } from '../components/BudgetTable'
+import { fireReward } from '../rewards/rewards'
+import { requestNotifications } from '../notifications'
 import { saveSetup } from '../storage/repository'
 import { cleanName, dateBounds, moneyError, NAME_MAX, parseMoney, slug } from '../budget/validate'
 import type { BudgetItem, Category, DefaultRange, DueDay, Frequency, MonthBoundary } from '../storage/db'
@@ -22,8 +24,10 @@ const BOUNDARIES: { value: MonthBoundary; label: string }[] = [
 const MONTH = { label: '', from: '', to: '', days: 30.44 }
 
 /** Budget setup overlay (0007 §5). Edits a working copy; Save stores it and closes, Cancel drops it. */
-export function BudgetSetup({ cats, items, defaultRange, calendar, onClose, onSaved }: {
+export function BudgetSetup({ cats, items, defaultRange, calendar, rewardsEnabled, notificationsEnabled, onClose, onSaved }: {
   cats: Category[]
+  rewardsEnabled: boolean
+  notificationsEnabled: boolean
   items: BudgetItem[]
   defaultRange: DefaultRange
   calendar: Calendar
@@ -49,6 +53,9 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, onClose, onSa
   const [range, setRange] = useState(defaultRange)
   const [weekStart, setWeekStart] = useState(calendar.weekStart)
   const [boundary, setBoundary] = useState(calendar.monthBoundary)
+  const [rewards, setRewards] = useState(rewardsEnabled)
+  const [notify, setNotify] = useState(notificationsEnabled)
+  const [notifyMsg, setNotifyMsg] = useState('')
   const [create, setCreate] = useState<Record<number, { name: string; parent: number }>>({})
   /** Expanded rows; categories start open, subcategories collapsed (0007 §10). */
   const [expanded, setExpanded] = useState<Set<number>>(() => new Set(original.filter(c => c.parentId == null).map(c => c.id)))
@@ -162,7 +169,7 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, onClose, onSa
     if (list.length) { requestAnimationFrame(() => focusFirstError(list, bannerRef.current)); return }
     setSaving(true)
     try {
-      await saveSetup(final, original, { defaultRange: range, weekStart, monthBoundary: boundary })
+      await saveSetup(final, original, { defaultRange: range, weekStart, monthBoundary: boundary, rewardsEnabled: rewards, notificationsEnabled: notify })
     } catch {
       setSaving(false)
       setSaveError('Error: Your budget setup wasn’t saved, and nothing was changed. Check that your device has free storage space, then try again.')
@@ -417,6 +424,34 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, onClose, onSa
           </ul>
         </fieldset>
         </div>
+
+        <fieldset className="fieldset prefs">
+          <legend className="legend">Preferences</legend>
+          <div className="field">
+            <label className="check">
+              <input type="checkbox" id="rewards" checked={rewards} onChange={e => setRewards(e.target.checked)} />
+              Rewards when you save an amount
+            </label>
+            <Button type="button" className="secondary small" id="reward-preview" onClick={() => fireReward(true)}>Preview reward</Button>
+          </div>
+          <div className="field">
+            <label className="check">
+              <input type="checkbox" id="notifications" checked={notify} aria-describedby="notifications-help"
+                onChange={async e => {
+                  if (!e.target.checked) { setNotify(false); setNotifyMsg(''); return }
+                  // Permission is asked here, from the click (0008 §6).
+                  const r = await requestNotifications()
+                  setNotify(r === 'granted')
+                  setNotifyMsg(r === 'granted' ? '' : r === 'denied'
+                    ? 'Notifications are blocked for this app. Allow them in your browser’s site settings, then turn this on again.'
+                    : 'This browser can’t show notifications, so the daily reminder stays off.')
+                }} />
+              Daily reminder
+            </label>
+            <p id="notifications-help" className="help">Asks your browser for permission to show a reminder each evening. Reminders at a set time aren’t available yet; this saves your choice for when they are.</p>
+            <p className="status" role="status">{notifyMsg}</p>
+          </div>
+        </fieldset>
 
         <section className="preview" aria-labelledby="preview-heading">
           <h3 id="preview-heading" className="section-title">Preview</h3>

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AddBudget } from './screens/AddBudget'
 import { Budget } from './screens/Budget'
 import { BudgetSetup } from './screens/BudgetSetup'
+import { RewardLayer } from './rewards/RewardLayer'
 import { Backup } from './components/Backup'
 import { Notices, type NoticeState } from './components/Notices'
 import { Tabs } from './components/ui'
@@ -18,6 +19,8 @@ function App() {
   const [range, setRange] = useState<Range>('day')
   const [defaultRange, setDefaultRange] = useState<DefaultRange>('day')
   const [calendar, setCalendar] = useState<Calendar>(DEFAULT_CALENDAR)
+  const [rewardsEnabled, setRewardsEnabled] = useState(true)
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false)
   const [setupOpen, setSetupOpen] = useState(false)
   const [notices, setNotices] = useState<NoticeState>({})
   const note = useCallback((p: Partial<NoticeState>) => setNotices(n => ({ ...n, ...p })), [])
@@ -34,6 +37,7 @@ function App() {
     .then(s => {
       const r = s.defaultRange ?? 'day'
       setRange(r); setDefaultRange(r)
+      setRewardsEnabled(s.rewardsEnabled); setNotificationsEnabled(s.notificationsEnabled)
       setCalendar({ weekStart: s.weekStart ?? 0, monthBoundary: s.monthBoundary ?? 'weeks' })
     })
     .catch(() => note({ loadError: LOAD_ERROR })), [note])
@@ -75,6 +79,7 @@ function App() {
   return (
     <main className="main">
       <h1 className="title">Simple Budget</h1>
+      <RewardLayer enabled={rewardsEnabled} />
       <Notices state={notices} onDismissPersist={dismissPersist} />
       <Tabs label="Sections" actions={[{ id: 'setup-budget', label: 'Setup Budget', onSelect: () => setSetupOpen(true) }]} tabs={[
         { id: 'add', label: 'Add purchase', panel: <AddBudget roots={roots} onSaved={() => { reloadItems(); reloadCats() }} /> },
@@ -89,6 +94,8 @@ function App() {
           items={items}
           defaultRange={defaultRange}
           calendar={calendar}
+          rewardsEnabled={rewardsEnabled}
+          notificationsEnabled={notificationsEnabled}
           onClose={() => setSetupOpen(false)}
           onSaved={() => { reloadCats(); reloadSettings(); setSetupOpen(false) }}
         />

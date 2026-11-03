@@ -81,12 +81,12 @@ tracked as a later-version item.
 - ✅ Security review (`docs/audits/security/security-v0.4.md`, approved): rename re-checked when it saves; estimate scaling (v0.2 3.4) fixed → transition to v0.5.0
 
 ## v0.5 — Rewards, settings, onboarding
-- Rewards animation + `rewardsEnabled` toggle
-- `notificationsEnabled` toggle
+- Rewards hooks + `rewardsEnabled` toggle (`0008` §6, §7): placeholder image, animation and sound; final design after user testing
+- `notificationsEnabled` toggle with permission request and `sendReminder()` hook (`0008` §6); no scheduling in v0.5
 - Table fixes (`0008` §1–4): expanders as real buttons (icon + name); Budget setup without its own keyboard shortcuts (treegrid role kept); due dates place the full amount on the expected day/week/month, with the "Schedule" control set by recurrence; borders between time periods in Week, Month and Annual
 - Date navigation refinement (`0008` §5): chevron Previous/Next; the range title opens the calendar directly
 - Abbreviation audit: find abbreviations in visible text and accessible names (e.g. "Est.", "Act.", short dates); give each a full accessible name or spell it out
-- Onboarding questionnaire (pay frequency, category opt-in multi-select with autocomplete)
+- Onboarding questionnaire (pay frequency, category opt-in multi-select with autocomplete), skippable, reopened by a ? help button next to the heading (`0008` §8)
 - UI/UX review (human approval)
 - Accessibility pass
 - Security review
@@ -126,4 +126,4 @@ tracked as a later-version item.
 ## Post v1.0
 - Correct a single purchase's amount or date (today: delete it and add it again)
 - Receipt photo capture (camera API / Capacitor if needed)
-- Capacitor APK build (if native notifications required)
+- Daily end-of-day reminder: needs a delivery outside the web app (phone reminder, or Capacitor APK build with local notifications)

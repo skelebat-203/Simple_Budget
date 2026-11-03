@@ -5,6 +5,7 @@ import { cleanName, moneyError, NAME_MAX, parseMoney, slug } from '../budget/val
 import { budgetItemRepo, categoryRepo, NameTakenError, RowInUseError } from '../storage/repository'
 import { Button, ConfirmDialog } from './ui'
 import { useCollapsed, useTreegrid } from './ui/useTreegrid'
+import { fireReward } from '../rewards/rewards'
 import { Expander } from './ui/Expander'
 import { ActionsMenu, type MenuAction } from './ui/ActionsMenu'
 
@@ -172,6 +173,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
     setStatus(`Added ${formatAmount(r.value) || '0.00'} to ${say(n)} on ${addDate}.`)
     closeRow(n, 'add')
     onChanged?.()
+    fireReward()
   }
 
   async function deleteRow(n: CatNode) {

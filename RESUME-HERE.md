@@ -37,21 +37,21 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
    - Files: `src/screens/Budget.tsx`, `src/components/ui/DatePicker.tsx`, `src/App.css`
    - Verify: names "Previous/Next {unit}"; `showPicker()` opens the calendar with a fallback where unsupported; focus returns to the title
    - Deps: none
-7. **Settings: rewards + notifications toggles** (v0.5/7) — `rewardsEnabled` (default on) and `notificationsEnabled` stored in Settings, with a settings UI.
+7. **Settings: rewards + notifications toggles** ✅ (v0.5.5) (v0.5/7) — `rewardsEnabled` (default on) and `notificationsEnabled` stored in Settings, with a settings UI.
    - Source: roadmap v0.5; `0001` Notifications; `0002` Reward System, Settings
-   - Files: `src/storage/structure.ts`, `src/storage/db.ts`, `src/storage/repository.ts`, `src/App.tsx`, new settings component
+   - Files: `src/storage/db.ts`, `src/storage/repository.ts`, `src/App.tsx`, `src/screens/BudgetSetup.tsx` (Preferences section), new `src/notifications.ts`
    - Verify: toggles persist across reload; notification permission asked only on user action, denial handled
-   - Deps: none; **needs human decision**: is v0.5 the toggle only, or a working daily reminder (a web app can't reliably schedule one while closed)?
-8. **Rewards animation** (v0.5/8) — animation on each successful budget-item save when `rewardsEnabled`.
+   - Deps: none; decided 2026-11-03: toggle + permission request + `sendReminder()` hook only; scheduling needs a phone reminder or the Capacitor build (`0008` §6)
+8. **Rewards animation** ✅ (v0.5.5) (v0.5/8) — animation on each successful budget-item save when `rewardsEnabled`.
    - Source: roadmap v0.5; `0001`, `0002` Reward System
-   - Files: `src/screens/AddBudget.tsx`, new reward component, `src/App.css`
+   - Files: `src/screens/AddBudget.tsx`, `src/components/BudgetTable.tsx`, new `src/rewards/`, `src/App.css`
    - Verify: plays on save only; off when toggled off; respects `prefers-reduced-motion`; doesn't steal focus or cover Save
-   - Deps: 7; **needs human decision**: animation style and sound (held in `0001`/`0002`)
+   - Deps: 7; decided 2026-11-03: placeholder cute image + animation + chime behind hooks (`REWARDS`, `fireReward()`), final design after user testing (`0008` §7)
 9. **Onboarding questionnaire** (v0.5/9) — first-run flow: pay frequency; categories Yes/No → multi-select with autocomplete over preloaded categories + "add your own"; selections populate the tables.
    - Source: roadmap v0.5; `0004-table-design.md` Onboarding
-   - Files: new `src/screens/Onboarding.tsx`, `src/App.tsx`, `src/storage/seed.ts`, `src/storage/preselected.ts`, `src/storage/repository.ts`, `src/components/ui/ItemSelector.tsx`
+   - Files: new `src/screens/Onboarding.tsx`, new `src/components/ui/MultiSelect.tsx`, `src/App.tsx`, `src/storage/seed.ts`, `src/storage/preselected.ts`, `src/storage/repository.ts`, `src/components/ui/ItemSelector.tsx`
    - Verify: shows on empty DB only; combobox keyboard pattern; custom names validated; tables populated
-   - Deps: 7 (Settings shape); **needs human decision**: skip / reopen later / resume after reload; where pay frequency is used
+   - Deps: 7 (Settings shape); decided 2026-11-03: skippable; reopened by a ? help button next to the heading; pay frequency = Income items' Recurrence (`0008` §8)
 10. **Abbreviation audit** (v0.5/10) — find abbreviations in visible text and accessible names ("Est.", "Act.", short dates); spell out or give full accessible names.
     - Source: roadmap v0.5
     - Files: all screens/components with visible text

@@ -13,6 +13,7 @@ function cleanSettings(s: Partial<Settings>): Settings {
     id: s.id,
     rewardsEnabled: s.rewardsEnabled ?? true,
     notificationsEnabled: !!s.notificationsEnabled,
+    onboarded: s.onboarded === true ? true : undefined,
     defaultRange: s.defaultRange && RANGES.has(s.defaultRange) ? s.defaultRange : 'day',
     weekStart: validWeekStart(s.weekStart) ? s.weekStart : 0,
     monthBoundary: validBoundary(s.monthBoundary) ? s.monthBoundary : 'weeks',

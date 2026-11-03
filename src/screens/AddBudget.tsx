@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { AmountInput, Button, DatePicker, ErrorSummary, focusFirstError, ItemSelector, type FieldError } from '../components/ui'
 import { addNewItem, budgetItemRepo, NameTakenError } from '../storage/repository'
 import { childColor, isoDate, type CatNode } from '../budget/tree'
+import { fireReward } from '../rewards/rewards'
 import { cleanName, dateBounds, moneyError, parseMoney } from '../budget/validate'
 
 const FIELDS = ['item', 'category', 'where', 'amount', 'date'] as const
@@ -96,6 +97,7 @@ export function AddBudget({ roots, onSaved }: {
       }
       reset()
       onSaved()
+      fireReward()
     } catch (err) {
       if (err instanceof NameTakenError) {
         const field = category || !isNewSub ? 'item' : 'category'

@@ -67,6 +67,8 @@ export interface Settings {
   id?: number
   rewardsEnabled: boolean
   notificationsEnabled: boolean
+  /** Set when the onboarding questionnaire was finished or skipped (0008 §8). */
+  onboarded?: boolean
   defaultRange?: DefaultRange
   /** Day a week starts on, 0 = Sunday … 6 = Saturday (0007 §1.1). */
   weekStart?: number
