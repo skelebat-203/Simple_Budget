@@ -58,11 +58,11 @@ export const FREQUENCIES: { value: Frequency; label: string }[] = [
 
 /** Debt, Utilities and Subscriptions items also get Quarterly and Annual (0007 §3). */
 export const frequenciesFor = (n: CatNode) => inBillGroup(n)
-  ? [...FREQUENCIES, { value: 'quarter' as const, label: 'Quarterly' }, { value: 'year' as const, label: 'Annual' }]
+  ? [...FREQUENCIES, { value: 'quarter' as const, label: 'Quarterly' }, { value: 'annual' as const, label: 'Annual' }]
   : FREQUENCIES
 
 /** Occurrences per month. Day-based scaling below stays until v0.4 (security-v0.2 3.4). */
-export const PER_MONTH: Record<Frequency, number> = { day: 30.44, week: 52 / 12, biweek: 26 / 12, bimonthly: 2, month: 1, quarter: 1 / 3, year: 1 / 12 }
+export const PER_MONTH: Record<Frequency, number> = { day: 30.44, week: 52 / 12, biweek: 26 / 12, bimonthly: 2, month: 1, quarter: 1 / 3, annual: 1 / 12 }
 
 /** Estimate for one node over `days` days. No recurrence = monthly. */
 export function estimateFor(c: Category, days: number): number {
@@ -105,7 +105,7 @@ export function periodsFor(range: Range, today: Date, cal: Calendar = DEFAULT_CA
     const s = weekStartOf(today, cal.weekStart)
     return { columns: [span(s, addDays(s, 6))], total: null, title: `Week of ${short(s)}` }
   }
-  if (range === 'year') {
+  if (range === 'annual') {
     // Calendar months, so no day falls in two columns.
     const y = today.getFullYear()
     const columns = Array.from({ length: 12 }, (_, m) => {

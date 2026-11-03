@@ -2,7 +2,7 @@ import { db, type BudgetItem, type Category, type Frequency, type DefaultRange, 
 import { cleanName, MONEY_MAX, slug } from '../budget/validate'
 import { toV7Structure } from './structure'
 
-const FREQS = new Set<Frequency>(['day', 'week', 'biweek', 'bimonthly', 'month', 'quarter', 'year'])
+const FREQS = new Set<Frequency>(['day', 'week', 'biweek', 'bimonthly', 'month', 'quarter', 'annual'])
 const RANGES = new Set<DefaultRange>(['day', 'week', 'month'])
 const validWeekStart = (n: unknown): n is number => Number.isInteger(n) && (n as number) >= 0 && (n as number) <= 6
 const validBoundary = (b: unknown): b is MonthBoundary => b === 'weeks' || b === 'calendar'
@@ -254,6 +254,8 @@ export function checkBackup(data: unknown): Backup {
   const b = data as Backup
   if (!b || b.format !== BACKUP_FORMAT || b.version !== 1) throw new BackupError('is not a Simple Budget backup. Choose the .json file you exported.')
   if (!Array.isArray(b.categories) || !Array.isArray(b.budgetItems) || !Array.isArray(b.settings)) throw new BackupError('is incomplete. Export a new backup and try again.')
+  // Backups made before Dexie v8 store frequency 'year'; map it to 'annual'.
+  for (const c of b.categories as { frequency?: string }[]) if (c?.frequency === 'year') c.frequency = 'annual'
   if (!b.categories.every(c => validCategory(c) && Number.isInteger(c.id))) throw new BackupError('has a damaged category list. Export a new backup and try again.')
   const ids = new Set(b.categories.map(c => c.id))
   if (ids.size !== b.categories.length) throw new BackupError('has a damaged category list. Export a new backup and try again.')

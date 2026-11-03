@@ -3,12 +3,12 @@ import { isPreselected } from './preselected'
 import { cleanName } from '../budget/validate'
 import { toV7Structure } from './structure'
 
-/** Recurrence of an estimate. Bi-monthly means twice a month. Quarter/year: bill groups only (0007 §3). */
-export type Frequency = 'day' | 'week' | 'biweek' | 'bimonthly' | 'month' | 'quarter' | 'year'
+/** Recurrence of an estimate. Bi-monthly means twice a month. Quarter/annual: bill groups only (0007 §3). */
+export type Frequency = 'day' | 'week' | 'biweek' | 'bimonthly' | 'month' | 'quarter' | 'annual'
 
-/** Budget table display range. Year (Annual) is never a default range (0007 §7.4). */
-export type Range = 'day' | 'week' | 'month' | 'year'
-export type DefaultRange = Exclude<Range, 'year'>
+/** Budget table display range. Annual is never a default range (0007 §7.4). */
+export type Range = 'day' | 'week' | 'month' | 'annual'
+export type DefaultRange = Exclude<Range, 'annual'>
 
 /** One recorded amount (a purchase, paycheck, credit…). Negative = credit. */
 export interface BudgetItem {
@@ -136,6 +136,11 @@ class SimpleBudgetDB extends Dexie {
       await cats.clear()
       await cats.bulkAdd(next)
       await tx.table('budgetItems').toCollection().modify((i: Record<string, unknown>) => { delete i.needsReview })
+    })
+    // v8: 'year' → 'annual' for frequency and range values (roadmap v0.4).
+    this.version(8).stores({}).upgrade(async tx => {
+      await tx.table('categories').toCollection().modify((c: Record<string, unknown>) => { if (c.frequency === 'year') c.frequency = 'annual' })
+      await tx.table('settings').toCollection().modify((s: Record<string, unknown>) => { if (s.defaultRange === 'year') s.defaultRange = 'annual' })
     })
   }
 }

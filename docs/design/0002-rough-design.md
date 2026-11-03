@@ -33,7 +33,7 @@ Companion to `0001-initial-requirements.md`. High-level architecture and stack r
 
 - **Mobile-first**: design for small screens first, then scale up.
 - **Form layout**: form content centered and single column; no multi-column form layouts; validation inline with focus management per `digital_accessibility.md`.
-- **Table structure**: follows `docs/design/0004-table-design.md` (Day/Week/Month/Year layouts, indents 0/1/2, colors by category, computed rows, only rows with amounts, category grouping).
+- **Table structure**: follows `docs/design/0004-table-design.md` (Day/Week/Month/Annual layouts, indents 0/1/2, colors by category, computed rows, only rows with amounts, category grouping).
 - **No inline `style` attributes**: use reusable CSS classes.
 - **Combined Item control**: single "Item" control replacing name + type, with autocomplete/filtering; categories larger/bold, subcategories bold, items normal; color coding; ordered category→subcategory→alpha.
 - **Negative amounts allowed** (credits).

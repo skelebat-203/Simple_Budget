@@ -33,7 +33,7 @@ changes and app restarts.
 - Same as week, but display Est./Act. columns for each week
 - Last 2 columns: Est. cells added together, Act. cells added together
 
-### Year
+### Annual
 
 - Same as month, but display Est./Act. columns for each month
 
@@ -205,5 +205,5 @@ Design decisions for flows built elsewhere (versions in `0003-roadmap.md`):
   - How often do you get paid? (day / week / month / bimonthly / every 2 weeks)
   - Add spending and savings categories? Yes / No
     - Yes → multi-select dropdown of all pre-loaded categories plus "add your
-      own"; populate the weekly, monthly, and year tables with selections;
+      own"; populate the weekly, monthly, and annual tables with selections;
       include autocomplete.

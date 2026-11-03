@@ -50,7 +50,7 @@ Up to one notification per day: "Did you add all your purchases?" Toggleable.
 
 ## Screen 2: Budget
 
-Toggles: Day / Week / Month / Year / Historic.
+Toggles: Day / Week / Month / Annual / Historic.
 
 Switch: Table / Chart.
 

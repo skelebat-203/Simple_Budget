@@ -4,9 +4,9 @@ Tracking file for current work status. Roadmap authority: `docs/design/0003-road
 Design: `0004-table-design.md` (table), `0006-prototype.html` (v0.2 UI), `0007-v0.3-design-updates.md` (v0.3 changes; wins on conflict).
 
 ## Current state
-- Version: v0.4.0. v0.3 complete (security review approved, `docs/audits/security/security-v0.3.md`). v0.2 complete (security review approved, `docs/audits/security/security-v0.2.md`).
-- Data: Dexie v7 (Income group, stored sibling `order`, `computed` only on top-level rows; see `src/storage/structure.ts`). Amounts link to categories by `categoryId`; estimate fields live on `Category`. `needsReview` removed (0007 §8.4).
-- Next: v0.4 step 1.
+- Version: v0.4.1. v0.3 complete (security review approved, `docs/audits/security/security-v0.3.md`). v0.2 complete (security review approved, `docs/audits/security/security-v0.2.md`).
+- Data: Dexie v8 (frequency/range `annual`; Income group, stored sibling `order`, `computed` only on top-level rows; see `src/storage/structure.ts`). Amounts link to categories by `categoryId`; estimate fields live on `Category`. `needsReview` removed (0007 §8.4).
+- Next: v0.4 Groups B and D (steps 3 and 10).
 - Testing: headless Chromium via host flatpak + puppeteer-core; scripts in the session scratchpad.
 
 ## v0.4 plan of action
@@ -21,9 +21,9 @@ Covers every v0.4 roadmap item. Each completed step bumps the last version segme
 - **Group D** — steps 10, 11 (`BudgetSetup.tsx`, `AddBudget.tsx`). After A, in parallel with B (shared `App.css` only).
 - **Group C** — steps 2, 7, 8, 9 (`BudgetTable.tsx` rows, `useTreegrid.ts`). After B.
 - **Reviews** — steps 12, 13, 14 in the main session with the human.
-- Status: ⏳ A · ☐ B · ☐ D · ☐ C · ☐ reviews
+- Status: ✅ A · ⏳ B · ⏳ D · ☐ C · ☐ reviews
 
-1. **Refactor "Year" to "Annual"** (v0.4.1) — UI labels, code identifiers, design docs, and the stored values: `Frequency` and `Range` `'year'` → `'annual'`, with a Dexie v8 upgrade that rewrites stored `frequency` and settings range values (human decision 2026-11-02: change now, before a prod version). Done first because every later step touches these names.
+1. ✅ **Refactor "Year" to "Annual"** (v0.4.1) — UI labels, code identifiers, design docs, and the stored values: `Frequency` and `Range` `'year'` → `'annual'`, with a Dexie v8 upgrade that rewrites stored `frequency` and settings range values (human decision 2026-11-02: change now, before a prod version). Done first because every later step touches these names.
    - Source: roadmap v0.4.
    - Files: `src/storage/db.ts`, `repository.ts` (`FREQS`, backup restore checks), `src/budget/tree.ts`, `src/budget/validate.ts`, `src/components/BudgetTable.tsx`, `src/screens/*`, `docs/design/*`.
    - Verify: `grep -rn "year"` shows only intended hits (dates); upgrade tested on a seeded v7 database with yearly items and an Annual range; build + lint pass.

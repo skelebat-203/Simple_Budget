@@ -44,7 +44,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
 
   const actions = !preview && !!onChanged
   /** Annual edits names in the name cell, so it has no Actions column (0007 §10). */
-  const actionCol = actions && range !== 'year'
+  const actionCol = actions && range !== 'annual'
   const repeated = repeatedNames(roots)
   const say = (n: CatNode) => spokenName(n, repeated)
   const [confirm, setConfirm] = useState<number | null>(null)
@@ -163,7 +163,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
 
   /** Annual name cell: the name with a pencil Rename button, or the rename form (0007 §9.3, §10). */
   function renameControls(n: CatNode): ReactNode {
-    if (!actions || range !== 'year' || !n.parent) return null
+    if (!actions || range !== 'annual' || !n.parent) return null
     const id = domId('rename_value', n)
     if (rowEdit?.id !== n.cat.id || rowEdit.kind !== 'rename') {
       return (
@@ -195,7 +195,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
   function rowActions(n: CatNode): ReactNode {
     if (!actions) return null
     const kind = rowEdit?.id === n.cat.id ? rowEdit.kind : null
-    if (range === 'year') return null
+    if (range === 'annual') return null
     if (range !== 'week' && range !== 'month') return <td />
     if (kind === 'add') {
       const id = domId('add_value', n)
@@ -353,7 +353,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
         aria-describedby={preview ? `${idBase}-key` : `${idBase}-key ${idBase}-keys`} {...grid}>
         <caption id={`${idBase}-caption`}>{title}</caption>
         <thead>
-          {range !== 'day' && range !== 'year' && showEstimates && (
+          {range !== 'day' && range !== 'annual' && showEstimates && (
             <tr>
               <td />
               {periods.map(p => <th key={p.label} scope="colgroup" colSpan={colSpan}>{p.label}</th>)}
@@ -362,7 +362,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
           )}
           <tr>
             <th scope="col" className="name">Item</th>
-            {range === 'year' || (range !== 'day' && !showEstimates)
+            {range === 'annual' || (range !== 'day' && !showEstimates)
               // One value per period (Annual, or estimates hidden): each period heads its own column (0007 §10).
               ? periods.map(p => <th key={p.label} scope="col" className="num">{p.label}</th>)
               : periods.map(p => (

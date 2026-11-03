@@ -73,7 +73,7 @@ tracked as a later-version item.
 - Fix: Save/Cancel in the edit control overflow their container
 - Remove the "Show estimates" checkbox from the Day and Annual tables
 - Larger scroll bars
-- Refactor "Year" to "Annual" (UI labels, code, design docs)
+- ✅ Refactor "Year" to "Annual" (UI labels, code, design docs)
 - Estimate toggle for the Week and Month tables (default on)
 - Expand/collapse category/subcategory rows + persisted state
 - UI/UX review (human approval)
