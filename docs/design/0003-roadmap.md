@@ -58,8 +58,8 @@ tracked as a later-version item.
 - ✅ Accessibility pass (Lighthouse 100 on 12 states; keyboard and screen reader tests passed; `docs/audits/a11y/a11y-v0.3.md`)
 - ✅ Security review (`docs/audits/security/security-v0.3.md`, approved): backup restore rejects looping or too-deep category trees, restore type checks, clear delete errors → transition to v0.4.0
 
-## v0.4 — Week/Month/Year + navigation
-- Week/Month/Year table views (date-spanning columns, per-period Est./Act.)
+## v0.4 — Week/Month/Annual + navigation
+- Week/Month/Annual table views (date-spanning columns, per-period Est./Act.)
 - Historical navigation (prev/next date range): a date `nav` above the tables (0007 §9.5)
 - Estimate scaling math: replace day-based scaling (monthly ÷ 30.44 × days) so monthly-style estimates show the typed amount per month (`docs/audits/security/security-v0.2.md` 3.4)
 - Multi-column form layout for large screens (1280px breakpoint, 0007 §10)
@@ -69,7 +69,12 @@ tracked as a later-version item.
 - Budget setup: make Taxes an expander in the table, like the other categories
 - Remove the border around the edit-name buttons
 - Budget setup "Add" buttons: tooltip "First enter a value in 'Create in {subcategory name}'"
-- Estimate toggle (default on)
+- Week table: break columns down by day
+- Fix: Save/Cancel in the edit control overflow their container
+- Remove the "Show estimates" checkbox from the Day and Annual tables
+- Larger scroll bars
+- Refactor "Year" to "Annual" (UI labels, code, design docs)
+- Estimate toggle for the Week and Month tables (default on)
 - Expand/collapse category/subcategory rows + persisted state
 - UI/UX review (human approval)
 - Accessibility pass

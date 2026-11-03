@@ -6,99 +6,92 @@ Design: `0004-table-design.md` (table), `0006-prototype.html` (v0.2 UI), `0007-v
 ## Current state
 - Version: v0.4.0. v0.3 complete (security review approved, `docs/audits/security/security-v0.3.md`). v0.2 complete (security review approved, `docs/audits/security/security-v0.2.md`).
 - Data: Dexie v7 (Income group, stored sibling `order`, `computed` only on top-level rows; see `src/storage/structure.ts`). Amounts link to categories by `categoryId`; estimate fields live on `Category`. `needsReview` removed (0007 §8.4).
-- Next: write the v0.4 plan of action from `0003-roadmap.md` v0.4 (same format as the v0.3 plan below).
+- Next: v0.4 step 1.
 - Testing: headless Chromium via host flatpak + puppeteer-core; scripts in the session scratchpad.
 
-## v0.3 plan of action
+## v0.4 plan of action
 
-Covers every v0.3 roadmap item. Each completed step bumps the last version segment to the step number (v0.3.1, v0.3.2 …); the final step bumps to v0.4.0. Commit on each bump per `versioning.md`. UI-touching steps are not complete until the human approves the UI/UX (`0005-ui-ux-review-checklist.md`).
+Covers every v0.4 roadmap item. Each completed step bumps the last version segment to the step number (v0.4.1, v0.4.2 …); the final step bumps to v0.5.0. Commit on each bump per `versioning.md`. UI-touching steps are not complete until the human approves the UI/UX (`0005-ui-ux-review-checklist.md`).
 
-1. ✅ **Name-ambiguity audit** (v0.3.1) — decided in 0007 §8; needsReview removed. Original scope: — list every repeated or ambiguous name in the seed tree and custom categories (Car, Miscellaneous, Medical …); propose how to remove the ambiguity (e.g. distinct names, or a parent-qualified display everywhere); decide how flagged amounts get resolved.
-   - Source: roadmap v0.3; security-v0.2 3.1.
-   - Deliverable: findings + proposal (location agreed with human), with a human decision.
-   - Verify: human approves the proposal.
-   - Deps: none. Its decision feeds step 9 (0007 §8.3).
+**Roadmap item "Week/Month/Annual table views":** reviewed 2026-11-02. Month (week columns + Total, Est./Act.) and Annual (12 months + Total, actuals only per 0007 §7) are done. Week is still one column; the per-day breakdown is step 4. The item closes with step 4.
 
-2. ✅ **Category structure + data model** (v0.3.2) — Income group over Pay, Incidental Income and custom subcategories; Taxes stays its own row; Net Income = Income − Taxes; subcategories allowed under Income, Savings and Expenses; a stored sort order; calculated subcategory estimates, with a manual estimate moved to a new Miscellaneous item (plus info banner) when the first child is created. Dexie v7 (also strips any leftover `needsReview` field) upgrade, tested on a seeded v6 database.
-   - Source: 0007 §2.
-   - Files: `src/storage/db.ts`, `seed.ts`, `repository.ts`, `src/budget/tree.ts`, `src/components/BudgetTable.tsx`.
-   - Verify: upgrade keeps every amount and estimate; table shows the new top level; totals match before and after.
-   - Deps: step 1.
+**Execution (human decision 2026-11-02): grouped subagents.** Steps are grouped by shared files; one subagent per group, each commits + bumps per step. Approval points come back to the main session.
+- **Group A** — step 1. Runs first, alone.
+- **Group B** — steps 3, 4, 5, 6 (`tree.ts`, `Budget.tsx`, table headers). After A.
+- **Group D** — steps 10, 11 (`BudgetSetup.tsx`, `AddBudget.tsx`). After A, in parallel with B (shared `App.css` only).
+- **Group C** — steps 2, 7, 8, 9 (`BudgetTable.tsx` rows, `useTreegrid.ts`). After B.
+- **Reviews** — steps 12, 13, 14 in the main session with the human.
+- Status: ⏳ A · ☐ B · ☐ D · ☐ C · ☐ reviews
 
-3. ✅ **Recurrence + estimate scaling** (v0.3.3) — Recurrence and Autopay on every item and on subcategories with a manual estimate; Quarterly and Annual for Debt, Utilities and Subscriptions; Week and Month tables scale estimates from each recurrence (day-based math stays until v0.4).
-   - Source: 0007 §3.
-   - Files: `src/budget/tree.ts`, `src/storage/db.ts` (`Frequency`), `repository.ts` (frequency check).
-   - Verify: scaling checks for each recurrence; $120 quarterly shows about $40 in a month view.
-   - Deps: step 2.
-
-4. ✅ **Calendar settings** (v0.3.4) — week start (any day, default Sunday) and month boundaries (whole weeks by default, or calendar month), stored in Settings and used by the Week and Month tables.
-   - Source: 0007 §1.
-   - Files: `src/storage/db.ts` (`Settings`), `src/budget/tree.ts` (`periodsFor`), `repository.ts`.
-   - Verify: period boundaries for sample months under each setting.
-   - Deps: none (the settings UI lands in step 7).
-
-5. ✅ **Tab navigation** (v0.3.5) — tab list with Add budget item and Budget; one panel at a time; ARIA tabs pattern with arrow keys.
-   - Source: 0007 §6.
-   - Files: `src/App.tsx`, new `src/components/ui/Tabs.tsx`, `src/App.css`.
-   - Verify: keyboard walkthrough; only one panel visible.
+1. **Refactor "Year" to "Annual"** (v0.4.1) — UI labels, code identifiers, design docs, and the stored values: `Frequency` and `Range` `'year'` → `'annual'`, with a Dexie v8 upgrade that rewrites stored `frequency` and settings range values (human decision 2026-11-02: change now, before a prod version). Done first because every later step touches these names.
+   - Source: roadmap v0.4.
+   - Files: `src/storage/db.ts`, `repository.ts` (`FREQS`, backup restore checks), `src/budget/tree.ts`, `src/budget/validate.ts`, `src/components/BudgetTable.tsx`, `src/screens/*`, `docs/design/*`.
+   - Verify: `grep -rn "year"` shows only intended hits (dates); upgrade tested on a seeded v7 database with yearly items and an Annual range; build + lint pass.
    - Deps: none.
 
-6. ✅ **Day and Annual tables** (v0.3.6); Annual uses calendar months so no day is counted twice — Day shows actuals only (no Est. column); new Annual range with an Act. column per month plus a year total; Annual is not a default-range option.
-   - Source: 0007 §7.
-   - Files: `src/components/BudgetTable.tsx`, `src/screens/Budget.tsx`, `src/budget/tree.ts`.
-   - Verify: sample data across months totals correctly; Day has no Est. column.
-   - Deps: steps 2 and 4.
+2. **Small UI fixes** (v0.4.2) — Save/Cancel in the edit control no longer overflow; no border on edit-name buttons; larger scroll bars.
+   - Source: roadmap v0.4.
+   - Files: `src/components/BudgetTable.tsx`, `src/App.css`.
+   - Verify: screenshots at 400px and 1280px; no overflow.
+   - Deps: none.
 
-7. ✅ **Budget setup redesign** (v0.3.7). Create rows: one per category with an Add to select (human choice, 0007 §5.2). For review: the setup table scrolls sideways on narrow screens (data-table exception) — one combined table (Select as the first column; a subcategory checkbox selects or clears its items and its accessible name says so; selection never clears estimates); a Create row per group; Move up/down and Move to reordering; calendar settings; Default display range as a radio group; live preview table; sticky footer with Cancel left and Save right; Save closes; new supporting text.
-   - Source: 0007 §5.
-   - Files: `src/screens/BudgetSetup.tsx`, `src/components/BudgetTable.tsx` (preview reuse), `repository.ts`, `src/App.css`.
-   - Verify: keyboard and screen reader walkthrough of select-all, reorder and Cancel; preview matches the Budget tab.
-   - Deps: steps 2, 3, 4, 6.
+3. **Estimate scaling math** (v0.4.3) — replace day-based scaling (monthly ÷ 30.44 × days) so a monthly estimate shows the typed amount per month; define Week and Annual results from that.
+   - Source: roadmap v0.4; security-v0.2 3.4.
+   - Files: `src/budget/tree.ts` (`PER_MONTH`, scaling fn), `src/screens/BudgetSetup.tsx` (`MONTH` preview).
+   - Verify: $100/month shows $100 in every Month view; $120 quarterly shows $40/month; Annual total = 12 × monthly.
+   - Deps: step 1.
 
-8. ✅ **Add form update** (v0.3.8); resolves security-v0.2 3.6. Charity › Miscellaneous is now preselected (Charity became a total row) — remove Estimated spend and Recurrence (resolves security-v0.2 3.6); the Item list shows selected items until the user types, then searches everything; new-item flow with a Category dropdown, Where? for a new subcategory, and Use in future (unchecked) left of a fixed right-side Save; new entries always appear in the tables.
-   - Source: 0007 §4.
-   - Files: `src/screens/AddBudget.tsx`, `src/components/ui/ItemSelector.tsx`, `repository.ts`.
-   - Verify: create an item, and a subcategory + item, with and without Use in future; the tables show them.
-   - Deps: steps 2 and 7.
+4. **Week table by day** (v0.4.4) — Week columns broken down per day (week start from Settings).
+   - Source: roadmap v0.4.
+   - Files: `src/budget/tree.ts` (`periodsFor`), `src/components/BudgetTable.tsx`.
+   - Verify: purchases land on the right day for each week-start setting; totals match the old Week view.
+   - Deps: step 3.
 
-9. ✅ **Shared search/filter component** (v0.3.9) — built during step 8 (`ItemSelector`: item / category modes, `initial` filter); reuse is checked in steps 10–12 — make `ItemSelector` the single search/filter dropdown, reusable by Edit, Delete and Categories (including a category-only mode with unselectable headings); sticky parent headings, repeat-name accessible names and option ids per 0007 §8.3.
-   - Source: roadmap v0.3.
-   - Files: `src/components/ui/ItemSelector.tsx`.
-   - Verify: used unchanged in steps 8 and 10–12.
-   - Deps: step 8.
+5. **Estimate toggle scope** (v0.4.5) — toggle shown on Week and Month only (default on); removed from Day and Annual.
+   - Source: roadmap v0.4.
+   - Files: `src/screens/Budget.tsx`.
+   - Verify: toggle present/absent per range; default on.
+   - Deps: step 4.
 
-10. ✅ **Day purchase rows + delete** (v0.3.10) — Day lists each purchase under its item; Delete with in-row confirmation; tab renamed "Add purchase".
-    - Source: 0007 §9.1, §6.
-    - Files: `src/components/BudgetTable.tsx`, `src/App.tsx`, `src/screens/AddBudget.tsx`, `repository.ts`.
-    - Verify: deleted purchases leave every table and total; keyboard + focus after delete.
-    - Deps: step 6.
+6. **Historical navigation** (v0.4.6) — date `nav` above the tables with prev/next date range for every range.
+   - Source: roadmap v0.4; 0007 §9.5.
+   - Files: `src/screens/Budget.tsx`, `src/budget/tree.ts`.
+   - Verify: prev/next across month and year boundaries under both month-boundary settings; keyboard + screen reader labels.
+   - Deps: steps 4 and 5.
 
-11. ✅ **Week/Month add value + delete rows** (v0.3.11) — Add value (+/−) on item rows; delete subcategories/items with no purchases and no items; top-level never deletable.
-    - Source: 0007 §9.2.
-    - Files: `src/components/BudgetTable.tsx`, `repository.ts`.
-    - Verify: added value shows in totals with the right date; blocked deletes explain why.
+7. **Row actions menu** (v0.4.7) — rows with more than one action get one actions menu (menu button pattern) so rows line up.
+   - Source: roadmap v0.4.
+   - Files: `src/components/BudgetTable.tsx`, new `src/components/ui/ActionsMenu.tsx`.
+   - Verify: keyboard (Enter/arrows/Escape, focus return); columns align.
+   - Deps: step 2.
+
+8. **Rename from Week and Month** (v0.4.8) — rename subcategories and items, with confirm dialog: "This will change the name of all instances of {old name} to {new name} across the application." (Confirm / Cancel). Reuses the Annual rename.
+   - Source: roadmap v0.4.
+   - Files: `src/components/BudgetTable.tsx`, `src/storage/repository.ts`.
+   - Verify: Cancel changes nothing; Confirm renames everywhere; dialog focus trap + return.
+   - Deps: step 7 (rename lives in the actions menu).
+
+9. **Expand/collapse persistence** (v0.4.9) — remember which category/subcategory rows are open (▾) or closed (▸) across reloads. One shared state: a row's open/closed state is the same in Day, Week, Month and Annual (human decision 2026-11-02).
+   - Source: roadmap v0.4.
+   - Files: `src/components/ui/useTreegrid.ts`, `src/storage/db.ts` (`Settings`) or localStorage.
+   - Verify: state survives reload; closing a row in Month shows it closed in Day, Week and Annual.
+   - Deps: none.
+
+10. **Budget setup updates** (v0.4.10) — Create row visual redesign (still one per category with Add to); Taxes as an expander like other categories; Add button tooltip "First enter a value in 'Create in {subcategory name}'".
+    - Source: roadmap v0.4.
+    - Files: `src/screens/BudgetSetup.tsx`, `src/App.css`.
+    - Verify: human approves the Create row design; tooltip reachable by keyboard and announced.
+    - Deps: step 2.
+
+11. **Multi-column form layout** (v0.4.11) — 1280px breakpoint.
+    - Source: roadmap v0.4; 0007 §10.
+    - Files: `src/screens/AddBudget.tsx`, `src/screens/BudgetSetup.tsx`, `src/App.css`.
+    - Verify: screenshots at 1279/1280px and 400px; reading/tab order unchanged.
     - Deps: step 10.
 
-12. ✅ **Annual rename** (v0.3.12) — rename subcategories and items in the Annual table.
-    - Source: 0007 §9.3.
-    - Files: `src/components/BudgetTable.tsx`, `repository.ts`.
-    - Verify: a rename shows everywhere; duplicate names rejected.
-    - Deps: step 6.
-
-13. ✅ **Due date + autopay display and editing** (v0.3.13); edited in Budget setup, shown under the item name in Week/Month — show and edit `dueDate` and `autopay` on items.
-    - Source: roadmap v0.3.
-    - Files: `src/screens/BudgetSetup.tsx`, `src/components/BudgetTable.tsx`.
-    - Verify: values round-trip and display.
-    - Deps: step 7.
-
-14. ✅ **UI/UX review** (v0.3.14) — approved 2026-11-02 after four rounds (0007 §10); covers the UI of steps 2–13 — agent pre-check against `0005-ui-ux-review-checklist.md`, then human approval of all v0.3 UI.
-    - Deps: steps 1–13.
-
-15. ✅ **Accessibility pass** (v0.3.15) — `docs/audits/a11y/a11y-v0.3.md` — Lighthouse ≥ 90 on every new state, scripted keyboard and focus checks, human screen reader test.
-    - Deps: step 14.
-
-16. ✅ **Security review** (v0.4.0) — approved 2026-11-02 — `docs/audits/security/security-v0.3.md`, NETWORKED matrix, all 8 domains; fix findings above Info.
-    - Deps: steps 1–15. Completes v0.3 and transitions to v0.4.0.
+12. **UI/UX review** (v0.4.12) — human approval per `0005-ui-ux-review-checklist.md`.
+13. **Accessibility pass** (v0.4.13) — Lighthouse + keyboard + screen reader; report in `docs/audits/a11y/a11y-v0.4.md`.
+14. **Security review** (→ v0.5.0) — `docs/audits/security/security-v0.4.md`, human approval.
 
 ## Rules
 - Each completed item: commit + version bump (per `versioning.md`).
