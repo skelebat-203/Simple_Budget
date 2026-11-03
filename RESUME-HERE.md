@@ -71,7 +71,7 @@ Covers every v0.4 roadmap item. Each completed step bumps the last version segme
    - Verify: Cancel changes nothing; Confirm renames everywhere; dialog focus trap + return.
    - Deps: step 7 (rename lives in the actions menu).
 
-9. **Expand/collapse persistence** (v0.4.9) — remember which category/subcategory rows are open (▾) or closed (▸) across reloads. One shared state: a row's open/closed state is the same in Day, Week, Month and Annual (human decision 2026-11-02).
+9. ✅ **Expand/collapse persistence** (v0.4.9) — remember which category/subcategory rows are open (▾) or closed (▸) across reloads. One shared state: a row's open/closed state is the same in Day, Week, Month and Annual (human decision 2026-11-02).
    - Source: roadmap v0.4.
    - Files: `src/components/ui/useTreegrid.ts`, `src/storage/db.ts` (`Settings`) or localStorage.
    - Verify: state survives reload; closing a row in Month shows it closed in Day, Week and Annual.

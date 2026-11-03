@@ -4,7 +4,7 @@ import { actualFor, domId, estimateTotal, isoDate, formatAmount, isTotal, period
 import { cleanName, moneyError, NAME_MAX, parseMoney, slug } from '../budget/validate'
 import { budgetItemRepo, categoryRepo, RowInUseError } from '../storage/repository'
 import { Button } from './ui'
-import { useTreegrid } from './ui/useTreegrid'
+import { useCollapsed, useTreegrid } from './ui/useTreegrid'
 import { ActionsMenu, type MenuAction } from './ui/ActionsMenu'
 import { ConfirmDialog } from './ui/ConfirmDialog'
 
@@ -14,11 +14,6 @@ const fieldOf: Record<Kind, string> = { add: 'add_value', delete: 'delete_row', 
 const buttonOf: Record<Kind, string> = { add: 'add', delete: 'delete_row', rename: 'rename' }
 
 const GRID = '__grid__'
-const COLLAPSED_KEY = 'simple-budget:collapsed'
-
-function loadCollapsed(): Set<number> {
-  try { return new Set(JSON.parse(localStorage.getItem(COLLAPSED_KEY) ?? '[]')) } catch { return new Set() }
-}
 
 /**
  * Budget table per docs/design/0004-table-design.md: tree order, indents
@@ -41,7 +36,8 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
   showEstimates: boolean
 }) {
   const showEstimates = wantEstimates && rangeHasEstimates(range)
-  const [collapsed, setCollapsed] = useState(loadCollapsed)
+  const [collapsed, toggle] = useCollapsed()
+  const { ref: gridRef, ...gridProps } = useTreegrid(toggle, !preview)
   const [today] = useState(() => new Date())
   const { columns, total, title } = periodsFor(range, date ?? today, calendar)
   const periods = total ? [...columns, total] : columns
@@ -65,7 +61,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
   useEffect(() => {
     if (!focusAfter.current) return
     // GRID: focus the table's first cell (e.g. after the last purchase in a list is deleted).
-    const el = focusAfter.current === GRID ? grid.ref.current?.querySelector<HTMLElement>('tbody th, tbody td') : document.getElementById(focusAfter.current)
+    const el = focusAfter.current === GRID ? gridRef.current?.querySelector<HTMLElement>('tbody th, tbody td') : document.getElementById(focusAfter.current)
     // A renamed row gets a new id only after the reload renders it, so wait a few renders for it.
     if (!el && ++focusTries.current < 4) return
     el?.focus()
@@ -80,6 +76,9 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
   const purchaseLabel = (i: BudgetItem) =>
     `Purchase, ${new Date(i.createdAt).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`
   const deleteId = (n: CatNode, i: BudgetItem) => ['delete', n.parent && slug(n.parent.cat.name), slug(n.cat.name), i.id].filter(Boolean).join('-')
+
+  /** Day purchase Delete: show (id) or hide (null) its confirmation, then focus `focus`. */
+  function askDelete(id: number | null, focus: string) { setConfirm(id); focusAfter.current = focus }
 
   async function remove(n: CatNode, i: BudgetItem, next: string) {
     setError('')
@@ -111,13 +110,14 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
   }
 
   /** Week/Month row actions (§9.2). More than one goes in an Actions menu so rows line up (v0.4 step 7). */
-  function menuActions(n: CatNode): (MenuAction & { kind: Kind })[] {
-    const list: (MenuAction & { kind: Kind })[] = []
-    if (!isTotal(n) && n.cat.name !== 'Net Income') list.push({ kind: 'add', id: domId('add', n), label: 'Add value', onSelect: () => openRow(n, 'add') })
-    if (n.parent) list.push({ kind: 'rename', id: domId('rename', n), label: 'Rename', onSelect: () => openRow(n, 'rename') })
-    if (n.parent) list.push({ kind: 'delete', id: domId('delete_row', n), label: 'Delete', onSelect: () => tryDelete(n) })
+  function menuActions(n: CatNode): MenuAction<Kind>[] {
+    const list: MenuAction<Kind>[] = []
+    if (!isTotal(n) && n.cat.name !== 'Net Income') list.push({ value: 'add', id: domId('add', n), label: 'Add value' })
+    if (n.parent) list.push({ value: 'rename', id: domId('rename', n), label: 'Rename' })
+    if (n.parent) list.push({ value: 'delete', id: domId('delete_row', n), label: 'Delete' })
     return list
   }
+  function act(n: CatNode, kind: Kind) { if (kind === 'delete') tryDelete(n); else openRow(n, kind) }
 
   async function rename(n: CatNode) {
     const name = cleanName(value)
@@ -263,10 +263,10 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
     const one = list.length === 1 ? list[0] : null
     return (
       <td className="row-actions">
-        {list.length > 1 && <ActionsMenu id={domId('actions', n)} label={`Actions for ${say(n)}`} items={list} />}
+        {list.length > 1 && <ActionsMenu id={domId('actions', n)} label={`Actions for ${say(n)}`} items={list} onSelect={k => act(n, k)} />}
         {one && (
-          <Button type="button" className="secondary small" id={one.id} aria-label={`${one.label} ${one.kind === 'add' ? 'to ' : ''}${say(n)}`}
-            onClick={one.onSelect}>{one.label}</Button>
+          <Button type="button" className="secondary small" id={one.id} aria-label={`${one.label} ${one.value === 'add' ? 'to ' : ''}${say(n)}`}
+            onClick={() => act(n, one.value)}>{one.label}</Button>
         )}
       </td>
     )
@@ -275,15 +275,6 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
   const values = (n: CatNode, p: Period) => ({ est: estimateTotal(n, p), act: actualFor(n, p, items) })
   const hasAmount = (n: CatNode) =>
     periods.some(p => { const v = values(n, p); return v.act !== 0 || (showEstimates && v.est !== 0) })
-
-  const grid = useTreegrid(id => toggle(id), !preview)
-
-  function toggle(id: number) {
-    const next = new Set(collapsed)
-    if (next.has(id)) next.delete(id); else next.add(id)
-    setCollapsed(next)
-    try { localStorage.setItem(COLLAPSED_KEY, JSON.stringify([...next])) } catch { /* storage unavailable */ }
-  }
 
   const cells = (get: (p: Period) => { est: number; act: number }) => periods.map(p => {
     const v = get(p)
@@ -350,11 +341,11 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
                   <span aria-hidden="true">Delete this purchase?</span>
                   <Button type="button" className="danger small" id={`${id}-confirm`} onClick={() => remove(n, i, next)}>Delete</Button>
                   <Button type="button" className="secondary small" id={`${id}-cancel`}
-                    onClick={() => { setConfirm(null); focusAfter.current = id }}>Cancel</Button>
+                    onClick={() => askDelete(null, id)}>Cancel</Button>
                 </span>
                 : <Button type="button" className="secondary small" id={id}
                   aria-label={`Delete ${say(n)} purchase of ${formatAmount(i.amount) || '0.00'}`}
-                  onClick={() => { setConfirm(i.id!); focusAfter.current = `${id}-cancel` }}>Delete</Button>}
+                  onClick={() => askDelete(i.id!, `${id}-cancel`)}>Delete</Button>}
             </td>
           )}
         </tr>,
@@ -379,7 +370,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
   return (
     <div className="table-box">
       <table className="table budget-table" aria-labelledby={`${idBase}-heading ${idBase}-caption`}
-        aria-describedby={preview ? `${idBase}-key` : `${idBase}-key ${idBase}-keys`} {...grid}>
+        aria-describedby={preview ? `${idBase}-key` : `${idBase}-key ${idBase}-keys`} ref={gridRef} {...gridProps}>
         <caption id={`${idBase}-caption`}>{title}</caption>
         <thead>
           {range !== 'day' && range !== 'annual' && showEstimates && (

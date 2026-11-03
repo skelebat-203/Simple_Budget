@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 
-export type MenuAction = { id: string; label: string; onSelect: () => void }
+/** A menu item: `id` is its DOM id; `value` is passed to onSelect. */
+export type MenuAction<T extends string = string> = { id: string; label: string; value: T }
 
 /**
  * Row actions menu (menu button pattern, v0.4 step 7). One button per row so
@@ -11,12 +12,13 @@ export type MenuAction = { id: string; label: string; onSelect: () => void }
  *   Tab closes. Focus returns to the button, then the picked action may move it.
  * - Keys it handles don't reach a surrounding treegrid.
  */
-export function ActionsMenu({ id, label, items }: {
+export function ActionsMenu<T extends string>({ id, label, items, onSelect }: {
   /** Button id; the menu is `{id}-menu`. */
   id: string
   /** Accessible name of the button, e.g. "Actions for Rent". */
   label: string
-  items: MenuAction[]
+  items: MenuAction<T>[]
+  onSelect: (value: T) => void
 }) {
   const [open, setOpen] = useState(false)
   const [active, setActive] = useState(0)
@@ -27,7 +29,7 @@ export function ActionsMenu({ id, label, items }: {
 
   function show(at: number) { setActive(at); setOpen(true) }
   function close(focusButton = true) { setOpen(false); if (focusButton) button.current?.focus() }
-  function pick(i: number) { close(); items[i].onSelect() }
+  function pick(i: number) { close(); onSelect(items[i].value) }
 
   function onButtonKey(e: KeyboardEvent<HTMLButtonElement>) {
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
