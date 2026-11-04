@@ -1,6 +1,7 @@
 // Input rules shared by every form (security-v0.2 2.1, 3.2, 3.5).
 
 export const NAME_MAX = 60
+export const DESCRIPTION_MAX = 120
 export const MONEY_MAX = 999_999_999.99
 
 /**
@@ -10,6 +11,11 @@ export const MONEY_MAX = 999_999_999.99
  */
 export function cleanName(s: string): string {
   return s.normalize('NFC').replace(/[\p{Cc}\p{Cf}]/gu, '').replace(/\s+/g, ' ').trim().slice(0, NAME_MAX)
+}
+
+/** Clean an optional description: same rules as a name, up to DESCRIPTION_MAX; '' when nothing is left. */
+export function cleanDescription(s: string): string {
+  return s.normalize('NFC').replace(/[\p{Cc}\p{Cf}]/gu, '').replace(/\s+/g, ' ').trim().slice(0, DESCRIPTION_MAX)
 }
 
 export type MoneyResult = { ok: true; value: number } | { ok: false; reason: 'empty' | 'format' | 'negative' | 'range' }

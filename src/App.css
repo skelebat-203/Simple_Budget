@@ -190,6 +190,7 @@
 .inline-form { display: inline-flex; align-items: center; gap: var(--space-xs); }
 .confirm { display: inline-flex; align-items: center; gap: var(--space-xs); flex-wrap: wrap; }
 .row.purchase .name { font-size: var(--font-size-sm); color: var(--color-text); }
+.row-description { display: block; white-space: normal; font-style: italic; padding-left: var(--space-md); font-size: var(--font-size-sm); font-weight: var(--font-weight-normal); color: var(--color-text-description); overflow-wrap: anywhere; }
 .row.purchase.depth-1 .name { padding-left: calc(var(--space-md) * 2); }
 .row.purchase.depth-2 .name { padding-left: calc(var(--space-md) * 3); }
 .row.purchase.depth-3 .name { padding-left: calc(var(--space-md) * 4); }
@@ -428,3 +429,8 @@ nav .btn.icon:hover:not(:disabled) { background: var(--color-border); }
 .wizard-list label { display: flex; align-items: center; gap: var(--space-sm); min-height: 2.75rem; cursor: pointer; }
 .wizard-list input[type=checkbox] { width: 1.375rem; height: 1.375rem; flex: none; accent-color: var(--color-primary-background); }
 .wizard-count { font-weight: var(--font-weight-bold); }
+
+/* Day table only: at least 500px wide, Item column 60% of the table; descriptions and actions wrap. */
+.day-table { min-width: 500px; table-layout: fixed; }
+.day-table thead th:first-child { width: 60%; }
+.day-table .row-actions { white-space: normal; }

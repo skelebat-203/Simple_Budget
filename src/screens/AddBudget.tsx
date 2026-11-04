@@ -1,12 +1,12 @@
 import { useRef, useState } from 'react'
-import { AmountField, Button, DatePicker, ErrorSummary, focusFirstError, ItemSelector, type FieldError } from '../components/ui'
+import { AmountField, Button, DatePicker, ErrorSummary, focusFirstError, Input, ItemSelector, type FieldError } from '../components/ui'
 import { addNewItem, budgetItemRepo, NameTakenError } from '../storage/repository'
 import { childColor, displayName, formatAmount, isoDate, type CatNode } from '../budget/tree'
 import { useAnnounce } from '../components/ui/announcer'
 import { fireReward } from '../rewards/rewards'
-import { cleanName, dateBounds, moneyError, parseAmount } from '../budget/validate'
+import { cleanDescription, cleanName, DESCRIPTION_MAX, dateBounds, moneyError, parseAmount } from '../budget/validate'
 
-const FIELDS = ['item', 'category', 'where', 'amount', 'date'] as const
+const FIELDS = ['item', 'category', 'where', 'amount', 'description', 'date'] as const
 type Errors = Partial<Record<typeof FIELDS[number], string>>
 
 const toList = (e: Errors): FieldError[] => FIELDS.filter(k => e[k]).map(k => ({ fieldId: k, message: e[k]! }))
@@ -27,6 +27,7 @@ export function AddBudget({ roots, onSaved }: {
   const [where, setWhere] = useState('')
   const [useInFuture, setUseInFuture] = useState(false)
   const [amount, setAmount] = useState('')
+  const [description, setDescription] = useState('')
   const [date, setDate] = useState(() => isoDate(new Date()))
   const [errors, setErrors] = useState<Errors>({})
   const [saving, setSaving] = useState(false)
@@ -60,7 +61,7 @@ export function AddBudget({ roots, onSaved }: {
   function reset() {
     setTarget(null); setItemText({ text: '', matches: 0 })
     setCategory(null); setCategoryText({ text: '', matches: 0 })
-    setWhere(''); setUseInFuture(false); setAmount('')
+    setWhere(''); setUseInFuture(false); setAmount(''); setDescription('')
     setFormKey(k => k + 1) // clears the Item and Category controls
   }
 
@@ -81,7 +82,7 @@ export function AddBudget({ roots, onSaved }: {
     const shownAmount = formatAmount(value) || '0.00'
     try {
       if (target) {
-        await budgetItemRepo.add({ categoryId: target.cat.id, amount: value, date })
+        await budgetItemRepo.add({ categoryId: target.cat.id, amount: value, date, description: cleanDescription(description) || undefined })
         setSaved({ what: `${displayName(target)}: ${shownAmount} on ${date}.`, extra: '' })
       } else {
         const name = cleanName(itemText.text)
@@ -95,6 +96,7 @@ export function AddBudget({ roots, onSaved }: {
           selected: useInFuture,
           amount: value,
           date,
+          description: cleanDescription(description) || undefined,
         })
         setSaved({ what: `${name}: ${shownAmount} on ${date}.`, extra: moved ? `Your ${moved} estimate moved to ${moved} › Miscellaneous. ${moved} now totals its items.` : '' })
       }
@@ -168,6 +170,12 @@ export function AddBudget({ roots, onSaved }: {
         <AmountField id="amount" allowNegative value={amount} onChange={e => setAmount(e.target.value)} aria-required="true"
           aria-invalid={!!errors.amount || undefined} aria-describedby={describe('amount', 'amount-help')} />
         {errors.amount && <p id="amount-error_msg" className="error">{errors.amount}</p>}
+      </div>
+      <div className="field">
+        <label className="label" htmlFor="description">Description</label>
+        <p id="description-help" className="help">Optional. Up to {DESCRIPTION_MAX} characters.</p>
+        <Input id="description" maxLength={DESCRIPTION_MAX} autoComplete="off" value={description}
+          onChange={e => setDescription(e.target.value)} aria-describedby="description-help" />
       </div>
       <div className="field">
         <label className="label" htmlFor="date">Date</label>

@@ -12,6 +12,7 @@
   --color-success: #15803d; /* success messages (popups/banners/tooltips) */
   --color-info: #0284c7; /* info messages (popups/banners/tooltips) */
   --color-text: #000000; /* standard text color */
+  --color-text-description: #4b5563; /* purchase description: dark grey, 7.6:1 on white */
 
   /* Category colors (docs/design/0004-table-design.md). Applied as text at
      every weight, so each meets 4.5:1 on the page background (≥5:1 here).

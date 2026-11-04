@@ -1,5 +1,5 @@
 import { db, type BudgetItem, type Category, type Frequency, type DefaultRange, type MonthBoundary, type Settings } from './db'
-import { cleanName, MONEY_MAX, slug } from '../budget/validate'
+import { cleanName, DESCRIPTION_MAX, MONEY_MAX, slug } from '../budget/validate'
 import { toV7Structure } from './structure'
 
 const FREQS = new Set<Frequency>(['day', 'week', 'biweek', 'bimonthly', 'month', 'quarter', 'annual'])
@@ -28,6 +28,7 @@ const isMoney = (n: unknown): n is number => typeof n === 'number' && Number.isF
 function validItem(r: unknown): r is BudgetItem {
   const x = r as BudgetItem
   return !!x && Number.isInteger(x.categoryId) && isMoney(x.amount) && typeof x.date === 'string' && DATE_RE.test(x.date)
+    && (x.description === undefined || (typeof x.description === 'string' && x.description.length <= DESCRIPTION_MAX))
 }
 
 function validCategory(r: unknown): r is Category {
@@ -181,6 +182,7 @@ export async function addNewItem(o: {
   selected: boolean
   amount: number
   date: string
+  description?: string
 }): Promise<string | undefined> {
   return db.transaction('rw', db.categories, db.budgetItems, async () => {
     let parent: { id: number; name: string }
@@ -193,7 +195,7 @@ export async function addNewItem(o: {
     }
     await assertFree(parent.id, o.name, parent.name)
     const r = await categoryRepo.add({ name: o.name, parentId: parent.id, color: o.color, selected: o.selected || undefined })
-    await budgetItemRepo.add({ categoryId: r.id, amount: o.amount, date: o.date })
+    await budgetItemRepo.add({ categoryId: r.id, amount: o.amount, date: o.date, description: o.description })
     return r.movedFrom
   })
 }
@@ -289,7 +291,7 @@ export function checkBackup(data: unknown): Backup {
   if (badTreeRows(cats).size) throw new BackupError('has categories nested in a loop or more than three levels deep. Export a new backup and try again.')
   return {
     ...b,
-    budgetItems: b.budgetItems.map(({ id, categoryId, amount, date, createdAt, updatedAt }) => ({ id, categoryId, amount, date, createdAt, updatedAt })),
+    budgetItems: b.budgetItems.map(({ id, categoryId, amount, date, description, createdAt, updatedAt }) => ({ id, categoryId, amount, date, ...(description ? { description } : {}), createdAt, updatedAt })),
     categories: cats.map(c => ({ ...c, name: cleanName(c.name) })),
     settings: b.settings.slice(0, 1).map(s => cleanSettings({ ...s, rewardsEnabled: !!s.rewardsEnabled })),
   }

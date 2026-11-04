@@ -351,7 +351,10 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
       const asking = confirm === i.id
       rows.push(
         <tr key={`p${i.id}`} className={`row purchase depth-${n.depth + 1}`} {...(preview ? {} : { "aria-level": n.depth + 2 })}>
-          <th scope="row" className="name">{purchaseLabel(i)}</th>
+          <th scope="row" className="name">
+            {purchaseLabel(i)}
+            {i.description && <span className="row-description">{i.description}</span>}
+          </th>
           <td className={`num${i.amount < 0 ? ' neg' : ''}`}>{formatAmount(i.amount) || '0.00'}</td>
           {actionCol && (
             <td className="row-actions">
@@ -390,7 +393,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
     <div className="table-wrap">
       {/* Only the table scrolls sideways; the help text below stays in the page width (v0.4 review). */}
       <div className="table-box">
-        <table className="table budget-table" aria-labelledby={`${idBase}-heading ${idBase}-caption`}
+        <table className={`table budget-table${range === 'day' ? ' day-table' : ''}`} aria-labelledby={`${idBase}-heading ${idBase}-caption`}
           aria-describedby={`${idBase}-key`} ref={gridRef} role={preview ? undefined : 'treegrid'}>
           <caption id={`${idBase}-caption`}>{title}</caption>
           <thead>

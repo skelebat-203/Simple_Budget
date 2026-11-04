@@ -35,7 +35,7 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
    - Files: `src/screens/AddBudget.tsx`, `src/screens/BudgetSetup.tsx`, new `src/components/ui/AmountField.tsx`, `src/budget/validate.ts`
    - Verify: parsing and rounding cases (only `+`, `-`, digits, decimal point, no code evaluation); invalid input message; result shown before saving; keyboard-only use; build + lint
    - Deps: none
-6. **Optional description** (v0.6/6) — optional field below Amount, stored with the purchase/item.
+6. **Optional description** (v0.6/6) ✅ (v0.6.9) — optional field below Amount, stored with the purchase/item.
    - Source: roadmap v0.6; `0009` §4
    - Files: `src/storage/structure.ts`, `src/storage/db.ts`, `src/storage/repository.ts`, `src/screens/AddBudget.tsx`, `src/budget/validate.ts`, backup restore
    - Verify: persists across reload and backup restore; length limit and sanitising; Dexie bump only if needed

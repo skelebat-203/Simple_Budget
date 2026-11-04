@@ -18,6 +18,8 @@ export interface BudgetItem {
   amount: number
   /** Local date, YYYY-MM-DD. */
   date: string
+  /** Optional note on the purchase (0009 §4); shown in the Day table. */
+  description?: string
   createdAt: number
   updatedAt: number
 }
