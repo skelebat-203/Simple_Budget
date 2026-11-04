@@ -20,7 +20,7 @@ export interface MultiOption {
  * Typed text that matches no option offers "Add …" when `onAdd` is given; it returns
  * an error message, or null when the text was added.
  */
-export function MultiSelect({ id, label, options, selected, onToggle, onAdd, addLabel, describedBy }: {
+export function MultiSelect({ id, label, options, selected, onToggle, onAdd, addLabel, describedBy, maxLength }: {
   id: string
   /** Name of the combobox and listbox. */
   label: string
@@ -31,6 +31,8 @@ export function MultiSelect({ id, label, options, selected, onToggle, onAdd, add
   /** Text of the Add option, given the typed text. */
   addLabel?: (text: string) => string
   describedBy?: string
+  /** Longest text the box accepts (typing stops there). */
+  maxLength?: number
 }) {
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState(false)
@@ -66,7 +68,7 @@ export function MultiSelect({ id, label, options, selected, onToggle, onAdd, add
         <input id={id} className="input" role="combobox" aria-label={label} aria-expanded={open} aria-controls={listId}
           aria-autocomplete="list" aria-activedescendant={open && active >= 0 ? optId(active) : undefined}
           aria-invalid={!!error || undefined} aria-describedby={[describedBy, hint, error ? errId : ''].filter(Boolean).join(' ')}
-          autoComplete="off" value={query}
+          autoComplete="off" maxLength={maxLength} value={query}
           onChange={e => { setQuery(e.target.value); setOpen(true); setActive(-1); setError('') }}
           onFocus={() => setOpen(true)} onBlur={() => setOpen(false)}
           onKeyDown={e => {

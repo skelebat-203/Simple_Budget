@@ -115,8 +115,8 @@ export function Onboarding({ cats, firstRun, onClose, onSkip, onDone }: {
           <div className="field">
             <label className="label" htmlFor="categories">Savings and spending items to track</label>
             <MultiSelect id="categories" label="Savings and spending items" options={options} selected={selected} onToggle={toggle}
-              onAdd={add} addLabel={t => `Add “${t}” to Expenses`} />
-            <p className="help">Names can be up to {NAME_MAX} characters.</p>
+              onAdd={add} addLabel={t => `Add “${t}” to Expenses`} maxLength={NAME_MAX} describedBy="categories-help" />
+            <p id="categories-help" className="help">Names can be up to {NAME_MAX} characters.</p>
           </div>
         )}
       </fieldset>

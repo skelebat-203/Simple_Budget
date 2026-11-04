@@ -10,7 +10,7 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
 
 **Run option (estimate):** single session with fresh restarts. The steps share a few files (`BudgetTable.tsx`, `BudgetSetup.tsx`, `App.css`, `structure.ts`), so parallel subagents would collide, and most UI steps need approval mid-way.
 
-1. **D001 name length** (v0.6/1) — stop typing at 60 characters in the onboarding multi-select; say the limit in the field help.
+1. **D001 name length** (v0.6/1) ✅ (v0.6.1) — stop typing at 60 characters in the onboarding multi-select; say the limit in the field help.
    - Source: `docs/defects/D001`
    - Files: `src/components/ui/MultiSelect.tsx`, `src/screens/Onboarding.tsx`
    - Verify: 200 typed characters stop at 60; help text read by screen reader; build + lint
