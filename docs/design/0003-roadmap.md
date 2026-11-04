@@ -100,10 +100,11 @@ tracked as a later-version item.
   - Onboarding as a three-step wizard with a progress bar
   - Budget setup: "Add" buttons in place of the four "Create in" fields
   - Highlight dialog: clicking an item name opens a dialog with the item and its children and the table's functions; the chevron alone expands and collapses
-  - Budget tables (not Annual): the Actions menu is renamed "Edit" with Description, Rename (moves the item to its right category), Add/Subtract and Delete (Day and Week only), each opening a dialog
+  - Budget tables (not Annual): the Actions menu is renamed "Edit" with Rename (moves the item to its right category, with a warning that it changes all historic records), Add/Subtract (Day: New purchase) and Delete (Day and Week only), each opening a dialog; Day purchase rows have an Edit button instead, opening one dialog with the Add purchase form prepopulated (`0009` §4.1)
   - Backup and upload described in the help dialog
-  - Add/Subtract: updates a purchase's amount in Day (a New purchase button on category rows adds one) and adds to or subtracts from an item's total in Week and Month (`0009` §4.1)
-- Hover styling on buttons and links across the app (decided 2026-11-04; the Edit menu and highlight work add their own, this covers the rest)
+  - Add/Subtract: Day has a New purchase button on category rows; purchases are edited in their own dialog and adds to or subtracts from an item's total in Week and Month, with a date picker limited to the viewed period (`0009` §4.1)
+- Hover styling on buttons and links across the app (decided 2026-11-04; built v0.6.15)
+- Week, Month and Annual amount columns at least wide enough for 222,222.99, in the tables and the highlight dialog (decided 2026-11-04; built v0.6.17)
 - Refactor so each tab panel's header below the tab is visually hidden (still available to screen readers)
 - Add addition and subtraction to the amount fields: typed expressions (decided 2026-11-04)
 - Optional description field below Amount
@@ -121,6 +122,10 @@ tracked as a later-version item.
 - Form field alignment class: adds the same space between a label and its control as appears when supporting (help) text sits between them, so fields shown side by side in columns line up in even rows (decided 2026-11-04)
 - Negative purchases (refunds or credits, `0007` §9) are listed in the Day table as a return (decided 2026-11-04; the exact label and styling are decided when built)
 - Input parsing for typed names: spell check and common abbreviations (e.g. "Misc." is tracked as "Miscellaneous") (decided 2026-11-04; the abbreviation list, where it runs and whether it corrects silently or asks are decided when built)
+- Move subcategories and items between parents: a subcategory moved into another becomes an item; an item moved out of a subcategory becomes a subcategory (e.g. a user creates "Retirement" under Savings and places IRA, 401k and 403b inside it). Must be fully keyboard accessible. Moving a subcategory that has items into another subcategory is refused with an error message (decided 2026-11-04). The interaction (a Move dialog, as Rename's Category select in `0009` §4, versus other ways) and what happens to the moved row's purchases and estimates are designed before building
+- Maximum app width of 1440px (decided 2026-11-04; content stays centered and the charts below use it)
+- Item column: sticky (left) in the Week, Month and Annual tables and the highlight dialog when the viewport is wider than 500px, and a persistent minimum width of 250px in every table in the app (decided 2026-11-04). Per the accessibility rules, sticky is removed at 500px and narrower, and focused cells must not be hidden behind the sticky column
+- Consolidate dialogs into one component (today three: form dialogs, confirm dialogs and a generic dialog); migrate the v0.6 dialogs (Edit menu, highlight, wizard) to it (decided 2026-11-04)
 - Chart view (Table/Chart switch)
 - Chart types for Budget screen
 - UI/UX review (human approval)

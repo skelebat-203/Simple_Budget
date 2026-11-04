@@ -45,22 +45,22 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
    - Files: `src/storage/repository.ts`, `src/components/ui/ItemSelector.tsx`, `src/budget/tree.ts`
    - Verify: purchases move once, at the first item; Charity leaves the dropdown; Medical unchanged; restore of a backup keeps the rule
    - Deps: spec decided in `0009` §6 (2026-11-04)
-8. **Budget setup "Add" buttons** (v0.6/8) ⏳ built (v0.6.11, v0.6.12), awaiting your review — one Add button per category replaces the four "Create in" field rows; selecting it shows that category's fields above the button; announces "Fields added above".
+8. **Budget setup "Add" buttons** (v0.6/8) ✅ (v0.6.11, v0.6.12, v0.6.16) — one Add button per category replaces the four "Create in" field rows; selecting it shows that category\'s fields above the button (Save right of "Add to"; the button reads Cancel while open; Save hides the fields and focuses Add); announces "Fields added above". Approved 2026-11-04.
    - Source: `0009` §2
    - Files: `src/screens/BudgetSetup.tsx`, `src/App.css`
    - Verify: focus moves to first new field; polite announcement through the single live region; Tab order; 320px
    - Deps: none
-9. **Edit menu with dialogs** (v0.6/9) ⏳ built (v0.6.13), awaiting your review — Day, Week, Month rows: "Actions" becomes "Edit" with Description, Rename (moves item to the right category), Add/Subtract, Delete (Day and Week only); each opens a dialog. Annual unchanged.
+9. **Edit menu with dialogs** (v0.6/9) ⏳ built (v0.6.13, v0.6.17, v0.6.18), approved 2026-11-04 except the Week/Month date picker (added 2026-11-04, **not built**; ✅ when built) — Day, Week, Month rows: "Actions" becomes "Edit" with Rename (moves item to the right category; warning banner), Add/Subtract (Day: New purchase), Delete (Day and Week only); each opens a dialog. Day purchase rows: an Edit button opens one dialog with the Add purchase form prepopulated (Cancel, Save, Delete). Annual unchanged.
    - Source: `0009` §4, §4.1; roadmap v0.6
    - Files: `src/components/BudgetTable.tsx`, new dialog components in `src/components/ui/`, `src/budget/setupEdits.ts`, `src/App.css`
-   - Verify: dialog focus trap and return; rename-to-other-category moves the item; delete only where allowed; five tables
-   - Deps: 5, 6; behavior decided 2026-11-04 in `0009` §4.1 (Day: New purchase button on category rows, amount update on purchase rows; Week/Month: add to or subtract from the item total; supersedes `0007` §9.1/§9.4 for the amount, so the roadmap's Post v1.0 item now covers the date only)
-10. **Highlight dialog** (v0.6/10) ⏳ built (v0.6.14), awaiting your review — clicking an item name opens a dialog with the row, its children and the table's functions; the chevron alone expands and collapses.
-    - Source: `0009` §3; prototype `0011`; decided 2026-11-04: dialog shows the row as in the table viewed (Day lists purchases; Week/Month/Annual do not); Delete confirms first, hidden in Month/Annual; Rename not offered for top-level categories; a purchase row in Day opens its own dialog (Add/Subtract, Delete)
+   - Verify: dialog focus trap and return; Week/Month date picker min/max are the viewed period's first and last day (custom month boundaries too); rename-to-other-category moves the item; delete only where allowed; five tables
+   - Deps: 5, 6; behavior decided 2026-11-04 in `0009` §4.1 (Day: New purchase button on category rows, amount update on purchase rows; Week/Month: add to or subtract from the item total, with a date picker limited to the viewed period; supersedes `0007` §9.1/§9.4 for the amount, so the roadmap's Post v1.0 item now covers the date only)
+10. **Highlight dialog** (v0.6/10) ✅ (v0.6.14, v0.6.17, v0.6.18) — clicking an item name opens a dialog with the row, its children and the table's functions; the chevron alone expands and collapses.
+    - Source: `0009` §3; prototype `0011`; decided 2026-11-04: dialog shows the row as in the table viewed (Day lists purchases; Week/Month/Annual do not); Delete confirms first, hidden in Month/Annual; Rename not offered for top-level categories; a purchase row in Day opens the purchase dialog (`0009` §4.1)
     - Files: `src/components/BudgetTable.tsx`, new dialog component, `src/App.css`
     - Verify: the name's clickable cue is a 2px dotted underline; name click no longer toggles (supersedes nothing in `0008` §1 except the name-toggle); same functions as the Edit menu; keyboard and screen reader
     - Deps: 9; `0009` §3 is decided (not blocked)
-9a. **Hover styling** (v0.6/9a) ⏳ built (v0.6.15), awaiting your review — hover state on every button and link across the app (today only some have one).
+9a. **Hover styling** (v0.6/9a) ✅ (v0.6.15) — hover state on every button and link across the app (today only some have one).
    - Source: roadmap v0.6; human request 2026-11-04 (highlight review)
    - Files: `src/App.css`, `src/styles/tokens.css`
    - Verify: scripted list of every button/link class with a `:hover` rule; contrast 3:1 in both themes; no hover-only information; disabled buttons do not react
@@ -105,12 +105,12 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
 ### Execution
 - ✅ **A — Small fixes** (steps 1, 2, 3, 4; MultiSelect, repository, AddBudget, App): parallel-safe, sequential in one session.
 - ✅ **B — Amounts and descriptions** (steps 5, 6, 7; AddBudget, structure, seed): after A step 3 (same `AddBudget.tsx`).
-- **C — Setup and table dialogs** (steps 8, 9, 10, 9a; BudgetSetup, BudgetTable, App.css): after B; design settled. Step 9a (hover styling) last. Built in v0.6.11–v0.6.15; marks stay ⏳ until the human approves the UI.
+- **C — Setup and table dialogs** (steps 8, 9, 10, 9a; BudgetSetup, BudgetTable, App.css): after B; design settled. Step 9a (hover styling) last. Built in v0.6.11–v0.6.18 and approved; only the Week/Month Add/Subtract date picker (step 9) remains.
 - **D — Nesting** (step 12; tree, BudgetTable, BudgetSetup, structure): after C; spec first.
 - ✅ **E — Wizard** (step 11; Onboarding): after A; design settled, so it can run any time after A (before C or D if wanted).
 - **F — Import** (steps 13, 14, 15, 16; import, Backup, BudgetSetup, Onboarding): after D and E.
 - **Reviews** (steps 17–19): main session with the user.
-- Status: ✅ A · ✅ B · ⏳ C (built, awaiting review) · ☐ D · ✅ E · ☐ F · ☐ reviews
+- Status: ✅ A · ✅ B · ⏳ C (date picker in step 9 left) · ☐ D · ✅ E · ☐ F · ☐ reviews
 
 ### Session process
 Run option 1: one session per group, fresh start at each group boundary. A session starts by reading this file and the roadmap, then:
