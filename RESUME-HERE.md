@@ -58,11 +58,11 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
     - Verify: scripted scan of every screen shows no unexplained abbreviations
     - Result: Est./Act. headers read "Estimated"/"Actual" to screen readers; week title spells the month; seed items "Trad 401k" and "Gen. Self Care" spelled out (existing databases keep the old names; no migration, pre-alpha). Kept with full accessible names: short weekday/month column headings. Kept as proper names: 401k, 403b, IRA, HSA, FSA.
     - Deps: 1–9 (runs over finished UI)
-11. **UI/UX review** (v0.5/11) — human approval, `0005` checklist, all widths and themes.
+11. **UI/UX review** ✅ (approved by the human 2026-11-04) (v0.5/11) — human approval, `0005` checklist, all widths and themes.
     - Deps: 1–10
-12. **Accessibility pass** (v0.5/12) — `docs/audits/a11y/a11y-v0.5.md`; includes screen reader table keys in Budget setup (`0008` §2).
+12. **Accessibility pass** ✅ (v0.5.8, v0.5.9; approved 2026-11-04, incl. screen reader table check) (v0.5/12) — `docs/audits/a11y/a11y-v0.5.md`; includes screen reader table keys in Budget setup (`0008` §2).
     - Deps: 11
-13. **Security review** (v0.5/13) — `docs/audits/security/security-v0.5.md`; on approval bump to v0.6.0.
+13. **Security review** ⏳ written, awaiting approval (v0.5/13) — `docs/audits/security/security-v0.5.md`; on approval bump to v0.6.0.
     - Deps: 12
 
 ### Execution
@@ -71,7 +71,7 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
 - **C — Settings, rewards, onboarding** (steps 7, 8, 9; storage, App, AddBudget, new screens): after A step 3 lands (shared `structure.ts`/`db.ts` Dexie bump), then sequential.
 - **D — Abbreviation audit** (step 10): after A, B, C.
 - **Reviews** (steps 11–13): main session with the user.
-- Status: ✅ A · ✅ B · ✅ C · ✅ D · ☐ reviews
+- Status: ✅ A · ✅ B · ✅ C · ✅ D · ✅ UI/UX · ✅ a11y · ⏳ security
 
 ## Rules
 - Each completed item: commit + version bump (per `.claude/CLAUDE.md` "Version numbering").
