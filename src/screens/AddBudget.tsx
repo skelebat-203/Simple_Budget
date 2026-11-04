@@ -1,10 +1,10 @@
 import { useRef, useState } from 'react'
-import { AmountInput, Button, DatePicker, ErrorSummary, focusFirstError, ItemSelector, type FieldError } from '../components/ui'
+import { AmountField, Button, DatePicker, ErrorSummary, focusFirstError, ItemSelector, type FieldError } from '../components/ui'
 import { addNewItem, budgetItemRepo, NameTakenError } from '../storage/repository'
 import { childColor, displayName, formatAmount, isoDate, type CatNode } from '../budget/tree'
 import { useAnnounce } from '../components/ui/announcer'
 import { fireReward } from '../rewards/rewards'
-import { cleanName, dateBounds, moneyError, parseMoney } from '../budget/validate'
+import { cleanName, dateBounds, moneyError, parseAmount } from '../budget/validate'
 
 const FIELDS = ['item', 'category', 'where', 'amount', 'date'] as const
 type Errors = Partial<Record<typeof FIELDS[number], string>>
@@ -50,10 +50,8 @@ export function AddBudget({ roots, onSaved }: {
     else if (!target && itemText.matches > 1) e.item = 'Invalid: Item pick one from the list; that name is used in more than one place'
     if (isNew && !category && !categoryText.text.trim()) e.category = 'Error: Category cannot be empty'
     if (isNewSub && !where) e.where = 'Error: Where? cannot be empty'
-    // A number input reports '' for text it can't parse; tell that apart from empty (security-v0.2 3.3).
-    const amountEl = document.getElementById('amount') as HTMLInputElement | null
-    const amt = amountEl?.validity.badInput ? { ok: false as const, reason: 'format' as const } : parseMoney(amount, { allowNegative: true })
-    if (!amt.ok) e.amount = moneyError('Amount', amt, '12.50 or -12.50')
+    const amt = parseAmount(amount, { allowNegative: true })
+    if (!amt.ok) e.amount = moneyError('Amount', amt, '12.50, 12.50+3 or -12.50')
     if (date === '') e.date = 'Error: Date cannot be empty'
     else if (date < bounds.min || date > bounds.max) e.date = `Invalid: Date use a date from ${bounds.min} to ${bounds.max}`
     return e
@@ -78,7 +76,7 @@ export function AddBudget({ roots, onSaved }: {
       return
     }
     setSaving(true)
-    const amt = parseMoney(amount, { allowNegative: true })
+    const amt = parseAmount(amount, { allowNegative: true })
     const value = amt.ok ? amt.value : 0
     const shownAmount = formatAmount(value) || '0.00'
     try {
@@ -166,8 +164,8 @@ export function AddBudget({ roots, onSaved }: {
       )}
       <div className="field">
         <label className="label" htmlFor="amount">Amount <span aria-hidden="true">*</span></label>
-        <p id="amount-help" className="help">Use a minus sign for a credit or refund, e.g. -12.50.</p>
-        <AmountInput id="amount" value={amount} onChange={e => setAmount(e.target.value)} aria-required="true"
+        <p id="amount-help" className="help">Use a minus sign for a credit or refund, e.g. -12.50. You can add or subtract, e.g. 12.50+3.</p>
+        <AmountField id="amount" allowNegative value={amount} onChange={e => setAmount(e.target.value)} aria-required="true"
           aria-invalid={!!errors.amount || undefined} aria-describedby={describe('amount', 'amount-help')} />
         {errors.amount && <p id="amount-error_msg" className="error">{errors.amount}</p>}
       </div>

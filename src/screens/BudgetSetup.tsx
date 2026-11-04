@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { Button, ErrorSummary, focusFirstError, type FieldError } from '../components/ui'
+import { AmountField, Button, ErrorSummary, focusFirstError, type FieldError } from '../components/ui'
 import { Expander } from '../components/ui/Expander'
 import { BudgetTable } from '../components/BudgetTable'
 import { useAnnounce } from '../components/ui/announcer'
 import { fireReward } from '../rewards/rewards'
 import { requestNotifications } from '../notifications'
 import { saveSetup } from '../storage/repository'
-import { cleanName, dateBounds, moneyError, NAME_MAX, parseMoney, slug } from '../budget/validate'
+import { cleanName, dateBounds, moneyError, NAME_MAX, parseAmount, slug } from '../budget/validate'
 import type { BudgetItem, Category, DefaultRange, DueDay, Frequency, MonthBoundary } from '../storage/db'
 import {
   buildTree, ancestors, dayChoices, domId, estimateTotal, flatten, formatAmount, frequenciesFor, isTotal, repeatedNames, scheduleClears,
@@ -113,7 +113,7 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, rewardsEnable
   /** Store a row's typed estimate in the working copy (before it can move, §2.1). */
   function flush(cs: Cat[], id: number): Cat[] {
     if (!(id in est)) return cs
-    const r = parseMoney(est[id], { allowNegative: false })
+    const r = parseAmount(est[id], { allowNegative: false })
     if (!r.ok && r.reason !== 'empty') return cs
     setEst(e => { const rest = { ...e }; delete rest[id]; return rest })
     return edit.patch(cs, id, { estimate: r.ok ? r.value : undefined })
@@ -164,9 +164,9 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, rewardsEnable
       }
       const text = estText(n.cat).trim()
       if (text === '') { final = edit.patch(final, n.cat.id, { estimate: undefined }); continue }
-      const r = parseMoney(text, { allowNegative: false })
+      const r = parseAmount(text, { allowNegative: false })
       if (r.ok) final = edit.patch(final, n.cat.id, { estimate: r.value })
-      else errs[domId('estimate', n)] = moneyError(`Estimated spending for ${say(n)}`, r, '40 or 1,200.00')
+      else errs[domId('estimate', n)] = moneyError(`Estimated spending for ${say(n)}`, r, '40, 40+5.25 or 1,200.00')
     }
     setErrors(errs)
     const list: FieldError[] = Object.entries(errs).map(([fieldId, message]) => ({ fieldId, message }))
@@ -185,7 +185,7 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, rewardsEnable
   // Preview reflects typed estimates that are already valid.
   const previewRoots = useMemo(() => buildTree(work.map(c => {
     if (!(c.id in est)) return c
-    const r = parseMoney(est[c.id], { allowNegative: false })
+    const r = parseAmount(est[c.id], { allowNegative: false })
     return r.ok ? { ...c, estimate: r.value } : r.reason === 'empty' ? { ...c, estimate: undefined } : c
   })), [work, est])
 
@@ -231,7 +231,7 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, rewardsEnable
           {total
             ? n.parent && <span>{formatAmount(estimateTotal(n, MONTH)) || '0.00'} <span className="help">per month</span></span>
             : <>
-              <input id={estId} className="input amount" inputMode="decimal" value={estText(n.cat)}
+              <AmountField id={estId} className="amount" allowNegative={false} value={estText(n.cat)}
                 aria-labelledby="setup-est-col" aria-describedby={errors[estId] ? `${nameId} ${estId}-error_msg` : nameId}
                 aria-invalid={!!errors[estId] || undefined}
                 onChange={e => setEst(x => ({ ...x, [n.cat.id]: e.target.value }))} />

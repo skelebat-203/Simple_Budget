@@ -30,7 +30,7 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
    - Files: `src/App.tsx`, `src/screens/*`, `src/App.css`
    - Verify: headings still in the accessibility tree and in heading navigation; no layout shift; 320/640/1024px
    - Deps: none
-5. **Add/subtract in amount fields** (v0.6/5) — amount fields accept typed expressions (e.g. `12.50+3`, `40-5.25`) and save the result.
+5. **Add/subtract in amount fields** (v0.6/5) ✅ (v0.6.8) — amount fields accept typed expressions (e.g. `12.50+3`, `40-5.25`) and save the result.
    - Source: roadmap v0.6; decided 2026-11-04: typed expressions only (no +/- buttons), in every field that adds a value or purchase: Add purchase form, Budget setup estimate fields, and the Add/Subtract dialog (step 9)
    - Files: `src/screens/AddBudget.tsx`, `src/screens/BudgetSetup.tsx`, new `src/components/ui/AmountField.tsx`, `src/budget/validate.ts`
    - Verify: parsing and rounding cases (only `+`, `-`, digits, decimal point, no code evaluation); invalid input message; result shown before saving; keyboard-only use; build + lint

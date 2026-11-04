@@ -1,9 +1,9 @@
 import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react'
 import type { BudgetItem, Range } from '../storage/db'
 import { actualFor, ancestors, domId, estimateTotal, isoDate, formatAmount, isTotal, periodsFor, rangeHasEstimates, repeatedNames, scheduleText, spokenName, type Calendar, type CatNode, type Period } from '../budget/tree'
-import { cleanName, moneyError, NAME_MAX, parseMoney, slug } from '../budget/validate'
+import { cleanName, moneyError, NAME_MAX, parseAmount, slug } from '../budget/validate'
 import { budgetItemRepo, categoryRepo, NameTakenError, RowInUseError } from '../storage/repository'
-import { Button, ConfirmDialog } from './ui'
+import { AmountField, Button, ConfirmDialog } from './ui'
 import { useCollapsed } from './ui/useCollapsed'
 import { fireReward } from '../rewards/rewards'
 import { useAnnounce } from './ui/announcer'
@@ -161,9 +161,9 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
   }
 
   async function addValue(n: CatNode) {
-    const r = parseMoney(value, { allowNegative: true })
+    const r = parseAmount(value, { allowNegative: true })
     if (!r.ok) {
-      setFieldError(moneyError(`Value for ${say(n)}`, r, '12.50 or -12.50'))
+      setFieldError(moneyError(`Value for ${say(n)}`, r, '12.50, 12.50+3 or -12.50'))
       focusAfter.current = domId('add_value', n)
       return
     }
@@ -250,7 +250,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
         <td className="row-actions">
           <span className="inline-form">
             <label className="sr-only" htmlFor={id}>Value to add to {say(n)}</label>
-            <input id={id} className="input amount" inputMode="decimal" value={value} autoComplete="off"
+            <AmountField id={id} className="amount" allowNegative value={value}
               aria-invalid={!!fieldError || undefined}
               aria-describedby={fieldError ? `${id}-error_msg ${idBase}-add-help` : `${idBase}-add-help`}
               onChange={e => setValue(e.target.value)}
@@ -422,7 +422,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
       </div>
       <p id={`${idBase}-key`} className="help">Only rows with an amount appear. Every row totals the rows under it.{range === 'day' && ' Each purchase is listed under its item.'}</p>
       {actions && (range === 'week' || range === 'month') && (
-        <p id={`${idBase}-add-help`} className="help">Add value records a new amount on that item, dated {addDate}. Use a minus sign to subtract, e.g. -12.50. A row can be deleted when it has no items and at most one purchase.</p>
+        <p id={`${idBase}-add-help`} className="help">Add value records a new amount on that item, dated {addDate}. Use a minus sign to subtract, e.g. -12.50, or type a sum, e.g. 12.50+3. A row can be deleted when it has no items and at most one purchase.</p>
       )}
       {actions && <p className="status">{status}</p>}
       {pending && (

@@ -1,6 +1,6 @@
 export { Button } from './Button'
 export { Input } from './Input'
-export { AmountInput } from './AmountInput'
+export { AmountField } from './AmountField'
 export { DatePicker } from './DatePicker'
 export { ItemSelector } from './ItemSelector'
 export { ErrorSummary } from './ErrorSummary'

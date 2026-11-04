@@ -28,6 +28,29 @@ export function parseMoney(raw: string, { allowNegative }: { allowNegative: bool
   return { ok: true, value: Object.is(value, -0) ? 0 : value }
 }
 
+/**
+ * Parse a typed amount that may add or subtract terms, e.g. `12.50+3` or `40-5.25`.
+ * Only digits, `.`, `,`, `+` and `-` are read (no evaluator); each term follows the
+ * parseMoney format. The sum is worked in whole cents so it never drifts, then
+ * checked like a single amount. `expr` is true when more than one term was typed.
+ */
+export function parseAmount(raw: string, { allowNegative }: { allowNegative: boolean }): MoneyResult & { expr?: boolean } {
+  const s = raw.trim().replace(/,/g, '').replace(/\s*([+-])\s*/g, '$1')
+  if (!/[+-]/.test(s.slice(1))) return parseMoney(s, { allowNegative })
+  const terms = s.match(/[+-]?[^+-]*/g)!.filter(t => t !== '')
+  if (terms.some(t => !/^[+-]?(\d+(\.\d{0,2})?|\.\d{1,2})$/.test(t))) return { ok: false, reason: 'format' }
+  let cents = 0
+  for (const t of terms) {
+    const r = parseMoney(t.replace(/^\+/, ''), { allowNegative: true })
+    if (!r.ok) return r
+    cents += Math.round(r.value * 100)
+  }
+  const value = cents / 100
+  if (value < 0 && !allowNegative) return { ok: false, reason: 'negative' }
+  if (Math.abs(value) > MONEY_MAX) return { ok: false, reason: 'range' }
+  return { ok: true, value: Object.is(value, -0) ? 0 : value, expr: true }
+}
+
 /** Field-level message in the digital_accessibility.md format. */
 export function moneyError(field: string, r: Exclude<MoneyResult, { ok: true }>, example: string): string {
   switch (r.reason) {
