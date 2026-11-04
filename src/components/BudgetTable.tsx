@@ -3,11 +3,11 @@ import type { BudgetItem, Range } from '../storage/db'
 import { actualFor, ancestors, childColor, domId, flatten, estimateTotal, isoDate, formatAmount, isTotal, periodsFor, rangeHasEstimates, repeatedNames, scheduleText, spokenName, type Calendar, type CatNode, type Period } from '../budget/tree'
 import { cleanName, NAME_MAX, slug } from '../budget/validate'
 import { budgetItemRepo, categoryRepo, NameTakenError, RowInUseError } from '../storage/repository'
-import { AmountDialog, Button, ConfirmDialog, DescriptionDialog, RenameDialog, type SaveResult } from './ui'
+import { AmountDialog, Button, ConfirmDialog, DescriptionDialog, Dialog, RenameDialog, type SaveResult } from './ui'
 import { useCollapsed } from './ui/useCollapsed'
 import { fireReward } from '../rewards/rewards'
 import { useAnnounce } from './ui/announcer'
-import { Expander } from './ui/Expander'
+import { Chevron } from './ui/Expander'
 import { ActionsMenu, type MenuAction } from './ui/ActionsMenu'
 
 /** Annual rename: the pencil button opens the name's inline form (§9.3, v0.4 step 8). */
@@ -24,7 +24,7 @@ const GRID = '__grid__'
  * 0/1/2, category colors, computed rows, only rows with an amount, and
  * expand/collapse state kept across range changes and restarts.
  */
-export function BudgetTable({ roots, items, range, showEstimates: wantEstimates, calendar, date, idBase = 'budget', preview = false, onChanged }: {
+export function BudgetTable({ roots, items, range, showEstimates: wantEstimates, calendar, date, idBase = 'budget', preview = false, highlight = false, onChanged }: {
   roots: CatNode[]
   /** A day in the range to show (0007 §9.5 date nav). Default: today. */
   date?: Date
@@ -34,11 +34,16 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
   idBase?: string
   /** Read-only preview (0007 §5.4): every row expanded, no expand/collapse buttons. */
   preview?: boolean
+  /** Inside a highlight dialog (0009 §3): every row open, names are plain text, ids are prefixed so they stay unique. */
+  highlight?: boolean
   calendar: Calendar
   items: BudgetItem[]
   range: Range
   showEstimates: boolean
 }) {
+  const did = (field: string, n: CatNode) => domId(highlight ? `hl_${field}` : field, n)
+  /** Plain rows: no expand or name buttons (preview and highlight dialog). */
+  const plain = preview || highlight
   const showEstimates = wantEstimates && rangeHasEstimates(range)
   const [collapsed, toggle] = useCollapsed()
   const gridRef = useRef<HTMLTableElement>(null)
@@ -56,6 +61,8 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
   const [rowEdit, setRowEdit] = useState<{ id: number; kind: Kind } | null>(null)
   /** Open Edit-menu dialog (0009 §4). */
   const [dlg, setDlg] = useState<Dlg | null>(null)
+  /** Open highlight dialog (0009 §3): a row with its children, or one Day purchase. */
+  const [hl, setHl] = useState<{ kind: 'row' | 'purchase'; id: number } | null>(null)
   const [value, setValue] = useState('')
   const [fieldError, setFieldError] = useState('')
   const [status, setStatus] = useState('')
@@ -83,7 +90,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
     : []
   const purchaseLabel = (i: BudgetItem) =>
     `Purchase, ${new Date(i.createdAt).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`
-  const editId = (n: CatNode, i: BudgetItem) => ['edit_purchase', n.parent && slug(n.parent.cat.name), slug(n.cat.name), i.id].filter(Boolean).join('-')
+  const editId = (n: CatNode, i: BudgetItem) => [highlight ? 'hl_edit_purchase' : 'edit_purchase', n.parent && slug(n.parent.cat.name), slug(n.cat.name), i.id].filter(Boolean).join('-')
 
   async function removePurchase(n: CatNode, i: BudgetItem, next: string): Promise<SaveResult> {
     try {
@@ -104,17 +111,17 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
 
   function openRow(n: CatNode, kind: Kind) {
     setRowEdit({ id: n.cat.id, kind }); setValue(n.cat.name); setFieldError(''); setError('')
-    focusAfter.current = domId('rename_value', n)
+    focusAfter.current = did('rename_value', n)
   }
   function closeRow(n: CatNode) {
     setRowEdit(null); setFieldError('')
-    focusAfter.current = domId('rename', n)
+    focusAfter.current = did('rename', n)
   }
 
   /** Edit menu for a Day, Week or Month category row (0009 §4). Delete: Day and Week only. */
   function menuActions(n: CatNode): MenuAction<Act>[] {
     const list: MenuAction<Act>[] = []
-    const item = (value: Act, label: string) => list.push({ value, label, id: domId(`edit_${value}`, n) })
+    const item = (value: Act, label: string) => list.push({ value, label, id: did(`edit_${value}`, n) })
     if (!isTotal(n) && n.cat.name !== 'Net Income') item(range === 'day' ? 'new' : 'adjust', range === 'day' ? 'New purchase' : 'Add/Subtract')
     if (n.parent) item('rename', 'Rename')
     if (n.parent && range !== 'month') item('delete', 'Delete')
@@ -124,7 +131,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
   function purchaseActions(n: CatNode, i: BudgetItem): MenuAction<Act>[] {
     return (['description', 'replace', 'delete'] as const).map(value => ({
       value, label: value === 'description' ? 'Description' : value === 'replace' ? 'Add/Subtract' : 'Delete',
-      id: [`edit_purchase_${value}`, n.parent && slug(n.parent.cat.name), slug(n.cat.name), i.id].filter(Boolean).join('-'),
+      id: [`${highlight ? 'hl_' : ''}edit_purchase_${value}`, n.parent && slug(n.parent.cat.name), slug(n.cat.name), i.id].filter(Boolean).join('-'),
     }))
   }
   function act(n: CatNode, a: Act, purchase?: BudgetItem) {
@@ -163,13 +170,13 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
     }
     setDlg(null)
     setStatus(`${move ? `Renamed ${say(n)} to ${name} and moved it to ${dest.cat.name}.` : `Renamed ${say(n)} to ${name}.`}${charity ? ` Your ${charity} Charity purchase${charity === 1 ? '' : 's'} moved to Charity › Miscellaneous.` : ''}`)
-    focusAfter.current = ['edit', slug(dest.cat.name), slug(name), n.cat.id].join('-')
+    focusAfter.current = [highlight ? 'hl_edit' : 'edit', slug(dest.cat.name), slug(name), n.cat.id].join('-')
     onChanged?.()
   }
 
   async function rename(n: CatNode) {
     const name = cleanName(value)
-    const fail = (msg: string) => { setFieldError(msg); focusAfter.current = domId('rename_value', n) }
+    const fail = (msg: string) => { setFieldError(msg); focusAfter.current = did('rename_value', n) }
     if (!name) return fail(`Error: Name for ${say(n)} cannot be empty`)
     if (n.parent!.children.some(c => c !== n && slug(c.cat.name) === slug(name))) return fail(`Invalid: Name “${name}” already exists in ${n.parent!.cat.name}`)
     if (name === n.cat.name) return closeRow(n)
@@ -185,21 +192,21 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
       if (err instanceof NameTakenError) {
         // A sibling got this name after the check (another tab): keep the form open on the field.
         setFieldError(`Invalid: Name ${err.message}`)
-        focusAfter.current = domId('rename_value', n)
+        focusAfter.current = did('rename_value', n)
       } else if (err instanceof RowInUseError) {
         setError(`Error: ${n.cat.name} wasn’t renamed because ${err.message}`)
         closeRow(n)
         onChanged?.()
       } else {
         setError(`Error: ${n.cat.name} wasn’t renamed. Try again.`)
-        focusAfter.current = domId('rename_value', n)
+        focusAfter.current = did('rename_value', n)
       }
       return
     }
     setStatus(`Renamed ${say(n)} to ${name}.`)
     closeRow(n)
     // The row's ids carry its name: focus the control under the new name.
-    focusAfter.current = domId('rename', n).replace(`-${slug(n.cat.name)}-${n.cat.id}`, `-${slug(name)}-${n.cat.id}`)
+    focusAfter.current = did('rename', n).replace(`-${slug(n.cat.name)}-${n.cat.id}`, `-${slug(name)}-${n.cat.id}`)
     onChanged?.()
   }
 
@@ -216,7 +223,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
     setDlg(null)
     setStatus(d.act === 'replace' ? `Changed the ${say(n)} purchase to ${text}.`
       : d.act === 'new' ? `Added a ${say(n)} purchase of ${text} on ${addDate}.` : `Added ${text} to ${say(n)} on ${addDate}.`)
-    focusAfter.current = purchase ? editId(n, purchase) : domId('edit', n)
+    focusAfter.current = purchase ? editId(n, purchase) : did('edit', n)
     onChanged?.()
     if (d.act !== 'replace') fireReward()
   }
@@ -257,10 +264,10 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
   /** Name cell: the rename form, or (Annual) the name's pencil Rename button (0007 §9.3, §10; Week/Month: v0.4 step 8). */
   function renameControls(n: CatNode): ReactNode {
     if (!actions || range !== 'annual' || !n.parent) return null
-    const id = domId('rename_value', n)
+    const id = did('rename_value', n)
     if (rowEdit?.id !== n.cat.id || rowEdit.kind !== 'rename') {
       return (
-        <Button type="button" className="secondary icon" id={domId('rename', n)} aria-label={`Rename ${say(n)}`}
+        <Button type="button" className="secondary icon" id={did('rename', n)} aria-label={`Rename ${say(n)}`}
           onClick={() => openRow(n, 'rename')}>
           <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" width="18" height="18">
             <path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zm17.71-10.21a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
@@ -290,7 +297,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
     const list = menuActions(n)
     return (
       <td className="row-actions">
-        {list.length > 0 && <ActionsMenu id={domId('edit', n)} label={`Edit ${say(n)}`} buttonLabel="Edit" items={list} onSelect={k => act(n, k)} />}
+        {list.length > 0 && <ActionsMenu id={did('edit', n)} label={`Edit ${say(n)}`} buttonLabel="Edit" items={list} onSelect={k => act(n, k)} />}
       </td>
     )
   }
@@ -319,24 +326,31 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
   }
 
   const rows: ReactNode[] = []
+  /** A highlight shows its row at the left edge. */
+  const base = highlight ? roots[0]?.depth ?? 0 : 0
   /** A row expands when it has rows under it: child rows with amounts, or (Day) its purchases. */
   const expandable = (n: CatNode) => n.children.some(hasAmount) || purchasesOf(n).length > 0
   function addRow(n: CatNode) {
     if (!hasAmount(n)) return
     const kids = n.children.filter(hasAmount)
-    const open = preview || !collapsed.has(n.cat.id)
+    const open = plain || !collapsed.has(n.cat.id)
     const label = n.cat.name
     rows.push(
-      <tr key={n.cat.id} className={`row depth-${n.depth}${n.children.length ? ' group' : ''}`}
-        {...(preview ? {} : { 'data-id': n.cat.id, 'aria-level': n.depth + 1, 'aria-expanded': expandable(n) ? open : undefined })}>
+      <tr key={n.cat.id} className={`row depth-${n.depth - base}${n.children.length ? ' group' : ''}`}
+        {...(plain ? {} : { 'data-id': n.cat.id, 'aria-level': n.depth + 1, 'aria-expanded': expandable(n) ? open : undefined })}>
         <th scope="row" className={`name clr-${n.cat.color}`}>
           <span className="name-line">
             {(() => {
               const renaming = rowEdit?.id === n.cat.id && rowEdit.kind === 'rename'
               if (renaming) return null
-              return expandable(n) && !preview
-                ? <Expander open={open} onToggle={() => toggle(n.cat.id)} id={domId('expand', n)}>{label}</Expander>
-                : <span>{label}</span>
+              if (plain) return <span>{label}</span>
+              return (
+                <>
+                  {expandable(n) && <Chevron open={open} onToggle={() => toggle(n.cat.id)} id={did('expand', n)} label={say(n)} />}
+                  <button type="button" className="name-link" id={did('name', n)} aria-haspopup="dialog"
+                    onClick={() => setHl({ kind: 'row', id: n.cat.id })}>{label}</button>
+                </>
+              )
             })()}
             {renameControls(n)}
           </span>
@@ -354,9 +368,11 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
     const bought = purchasesOf(n)
     bought.forEach(i => {
       rows.push(
-        <tr key={`p${i.id}`} className={`row purchase depth-${n.depth + 1}`} {...(preview ? {} : { "aria-level": n.depth + 2 })}>
+        <tr key={`p${i.id}`} className={`row purchase depth-${n.depth + 1 - base}`} {...(plain ? {} : { "aria-level": n.depth + 2 })}>
           <th scope="row" className="name">
-            {purchaseLabel(i)}
+            {plain ? purchaseLabel(i)
+              : <button type="button" className="name-link" id={`${editId(n, i)}-name`.replace('edit_purchase', 'name_purchase')} aria-haspopup="dialog"
+                onClick={() => setHl({ kind: 'purchase', id: i.id! })}>{purchaseLabel(i)}</button>}
             {i.description && <span className="row-description">{i.description}</span>}
           </th>
           <td className={`num${i.amount < 0 ? ' neg' : ''}`}>{formatAmount(i.amount) || '0.00'}</td>
@@ -382,6 +398,44 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
         </tr>,
       )
     }
+  }
+
+  const hlNode = hl?.kind === 'row' ? flatten(roots).find(x => x.cat.id === hl.id) : undefined
+  const hlPurchase = hl?.kind === 'purchase' ? items.find(x => x.id === hl.id) : undefined
+  const hlPurchaseNode = hlPurchase && flatten(roots).find(x => x.cat.id === hlPurchase.categoryId)
+  // The row or purchase can go away (deleted, or removed in another tab): its dialog then shows nothing.
+  const hlGone = !!hl && !(hlNode || (hlPurchase && hlPurchaseNode))
+
+  /** The highlight dialog (0009 §3): the row as this table shows it, with the same functions; or one Day purchase. */
+  function highlightDialog(): ReactNode {
+    if (!hl || hlGone) return null
+    const close = () => setHl(null)
+    const closeBtn = <><span /><Button type="button" className="secondary" onClick={close}>Close</Button></>
+    if (hlNode) {
+      return (
+        <Dialog id={`${idBase}-highlight`} title={hlNode.cat.name} className="highlight-dialog" onClose={close} buttons={closeBtn}>
+          <p className="help">{hlNode.children.length || (range === 'day' && purchasesOf(hlNode).length) ? `${say(hlNode)} and the rows under it.` : `${say(hlNode)} has nothing under it.`}</p>
+          <BudgetTable roots={[hlNode]} items={items} range={range} showEstimates={wantEstimates} calendar={calendar} date={date}
+            idBase={`${idBase}-hl`} highlight onChanged={onChanged} />
+        </Dialog>
+      )
+    }
+    const i = hlPurchase!, n = hlPurchaseNode!
+    return (
+      <Dialog id={`${idBase}-highlight_purchase`} title={`${purchaseLabel(i)}, ${say(n)}`} className="highlight-dialog narrow" onClose={close} buttons={closeBtn}>
+        <dl className="detail">
+          <dt>Amount</dt><dd>{formatAmount(i.amount) || '0.00'}</dd>
+          <dt>Date</dt><dd>{i.date}</dd>
+          {i.description && <><dt>Description</dt><dd>{i.description}</dd></>}
+        </dl>
+        {actions && (
+          <div className="actions">
+            <Button type="button" className="secondary" onClick={() => act(n, 'replace', i)}>Add/Subtract</Button>
+            <Button type="button" className="danger" onClick={() => act(n, 'delete', i)}>Delete</Button>
+          </div>
+        )}
+      </Dialog>
+    )
   }
 
   /** The open Edit-menu dialog (0009 §4). */
@@ -429,8 +483,8 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
     <div className="table-wrap">
       {/* Only the table scrolls sideways; the help text below stays in the page width (v0.4 review). */}
       <div className="table-box">
-        <table className={`table budget-table${range === 'day' ? ' day-table' : ''}`} aria-labelledby={`${idBase}-heading ${idBase}-caption`}
-          aria-describedby={`${idBase}-key`} ref={gridRef} role={preview ? undefined : 'treegrid'}>
+        <table className={`table budget-table${range === 'day' ? ' day-table' : ''}`} aria-labelledby={highlight ? `${idBase}-caption` : `${idBase}-heading ${idBase}-caption`}
+          aria-describedby={highlight ? undefined : `${idBase}-key`} ref={gridRef} role={plain ? undefined : 'treegrid'}>
           <caption id={`${idBase}-caption`}>{title}</caption>
           <thead>
             {range !== 'day' && range !== 'annual' && showEstimates && (
@@ -459,8 +513,8 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
           </tbody>
         </table>
       </div>
-      <p id={`${idBase}-key`} className="help">Only rows with an amount appear. Every row totals the rows under it.{range === 'day' && ' Each purchase is listed under its item.'}</p>
-      {actions && (range === 'week' || range === 'month') && (
+      {!highlight && <p id={`${idBase}-key`} className="help">Only rows with an amount appear. Every row totals the rows under it.{range === 'day' && ' Each purchase is listed under its item.'}</p>}
+      {actions && !highlight && (range === 'week' || range === 'month') && (
         <p id={`${idBase}-add-help`} className="help">Add/Subtract records a new amount on that item, dated {addDate}. A row can be deleted when it has no items and at most one purchase{range === 'month' ? '; Delete is in the Week table' : ''}.</p>
       )}
       {actions && <p className="status">{status}</p>}
@@ -471,6 +525,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
           This will change the name of all instances of {pending.n.cat.name} to {pending.name} across the application.
         </ConfirmDialog>
       )}
+      {highlightDialog()}
       {dlg && editDialog(dlg)}
       {error && <p className="error">{error}</p>}
     </div>

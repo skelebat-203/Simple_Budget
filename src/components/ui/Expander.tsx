@@ -12,3 +12,12 @@ export function Expander({ open, onToggle, children, id }: { open: boolean; onTo
     </button>
   )
 }
+
+/** Expand/collapse chevron of a table row (0009 §3): the row's name is a separate button. */
+export function Chevron({ open, onToggle, label, id }: { open: boolean; onToggle: () => void; label: string; id?: string }) {
+  return (
+    <button type="button" className="chevron" id={id} aria-expanded={open} aria-label={`${open ? 'Collapse' : 'Expand'} ${label}`} onClick={onToggle}>
+      <span className="twisty" aria-hidden="true">{open ? '▾' : '▸'}</span>
+    </button>
+  )
+}

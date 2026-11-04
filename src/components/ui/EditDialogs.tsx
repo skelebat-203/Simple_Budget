@@ -154,6 +154,7 @@ export function AmountDialog({ id, title, spoken, intro, initial, withDescriptio
       <Field id={fieldId} label="Amount" error={fieldError}>
         <AmountField id={fieldId} className="amount" allowNegative value={value}
           aria-invalid={!!fieldError || undefined} aria-describedby={[describe(fieldId, fieldError), `${id}-intro`].filter(Boolean).join(' ')}
+          onFocus={e => { if (initial) e.target.select() }}
           onChange={e => setValue(e.target.value)} />
       </Field>
       {withDescription && (
