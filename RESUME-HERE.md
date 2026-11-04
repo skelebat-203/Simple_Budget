@@ -30,11 +30,6 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
    - Files: `src/App.tsx`, `src/screens/*`, `src/App.css`
    - Verify: headings still in the accessibility tree and in heading navigation; no layout shift; 320/640/1024px
    - Deps: none
-4a. **Hover styling** (v0.6/4a) — hover state on every button and link across the app (today only some have one).
-   - Source: roadmap v0.6; human request 2026-11-04 (highlight review)
-   - Files: `src/App.css`, `src/styles/tokens.css`
-   - Verify: scripted list of every button/link class with a `:hover` rule; contrast 3:1 in both themes; no hover-only information; disabled buttons do not react
-   - Deps: none
 5. **Add/subtract in amount fields** (v0.6/5) — amount fields accept typed expressions (e.g. `12.50+3`, `40-5.25`) and save the result.
    - Source: roadmap v0.6; decided 2026-11-04: typed expressions only (no +/- buttons), in every field that adds a value or purchase: Add purchase form, Budget setup estimate fields, and the Add/Subtract dialog (step 9)
    - Files: `src/screens/AddBudget.tsx`, `src/screens/BudgetSetup.tsx`, new `src/components/ui/AmountField.tsx`, `src/budget/validate.ts`
@@ -65,6 +60,11 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
     - Files: `src/components/BudgetTable.tsx`, new dialog component, `src/App.css`
     - Verify: the name's clickable cue is a 2px dotted underline; name click no longer toggles (supersedes nothing in `0008` §1 except the name-toggle); same functions as the Edit menu; keyboard and screen reader
     - Deps: 9; `0009` §3 is decided (not blocked)
+9a. **Hover styling** (v0.6/9a) — hover state on every button and link across the app (today only some have one).
+   - Source: roadmap v0.6; human request 2026-11-04 (highlight review)
+   - Files: `src/App.css`, `src/styles/tokens.css`
+   - Verify: scripted list of every button/link class with a `:hover` rule; contrast 3:1 in both themes; no hover-only information; disabled buttons do not react
+   - Deps: 9, 10 (same `App.css`; covers what their dialogs do not)
 11. **Onboarding wizard** (v0.6/11) ✅ (v0.6.7) — three-step dialog wizard with progress bar replacing the single-dialog questionnaire.
     - Source: `0009` §1; prototype `0010`; replaces `0008` §8
     - Files: `src/screens/Onboarding.tsx`, `src/storage/seed.ts`, `src/storage/preselected.ts`, `src/App.css`
@@ -103,9 +103,9 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
     - Deps: 18
 
 ### Execution
-- **A — Small fixes** (steps 1, 2, 3, 4, 4a; MultiSelect, repository, AddBudget, App): parallel-safe, sequential in one session.
+- ✅ **A — Small fixes** (steps 1, 2, 3, 4; MultiSelect, repository, AddBudget, App): parallel-safe, sequential in one session.
 - **B — Amounts and descriptions** (steps 5, 6, 7; AddBudget, structure, seed): after A step 3 (same `AddBudget.tsx`).
-- **C — Setup and table dialogs** (steps 8, 9, 10; BudgetSetup, BudgetTable): after B; step 10 waits for the human's `0011` decision.
+- **C — Setup and table dialogs** (steps 8, 9, 10, 9a; BudgetSetup, BudgetTable, App.css): after B; design settled. Step 9a (hover styling) last.
 - **D — Nesting** (step 12; tree, BudgetTable, BudgetSetup, structure): after C; spec first.
 - ✅ **E — Wizard** (step 11; Onboarding): after A; design settled, so it can run any time after A (before C or D if wanted).
 - **F — Import** (steps 13, 14, 15, 16; import, Backup, BudgetSetup, Onboarding): after D and E.
