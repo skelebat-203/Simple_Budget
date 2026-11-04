@@ -1,12 +1,12 @@
 # RESUME-HERE
 
 Tracking file for current work status. Roadmap authority: `docs/design/0003-roadmap.md`.
-Design: `0004-table-design.md` (table), `0006-prototype.html` (v0.2 UI), `0007-v0.3-design-updates.md` (v0.3 changes), `0008-v0.5-design-updates.md` (v0.5 changes; wins on conflict), `0009-v0.6-design-updates.md` (v0.6, not final).
+Design: `0004-table-design.md` (table), `0006-prototype.html` (v0.2 UI), `0007-v0.3-design-updates.md` (v0.3 changes), `0008-v0.5-design-updates.md` (v0.5 changes; wins on conflict), `0009-v0.6-design-updates.md` (v0.6; wins on conflict).
 
 ## v0.6 plan of action
 Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per completed-work commit; trailer `Plan-Step: v0.6/N`). The final step bumps to v0.7.0. UI steps need human approval (`0005-ui-ux-review-checklist.md`). Baseline: v0.6.0; v0.5 complete (`docs/audits/security/security-v0.5.md`, `docs/audits/a11y/a11y-v0.5.md`). Data: Dexie v8 (`src/storage/structure.ts`; schedule fields and `Settings.onboarded` unindexed). Testing: headless Chromium via host flatpak + puppeteer-core; scripts in the session scratchpad.
 
-**Before building (human):** the wizard (`0010`) is settled. For the highlight (`0011`), the human still picks the name underline and a Day view (purchase row dialog) is added to the prototype; step 10 waits on both. Confirmed formats for import (step 13) and the Budget setup + help merge (step 15) also need the human.
+**Before building (human):** the wizard (`0010`) is settled. The highlight (`0011`) is settled too (2px dotted name underline). Confirmed formats for import (step 13) and the Budget setup + help merge (step 15) also need the human.
 
 **Run option (estimate):** single session with fresh restarts. The steps share a few files (`BudgetTable.tsx`, `BudgetSetup.tsx`, `App.css`, `structure.ts`), so parallel subagents would collide, and most UI steps need approval mid-way.
 
@@ -63,8 +63,8 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
 10. **Highlight dialog** (v0.6/10) — clicking an item name opens a dialog with the row, its children and the table's functions; the chevron alone expands and collapses.
     - Source: `0009` §3; prototype `0011`; decided 2026-11-04: dialog shows the row as in the table viewed (Day lists purchases; Week/Month/Annual do not); Delete confirms first, hidden in Month/Annual; Rename not offered for top-level categories; a purchase row in Day opens its own dialog (Add/Subtract, Delete)
     - Files: `src/components/BudgetTable.tsx`, new dialog component, `src/App.css`
-    - Verify: the name's clickable cue is the one the human picks from `0011`; name click no longer toggles (supersedes nothing in `0008` §1 except the name-toggle); same functions as the Edit menu; keyboard and screen reader
-    - Deps: 9; **blocked** until the human picks the name underline in `0011` (the rest of `0009` §3 is answered)
+    - Verify: the name's clickable cue is a 2px dotted underline; name click no longer toggles (supersedes nothing in `0008` §1 except the name-toggle); same functions as the Edit menu; keyboard and screen reader
+    - Deps: 9; `0009` §3 is decided (not blocked)
 11. **Onboarding wizard** (v0.6/11) — three-step dialog wizard with progress bar replacing the single-dialog questionnaire.
     - Source: `0009` §1; prototype `0010`; replaces `0008` §8
     - Files: `src/screens/Onboarding.tsx`, `src/storage/seed.ts`, `src/storage/preselected.ts`, `src/App.css`
