@@ -20,7 +20,7 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
    - Files: `src/storage/repository.ts`, `checkBackup`
    - Verify: fresh database under StrictMode ends with one row; restore of a backup with two rows keeps one
    - Deps: none
-3. **Informative "Saved" confirmation** (v0.6/3) ⏳ built v0.6.3, v0.6.5 (success banner), awaiting approval — the message says what was saved and how much (item name and amount). Primary user request.
+3. **Informative "Saved" confirmation** (v0.6/3) ✅ (v0.6.3, v0.6.5) — the message says what was saved and how much (item name and amount). Primary user request.
    - Source: roadmap v0.6
    - Files: `src/screens/AddBudget.tsx`, `src/components/Notices.tsx`
    - Verify: text for each save type; announced once through the single live region; no rewards-animation overlap
@@ -110,7 +110,7 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
 - **E — Wizard** (step 11; Onboarding): after A; design settled, so it can run any time after A (before C or D if wanted).
 - **F — Import** (steps 13, 14, 15, 16; import, Backup, BudgetSetup, Onboarding): after D and E.
 - **Reviews** (steps 17–19): main session with the user.
-- Status: ⏳ A (1, 2, 4 ✅; 3 awaiting approval) · ☐ B · ☐ C · ☐ D · ☐ E · ☐ F · ☐ reviews
+- Status: ✅ A · ☐ B · ☐ C · ☐ D · ☐ E · ☐ F · ☐ reviews
 
 ### Session process
 Run option 1: one session per group, fresh start at each group boundary. A session starts by reading this file and the roadmap, then:
