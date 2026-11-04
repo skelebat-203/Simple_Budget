@@ -132,13 +132,15 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, rewardsEnable
     if (!name) return
     const parent = flatten([root]).find(n => n.cat.id === c.parent) ?? root
     if (edit.nameTaken(work, parent.cat.id, name)) {
-      setErrors(e => ({ ...e, [key]: `Invalid: Create in ${root.cat.name} “${name}” already exists in ${parent.cat.name}` }))
+      setErrors(e => ({ ...e, [key]: `Invalid: “${name}” already exists in ${parent.cat.name}` }))
       return
     }
     const r = edit.create(flush(work, parent.cat.id), name, parent.cat.id)
     setWork(r.cats)
     expand(parent.cat.id)
     setCreate(x => ({ ...x, [root.cat.id]: { name: '', parent: c.parent } }))
+    setShown(x => { const n = new Set(x); n.delete(root.cat.id); return n })
+    setFocusId(`${key}-add`)
     setErrors(e => { const rest = { ...e }; delete rest[key]; return rest })
     setStatus(r.movedFrom
       ? `Added ${name}. Your ${r.movedFrom} estimate moved to ${r.movedFrom} › Miscellaneous. ${r.movedFrom} now totals its items.`
@@ -338,6 +340,14 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, rewardsEnable
       setFocusId(base)
       announce('Fields added above.')
     }
+    /** Cancel hides the fields, drops what was typed and returns focus to Add. */
+    const cancel = () => {
+      setShown(x => { const n = new Set(x); n.delete(root.cat.id); return n })
+      setCreate(x => ({ ...x, [root.cat.id]: { name: '', parent: root.cat.id } }))
+      setErrors(e => { const rest = { ...e }; delete rest[base]; return rest })
+      setFocusId(`${base}-add`)
+      announce('Fields removed.')
+    }
     const set = (p: Partial<typeof c>) => setCreate(x => ({ ...x, [root.cat.id]: { ...c, ...p } }))
     return (
       <tr key={`create-${root.cat.id}`} className={`row create depth-1 clr-${root.cat.color}`} aria-level={2}>
@@ -367,8 +377,8 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, rewardsEnable
             </span>
             </div>}
             {err && open && <p id={`${base}-error_msg`} className="error">{err}</p>}
-            <Button type="button" className="secondary" id={`${base}-add`} aria-label={`Add to ${root.cat.name}`}
-              aria-expanded={open} onClick={reveal}>Add</Button>
+            <Button type="button" className="secondary" id={`${base}-add`} aria-label={open ? `Cancel adding to ${root.cat.name}` : `Add to ${root.cat.name}`}
+              onClick={open ? cancel : reveal}>{open ? 'Cancel' : 'Add'}</Button>
           </div>
         </td>
       </tr>
