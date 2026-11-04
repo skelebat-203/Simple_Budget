@@ -469,3 +469,10 @@ nav .btn.icon:hover:not(:disabled) { background: var(--color-border); }
 .details summary:hover, .wizard-list summary:hover { background: var(--color-border); }
 .check:hover { background: var(--color-border); }
 .banner a:hover, .error-summary a:hover { text-decoration-thickness: 3px; }
+
+/* --- Review fixes (v0.6.17-18) --- */
+/* Week, Month and Annual amounts: wide enough for 222,222.99 in the table and in the highlight dialog. */
+.budget-table:not(.day-table) th.num, .budget-table:not(.day-table) td.num { min-width: 7.5rem; }
+.dialog-actions > .actions { gap: var(--space-sm); }
+.dialog .banner-warn { margin: 0; }
+.dialog .banner-warn .banner-title { margin: 0; }

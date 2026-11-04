@@ -3,7 +3,7 @@ import type { BudgetItem, Range } from '../storage/db'
 import { actualFor, ancestors, childColor, domId, flatten, estimateTotal, isoDate, formatAmount, isTotal, periodsFor, rangeHasEstimates, repeatedNames, scheduleText, spokenName, type Calendar, type CatNode, type Period } from '../budget/tree'
 import { cleanName, NAME_MAX, slug } from '../budget/validate'
 import { budgetItemRepo, categoryRepo, NameTakenError, RowInUseError } from '../storage/repository'
-import { AmountDialog, Button, ConfirmDialog, DescriptionDialog, Dialog, RenameDialog, type SaveResult } from './ui'
+import { AmountDialog, Button, ConfirmDialog, Dialog, RenameDialog, type SaveResult } from './ui'
 import { useCollapsed } from './ui/useCollapsed'
 import { fireReward } from '../rewards/rewards'
 import { useAnnounce } from './ui/announcer'
@@ -13,8 +13,8 @@ import { ActionsMenu, type MenuAction } from './ui/ActionsMenu'
 /** Annual rename: the pencil button opens the name's inline form (§9.3, v0.4 step 8). */
 type Kind = 'rename'
 
-/** Edit-menu actions (0009 §4): each opens a dialog. 'new' is Day's New purchase, 'adjust' is Add/Subtract on an item's total, 'replace' is Add/Subtract on a purchase. */
-type Act = 'rename' | 'new' | 'adjust' | 'replace' | 'description' | 'delete'
+/** Edit actions (0009 §4): each opens a dialog. 'new' is Day's New purchase, 'adjust' is Add/Subtract on an item's total, 'editPurchase' is a Day purchase's Edit dialog. */
+type Act = 'rename' | 'new' | 'adjust' | 'editPurchase' | 'delete'
 type Dlg = { act: Act; n: CatNode; purchase?: BudgetItem }
 
 const GRID = '__grid__'
@@ -24,7 +24,7 @@ const GRID = '__grid__'
  * 0/1/2, category colors, computed rows, only rows with an amount, and
  * expand/collapse state kept across range changes and restarts.
  */
-export function BudgetTable({ roots, items, range, showEstimates: wantEstimates, calendar, date, idBase = 'budget', preview = false, highlight = false, onChanged }: {
+export function BudgetTable({ roots, items, range, showEstimates: wantEstimates, calendar, date, idBase = 'budget', preview = false, highlight = false, allRoots, onChanged }: {
   roots: CatNode[]
   /** A day in the range to show (0007 §9.5 date nav). Default: today. */
   date?: Date
@@ -36,16 +36,19 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
   preview?: boolean
   /** Inside a highlight dialog (0009 §3): every row open, names are plain text, ids are prefixed so they stay unique. */
   highlight?: boolean
+  /** The whole tree, when `roots` is only part of it (highlight dialog): where Rename may move a row. */
+  allRoots?: CatNode[]
   calendar: Calendar
   items: BudgetItem[]
   range: Range
   showEstimates: boolean
 }) {
+  const tree = allRoots ?? roots
   const did = (field: string, n: CatNode) => domId(highlight ? `hl_${field}` : field, n)
   /** Plain rows: no expand or name buttons (preview and highlight dialog). */
   const plain = preview || highlight
   const showEstimates = wantEstimates && rangeHasEstimates(range)
-  const [collapsed, toggle] = useCollapsed()
+  const [collapsed, toggle, openRows] = useCollapsed()
   const gridRef = useRef<HTMLTableElement>(null)
   const [today] = useState(() => new Date())
   const { columns, total, title } = periodsFor(range, date ?? today, calendar)
@@ -127,13 +130,6 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
     if (n.parent && range !== 'month') item('delete', 'Delete')
     return list
   }
-  /** Edit menu for a purchase row (Day): Description, Add/Subtract, Delete. */
-  function purchaseActions(n: CatNode, i: BudgetItem): MenuAction<Act>[] {
-    return (['description', 'replace', 'delete'] as const).map(value => ({
-      value, label: value === 'description' ? 'Description' : value === 'replace' ? 'Add/Subtract' : 'Delete',
-      id: [`${highlight ? 'hl_' : ''}edit_purchase_${value}`, n.parent && slug(n.parent.cat.name), slug(n.cat.name), i.id].filter(Boolean).join('-'),
-    }))
-  }
   function act(n: CatNode, a: Act, purchase?: BudgetItem) {
     if (a === 'delete' && !purchase) {
       const why = n.children.length ? 'delete its items first'
@@ -147,6 +143,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
   /** Where a row may be moved by Rename: its parent's level (0009 §4). Computed roots are left out. */
   function parentChoices(n: CatNode): { id: number; label: string }[] {
     const here = n.parent!
+    const roots = tree
     if (n.depth === 1) return roots.filter(r => !r.cat.computed || r === here).map(r => ({ id: r.cat.id, label: r.cat.name }))
     return roots.filter(r => !r.cat.computed || r === here.parent)
       .flatMap(r => r.children.map(c => ({ id: c.cat.id, label: `${r.cat.name} › ${c.cat.name}` })))
@@ -155,7 +152,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
   /** Dialog rename, with a move when the Category select changed. */
   async function saveRename(n: CatNode, name: string, parentId: number): Promise<SaveResult> {
     let move: { parentId: number; recolor: { id: number; color: string }[] } | undefined
-    const dest = flatten(roots).find(x => x.cat.id === parentId)!
+    const dest = flatten(tree).find(x => x.cat.id === parentId)!
     if (parentId !== n.parent!.cat.id) {
       const moved = { ...n, parent: dest }
       move = { parentId, recolor: [{ id: n.cat.id, color: childColor(dest) }, ...n.children.map(c => ({ id: c.cat.id, color: childColor(moved) }))] }
@@ -169,6 +166,8 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
       return `Error: ${n.cat.name} wasn’t renamed. Try again.`
     }
     setDlg(null)
+    // Open the rows above the moved item so it shows (and can take focus).
+    if (move) openRows([...ancestors(dest).map(a => a.cat.id), dest.cat.id])
     setStatus(`${move ? `Renamed ${say(n)} to ${name} and moved it to ${dest.cat.name}.` : `Renamed ${say(n)} to ${name}.`}${charity ? ` Your ${charity} Charity purchase${charity === 1 ? '' : 's'} moved to Charity › Miscellaneous.` : ''}`)
     focusAfter.current = [highlight ? 'hl_edit' : 'edit', slug(dest.cat.name), slug(name), n.cat.id].join('-')
     onChanged?.()
@@ -210,34 +209,23 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
     onChanged?.()
   }
 
-  /** Dialog Add/Subtract and New purchase (0009 §4.1). */
+  /** Dialog Add/Subtract, New purchase and a purchase's Edit (0009 §4.1). */
   async function saveAmount(d: Dlg, amount: number, description: string): Promise<SaveResult> {
     const { n, purchase } = d
     try {
-      if (d.act === 'replace') await budgetItemRepo.update(purchase!.id!, { amount })
+      if (d.act === 'editPurchase') await budgetItemRepo.replace(purchase!.id!, { categoryId: n.cat.id, amount, date: purchase!.date, ...(description ? { description } : {}) })
       else await budgetItemRepo.add({ categoryId: n.cat.id, amount, date: addDate, ...(description ? { description } : {}) })
     } catch {
       return `Error: The amount for ${n.cat.name} wasn’t saved. Try again.`
     }
     const text = formatAmount(amount) || '0.00'
     setDlg(null)
-    setStatus(d.act === 'replace' ? `Changed the ${say(n)} purchase to ${text}.`
+    setStatus(d.act === 'editPurchase' ? `Saved the ${say(n)} purchase of ${text}.`
       : d.act === 'new' ? `Added a ${say(n)} purchase of ${text} on ${addDate}.` : `Added ${text} to ${say(n)} on ${addDate}.`)
-    focusAfter.current = purchase ? editId(n, purchase) : did('edit', n)
+    // An edited purchase is a new record with a new id: focus its item's Edit menu instead.
+    focusAfter.current = did('edit', n)
     onChanged?.()
-    if (d.act !== 'replace') fireReward()
-  }
-
-  async function saveDescription(n: CatNode, i: BudgetItem, description: string): Promise<SaveResult> {
-    try {
-      await budgetItemRepo.update(i.id!, { description: description || undefined })
-    } catch {
-      return `Error: The description for the ${n.cat.name} purchase wasn’t saved. Try again.`
-    }
-    setDlg(null)
-    setStatus(description ? `Saved the description for the ${say(n)} purchase.` : `Removed the description from the ${say(n)} purchase.`)
-    focusAfter.current = editId(n, i)
-    onChanged?.()
+    if (d.act !== 'editPurchase') fireReward()
   }
 
   async function deleteRow(n: CatNode) {
@@ -378,8 +366,8 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
           <td className={`num${i.amount < 0 ? ' neg' : ''}`}>{formatAmount(i.amount) || '0.00'}</td>
           {actionCol && (
             <td className="row-actions">
-              <ActionsMenu id={editId(n, i)} label={`Edit ${say(n)} purchase of ${formatAmount(i.amount) || '0.00'}`} buttonLabel="Edit"
-                items={purchaseActions(n, i)} onSelect={a => act(n, a, i)} />
+              <Button type="button" className="secondary small" id={editId(n, i)}
+                aria-label={`Edit ${say(n)} purchase of ${formatAmount(i.amount) || '0.00'}`} onClick={() => act(n, 'editPurchase', i)}>Edit</Button>
             </td>
           )}
         </tr>,
@@ -416,7 +404,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
         <Dialog id={`${idBase}-highlight`} title={hlNode.cat.name} className="highlight-dialog" onClose={close} buttons={closeBtn}>
           <p className="help">{hlNode.children.length || (range === 'day' && purchasesOf(hlNode).length) ? `${say(hlNode)} and the rows under it.` : `${say(hlNode)} has nothing under it.`}</p>
           <BudgetTable roots={[hlNode]} items={items} range={range} showEstimates={wantEstimates} calendar={calendar} date={date}
-            idBase={`${idBase}-hl`} highlight onChanged={onChanged} />
+            idBase={`${idBase}-hl`} highlight allRoots={tree} onChanged={onChanged} />
         </Dialog>
       )
     }
@@ -430,8 +418,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
         </dl>
         {actions && (
           <div className="actions">
-            <Button type="button" className="secondary" onClick={() => act(n, 'replace', i)}>Add/Subtract</Button>
-            <Button type="button" className="danger" onClick={() => act(n, 'delete', i)}>Delete</Button>
+            <Button type="button" onClick={() => act(n, 'editPurchase', i)}>Edit</Button>
           </div>
         )}
       </Dialog>
@@ -456,13 +443,12 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
         return <AmountDialog id={id} title={`Add or subtract for ${say(n)}`} spoken={say(n)}
           intro={`Adds to or subtracts from the ${say(n)} total as a new amount dated ${addDate}. Use a minus sign to subtract, e.g. -12.50, or type a sum, e.g. 12.50+3.`}
           onSave={(amount, description) => saveAmount(d, amount, description)} onCancel={close} />
-      case 'replace':
-        return <AmountDialog id={id} title={`Change ${spoken}`} spoken={spoken} initial={String(purchase!.amount)}
-          intro="The amount you enter replaces this purchase’s amount. The date stays the same. Type a sum to work it out, e.g. 12.50+3."
-          onSave={(amount, description) => saveAmount(d, amount, description)} onCancel={close} />
-      case 'description':
-        return <DescriptionDialog id={id} spoken={spoken} initial={purchase!.description ?? ''}
-          onSave={text => saveDescription(n, purchase!, text)} onCancel={close} />
+      case 'editPurchase':
+        return <AmountDialog id={id} title={`Edit ${spoken}`} spoken={spoken} withDescription submitLabel="Save"
+          initial={purchase!.amount.toFixed(2)} initialDescription={purchase!.description ?? ''}
+          intro={`Saving replaces this purchase with a new record. The date stays ${purchase!.date}. Type a sum to work it out, e.g. 12.50+3.`}
+          onSave={(amount, description) => saveAmount(d, amount, description)}
+          onDelete={() => setDlg({ act: 'delete', n, purchase })} onCancel={close} />
       case 'delete': {
         const confirmDelete = purchase
           ? () => { const bought = purchasesOf(n); const k = bought.indexOf(purchase)

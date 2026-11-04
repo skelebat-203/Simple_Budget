@@ -14,7 +14,7 @@ function loadCollapsed(): Set<number> {
  * Budget setup keeps its own, unsaved expand state. The tables have no keyboard
  * shortcuts of their own: every control is a Tab stop (0008 §2, applied to all tables in v0.5.9).
  */
-export function useCollapsed(): [Set<number>, (id: number) => void] {
+export function useCollapsed(): [Set<number>, (id: number) => void, (ids: number[]) => void] {
   const [collapsed, setCollapsed] = useState(loadCollapsed)
   useEffect(() => {
     const sync = () => setCollapsed(loadCollapsed())
@@ -23,16 +23,26 @@ export function useCollapsed(): [Set<number>, (id: number) => void] {
     window.addEventListener('storage', onStorage)
     return () => { window.removeEventListener(COLLAPSED_EVENT, sync); window.removeEventListener('storage', onStorage) }
   }, [])
-  function toggle(id: number) {
-    const next = new Set(collapsed)
-    if (next.has(id)) next.delete(id); else next.add(id)
+  function save(next: Set<number>) {
     setCollapsed(next)
     try {
       localStorage.setItem(COLLAPSED_KEY, JSON.stringify([...next]))
       window.dispatchEvent(new Event(COLLAPSED_EVENT))
     } catch { /* storage unavailable: this table, this session only */ }
   }
-  return [collapsed, toggle]
+  function toggle(id: number) {
+    const next = new Set(collapsed)
+    if (next.has(id)) next.delete(id); else next.add(id)
+    save(next)
+  }
+  /** Open every row in `ids` (e.g. the rows above an item that was just moved, so it shows). */
+  function open(ids: number[]) {
+    if (!ids.some(id => collapsed.has(id))) return
+    const next = new Set(collapsed)
+    ids.forEach(id => next.delete(id))
+    save(next)
+  }
+  return [collapsed, toggle, open]
 }
 
 /** Expand/collapse buttons are always Tab stops (0008 §1), so they aren't managed here. */

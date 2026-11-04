@@ -14,7 +14,7 @@ export type SaveResult = string | void
  * field submits. `error` is a message for the whole form (e.g. a failed save); field errors are
  * shown by each dialog under its field. Messages go through the single live region.
  */
-function FormDialog({ id, title, focusId, submitLabel, onCancel, onSubmit, error, busy, children }: {
+export function FormDialog({ id, title, focusId, submitLabel, onCancel, onSubmit, error, busy, endButton, children }: {
   id: string
   title: string
   focusId: string
@@ -23,15 +23,25 @@ function FormDialog({ id, title, focusId, submitLabel, onCancel, onSubmit, error
   onSubmit: () => void
   error?: string
   busy?: boolean
+  /** A button kept apart at the right (e.g. Delete); Cancel and the submit button then sit together at the left. */
+  endButton?: ReactNode
   children: ReactNode
 }) {
   useAnnounce(error ?? '')
   return (
     <Dialog id={id} title={title} className="form-dialog" focusId={focusId} onClose={onCancel}
-      buttons={<>
-        <Button type="button" className="secondary" onClick={onCancel}>Cancel</Button>
-        <Button type="submit" form={`${id}-form`} disabled={busy}>{submitLabel}</Button>
-      </>}>
+      buttons={endButton
+        ? <>
+          <span className="actions">
+            <Button type="button" className="secondary" onClick={onCancel}>Cancel</Button>
+            <Button type="submit" form={`${id}-form`} disabled={busy}>{submitLabel}</Button>
+          </span>
+          {endButton}
+        </>
+        : <>
+          <Button type="button" className="secondary" onClick={onCancel}>Cancel</Button>
+          <Button type="submit" form={`${id}-form`} disabled={busy}>{submitLabel}</Button>
+        </>}>
       <form id={`${id}-form`} noValidate className="dialog-form" onSubmit={e => { e.preventDefault(); onSubmit() }}>
         {children}
         {error && <p className="error">{error}</p>}
@@ -98,9 +108,12 @@ export function RenameDialog({ id, spoken, name, parentId, parents, level, onSav
   useAnnounce(fieldError)
   return (
     <FormDialog id={id} focusId={fieldId} title={`Rename ${spoken}`} submitLabel="Save" onCancel={onCancel} onSubmit={submit} error={saver.error} busy={saver.busy}>
-      <Field id={fieldId} label="New name" error={fieldError} help="The name changes everywhere in the app.">
+      <div className="banner banner-warn" role="note">
+        <p className="banner-title">This changes ALL historic records.</p>
+      </div>
+      <Field id={fieldId} label="New name" error={fieldError}>
         <Input id={fieldId} ref={input} maxLength={NAME_MAX} value={value} autoComplete="off"
-          aria-invalid={!!fieldError || undefined} aria-describedby={describe(fieldId, fieldError, true)}
+          aria-invalid={!!fieldError || undefined} aria-describedby={describe(fieldId, fieldError)}
           onChange={e => setValue(e.target.value)} />
       </Field>
       {parents.length > 1 && (
@@ -120,20 +133,23 @@ export function RenameDialog({ id, spoken, name, parentId, parents, level, onSav
  * purchase's amount (Day, purchase row), or a value added to or subtracted from an item's total
  * (Week, Month). Amounts accept typed sums.
  */
-export function AmountDialog({ id, title, spoken, intro, initial, withDescription, submitLabel = 'Save', onSave, onCancel }: {
+export function AmountDialog({ id, title, spoken, intro, initial, initialDescription, withDescription, submitLabel = 'Save', onSave, onDelete, onCancel }: {
   id: string
   title: string
   spoken: string
   /** One line of help above the amount. */
   intro: string
   initial?: string
+  initialDescription?: string
   withDescription?: boolean
   submitLabel?: string
   onSave: (amount: number, description: string) => SaveResult | Promise<SaveResult>
+  /** When given, a Delete button shows at the right of the footer. */
+  onDelete?: () => void
   onCancel: () => void
 }) {
   const [value, setValue] = useState(initial ?? '')
-  const [description, setDescription] = useState('')
+  const [description, setDescription] = useState(initialDescription ?? '')
   const [fieldError, setFieldError] = useState('')
   const saver = useSaver()
   const fieldId = `${id}-amount`
@@ -149,7 +165,8 @@ export function AmountDialog({ id, title, spoken, intro, initial, withDescriptio
   }
   useAnnounce(fieldError)
   return (
-    <FormDialog id={id} focusId={fieldId} title={title} submitLabel={submitLabel} onCancel={onCancel} onSubmit={submit} error={saver.error} busy={saver.busy}>
+    <FormDialog id={id} focusId={fieldId} title={title} submitLabel={submitLabel} onCancel={onCancel} onSubmit={submit} error={saver.error} busy={saver.busy}
+      endButton={onDelete && <Button type="button" className="danger" onClick={onDelete}>Delete</Button>}>
       <p id={`${id}-intro`} className="help">{intro}</p>
       <Field id={fieldId} label="Amount" error={fieldError}>
         <AmountField id={fieldId} className="amount" allowNegative value={value}
@@ -163,28 +180,6 @@ export function AmountDialog({ id, title, spoken, intro, initial, withDescriptio
             onChange={e => setDescription(e.target.value)} />
         </Field>
       )}
-    </FormDialog>
-  )
-}
-
-/** Edit a purchase's optional description; leaving it empty removes it. */
-export function DescriptionDialog({ id, spoken, initial, onSave, onCancel }: {
-  id: string
-  spoken: string
-  initial: string
-  onSave: (description: string) => SaveResult | Promise<SaveResult>
-  onCancel: () => void
-}) {
-  const [value, setValue] = useState(initial)
-  const saver = useSaver()
-  const fieldId = `${id}-description`
-  return (
-    <FormDialog id={id} focusId={fieldId} title={`Description for ${spoken}`} submitLabel="Save" onCancel={onCancel}
-      onSubmit={() => saver.run(() => onSave(cleanDescription(value)))} error={saver.error} busy={saver.busy}>
-      <Field id={fieldId} label="Description (optional)" help={`Up to ${DESCRIPTION_MAX} characters. Leave empty to remove it.`}>
-        <Input id={fieldId} maxLength={DESCRIPTION_MAX} value={value} autoComplete="off" aria-describedby={`${fieldId}-help`}
-          onChange={e => setValue(e.target.value)} />
-      </Field>
     </FormDialog>
   )
 }

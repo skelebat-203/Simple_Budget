@@ -85,6 +85,14 @@ export const budgetItemRepo = {
     return db.budgetItems.update(id, { ...patch, updatedAt: Date.now() })
   },
   async remove(id: number) { return db.budgetItems.delete(id) },
+  /** Replace a purchase with a new record (Day Edit dialog, 0009 §4): the old one is removed and the new one added, all or nothing. */
+  async replace(oldId: number, item: Omit<BudgetItem, 'id' | 'createdAt' | 'updatedAt'>) {
+    return db.transaction('rw', db.budgetItems, async () => {
+      await db.budgetItems.delete(oldId)
+      const now = Date.now()
+      return db.budgetItems.add({ ...item, createdAt: now, updatedAt: now })
+    })
+  },
 }
 
 /**
