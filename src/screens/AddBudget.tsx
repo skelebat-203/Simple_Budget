@@ -123,7 +123,7 @@ export function AddBudget({ roots, onSaved }: {
 
   return (
     <section className="panel" aria-labelledby="add-heading">
-      <h2 id="add-heading" className="section-title">Add purchase</h2>
+      <h2 id="add-heading" className="sr-only">Add purchase</h2>
       <ErrorSummary ref={bannerRef} errors={toList(errors)} />
       {/* Two columns from 1280px; fields keep their DOM (reading and tab) order (0007 §10). */}
       <div className="form-grid">

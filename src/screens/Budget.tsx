@@ -52,7 +52,7 @@ export function Budget({ roots, items, range, onRangeChange, calendar, onChanged
   const pick = (v: string) => { if (v && v >= bounds.min && v <= bounds.max) setAnchor(parseIso(v)) }
   return (
     <section className="panel wide" aria-labelledby="budget-heading">
-      <h2 id="budget-heading" className="section-title">Budget</h2>
+      <h2 id="budget-heading" className="sr-only">Budget</h2>
       <div className="toolbar">
         <div className="toggle-group ranges" role="group" aria-label="Range">
           {RANGES.map(r => (
