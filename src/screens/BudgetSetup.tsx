@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { AmountField, Button, ErrorSummary, focusFirstError, type FieldError } from '../components/ui'
 import { Expander } from '../components/ui/Expander'
 import { BudgetTable } from '../components/BudgetTable'
-import { useAnnounce } from '../components/ui/announcer'
+import { announce, useAnnounce } from '../components/ui/announcer'
 import { fireReward } from '../rewards/rewards'
 import { requestNotifications } from '../notifications'
 import { saveSetup } from '../storage/repository'
@@ -57,6 +57,8 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, rewardsEnable
   const [rewards, setRewards] = useState(rewardsEnabled)
   const [notify, setNotify] = useState(notificationsEnabled)
   const [notifyMsg, setNotifyMsg] = useState('')
+  /** Categories whose "Create in" fields are showing (0009 §2). */
+  const [shown, setShown] = useState<Set<number>>(new Set())
   const [create, setCreate] = useState<Record<number, { name: string; parent: number }>>({})
   /** Expanded rows; categories start open, subcategories collapsed (0007 §10). */
   const [expanded, setExpanded] = useState<Set<number>>(() => new Set(original.filter(c => c.parentId == null).map(c => c.id)))
@@ -329,12 +331,19 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, rewardsEnable
     const base = `create-${slug(root.cat.name)}`
     const c = create[root.cat.id] ?? { name: '', parent: root.cat.id }
     const err = errors[base]
+    const open = shown.has(root.cat.id)
     const empty = !c.name.trim()
+    const reveal = () => {
+      setShown(x => new Set(x).add(root.cat.id))
+      setFocusId(base)
+      announce('Fields added above.')
+    }
     const set = (p: Partial<typeof c>) => setCreate(x => ({ ...x, [root.cat.id]: { ...c, ...p } }))
     return (
       <tr key={`create-${root.cat.id}`} className={`row create depth-1 clr-${root.cat.color}`} aria-level={2}>
         <td colSpan={6}>
           <div className="create-row">
+            {open && <>
             <div className="create-field">
               <label className="label" htmlFor={base}>Create in {root.cat.name}</label>
               <input id={base} className="input" maxLength={NAME_MAX} value={c.name}
@@ -348,12 +357,15 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, rewardsEnable
                 {[root, ...root.children].map(t => <option key={t.cat.id} value={t.cat.id}>{t.cat.name}</option>)}
               </select>
             </div>
+            </>}
             {/* While disabled, Add shows and is described by a tooltip on hover or focus (v0.4 step 10). */}
             <span className={`tip-wrap${tipOff === base ? ' tip-off' : ''}`} data-tip={base}
               onMouseLeave={() => setTipOff(t => t === base ? null : t)} onBlur={() => setTipOff(t => t === base ? null : t)}>
-              <Button type="button" className="secondary" id={`${base}-add`} aria-disabled={empty || undefined}
-                aria-describedby={empty ? `${base}-tooltip` : base} onClick={() => addRow(root)}>Add</Button>
-              {empty && <span id={`${base}-tooltip`} role="tooltip" className="tooltip">First enter a value in ‘Create in {root.cat.name}’</span>}
+              <Button type="button" className="secondary" id={`${base}-add`} aria-disabled={(open && empty) || undefined}
+                aria-label={`Add to ${root.cat.name}`}
+                aria-describedby={open ? (empty ? `${base}-tooltip` : base) : undefined}
+                onClick={() => open ? addRow(root) : reveal()}>Add</Button>
+              {open && empty && <span id={`${base}-tooltip`} role="tooltip" className="tooltip">First enter a value in ‘Create in {root.cat.name}’</span>}
             </span>
             {err && <p id={`${base}-error_msg`} className="error">{err}</p>}
           </div>
