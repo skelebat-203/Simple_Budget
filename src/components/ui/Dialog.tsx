@@ -9,7 +9,7 @@ const FOCUSABLE = 'button:not([disabled]), [href], input:not([disabled]), select
  * to what had it before the dialog opened unless the caller moves it.
  * Title, content and buttons come from the caller; buttons go Cancel left, Confirm right (0007 §4.2).
  */
-export function Dialog({ id, title, children, buttons, onClose, className, describedBy, focusId }: {
+export function Dialog({ id, title, children, buttons, onClose, className, describedBy }: {
   id: string
   title: ReactNode
   children: ReactNode
@@ -20,22 +20,19 @@ export function Dialog({ id, title, children, buttons, onClose, className, descr
   className?: string
   /** Id of the content element that describes the dialog, if any. */
   describedBy?: string
-  /** Id of the control that takes focus on open (a form's first field); default is the dialog itself. */
-  focusId?: string
 }) {
   const ref = useRef<HTMLDialogElement>(null)
   useEffect(() => {
     const d = ref.current
     const opener = document.activeElement as HTMLElement | null
     if (d && !d.open) d.showModal()
-    const first = focusId ? document.getElementById(focusId) : null
-    if (first) first.focus(); else d?.focus()
+    d?.focus()
     return () => {
       d?.close()
       // Back to the opener unless the caller already moved focus elsewhere.
       if (opener?.isConnected && (document.activeElement === document.body || !document.activeElement)) opener.focus()
     }
-  }, [focusId])
+  }, [])
 
   return (
     <dialog ref={ref} id={id} tabIndex={-1} className={`dialog ${className ?? ''}`.trim()} aria-modal="true"

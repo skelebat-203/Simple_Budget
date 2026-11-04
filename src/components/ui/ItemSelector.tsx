@@ -16,11 +16,13 @@ interface Group { heading: CatNode; options: CatNode[] }
  * Typed text that names exactly one option picks it. `onText` reports the
  * text so a form can offer to create something new.
  */
-export function ItemSelector({ id, roots, mode = 'item', initial, onChange, onText, invalid, describedBy, required = true, placeholder, label }: {
+export function ItemSelector({ id, roots, mode = 'item', initial, defaultTarget, onChange, onText, invalid, describedBy, required = true, placeholder, label }: {
   id: string
   roots: CatNode[]
   mode?: 'item' | 'category'
   initial?: (n: CatNode) => boolean
+  /** Row already chosen when the control opens (editing a saved purchase). */
+  defaultTarget?: CatNode
   onChange: (target: CatNode | null) => void
   onText?: (text: string, matches: number) => void
   invalid?: boolean
@@ -30,7 +32,7 @@ export function ItemSelector({ id, roots, mode = 'item', initial, onChange, onTe
   /** Listbox name. */
   label: string
 }) {
-  const [query, setQuery] = useState('')
+  const [query, setQuery] = useState(() => (defaultTarget ? displayName(defaultTarget) : ''))
   const [open, setOpen] = useState(false)
   const [active, setActive] = useState(-1)
   const listId = `${id}-listbox`
@@ -117,7 +119,7 @@ export function ItemSelector({ id, roots, mode = 'item', initial, onChange, onTe
           if (e.key === 'ArrowDown') { e.preventDefault(); move(1) }
           else if (e.key === 'ArrowUp') { e.preventDefault(); move(-1) }
           else if (e.key === 'Enter' && open && active >= 0 && flat[active]) { e.preventDefault(); pick(flat[active]) }
-          else if (e.key === 'Escape') setOpen(false)
+          else if (e.key === 'Escape' && open) { e.preventDefault(); setOpen(false) } // closes the list only, not a dialog around it
         }}
       />
       {open && (

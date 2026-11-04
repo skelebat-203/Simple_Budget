@@ -14,10 +14,10 @@ export type SaveResult = string | void
  * field submits. `error` is a message for the whole form (e.g. a failed save); field errors are
  * shown by each dialog under its field. Messages go through the single live region.
  */
-export function FormDialog({ id, title, focusId, submitLabel, onCancel, onSubmit, error, busy, endButton, children }: {
+export function FormDialog({ id, title, className, submitLabel, onCancel, onSubmit, error, busy, endButton, children }: {
   id: string
   title: string
-  focusId: string
+  className?: string
   submitLabel: string
   onCancel: () => void
   onSubmit: () => void
@@ -29,7 +29,7 @@ export function FormDialog({ id, title, focusId, submitLabel, onCancel, onSubmit
 }) {
   useAnnounce(error ?? '')
   return (
-    <Dialog id={id} title={title} className="form-dialog" focusId={focusId} onClose={onCancel}
+    <Dialog id={id} title={title} className={`form-dialog ${className ?? ''}`.trim()} onClose={onCancel}
       buttons={endButton
         ? <>
           <span className="actions">
@@ -107,7 +107,7 @@ export function RenameDialog({ id, spoken, name, parentId, parents, level, onSav
   }
   useAnnounce(fieldError)
   return (
-    <FormDialog id={id} focusId={fieldId} title={`Rename ${spoken}`} submitLabel="Save" onCancel={onCancel} onSubmit={submit} error={saver.error} busy={saver.busy}>
+    <FormDialog id={id} title={`Rename ${spoken}`} submitLabel="Save" onCancel={onCancel} onSubmit={submit} error={saver.error} busy={saver.busy}>
       <div className="banner banner-warn" role="note">
         <p className="banner-title">This changes ALL historic records.</p>
       </div>
@@ -165,7 +165,7 @@ export function AmountDialog({ id, title, spoken, intro, initial, initialDescrip
   }
   useAnnounce(fieldError)
   return (
-    <FormDialog id={id} focusId={fieldId} title={title} submitLabel={submitLabel} onCancel={onCancel} onSubmit={submit} error={saver.error} busy={saver.busy}
+    <FormDialog id={id} title={title} submitLabel={submitLabel} onCancel={onCancel} onSubmit={submit} error={saver.error} busy={saver.busy}
       endButton={onDelete && <Button type="button" className="danger" onClick={onDelete}>Delete</Button>}>
       <p id={`${id}-intro`} className="help">{intro}</p>
       <Field id={fieldId} label="Amount" error={fieldError}>

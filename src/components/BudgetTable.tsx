@@ -2,7 +2,9 @@ import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react'
 import type { BudgetItem, Range } from '../storage/db'
 import { actualFor, ancestors, childColor, domId, flatten, estimateTotal, isoDate, formatAmount, isTotal, periodsFor, rangeHasEstimates, repeatedNames, scheduleText, spokenName, type Calendar, type CatNode, type Period } from '../budget/tree'
 import { cleanName, NAME_MAX, slug } from '../budget/validate'
-import { budgetItemRepo, categoryRepo, NameTakenError, RowInUseError } from '../storage/repository'
+import { addNewItem, budgetItemRepo, categoryRepo, NameTakenError, RowInUseError } from '../storage/repository'
+import { PurchaseDialog } from './PurchaseDialog'
+import type { PurchaseSave } from './PurchaseForm'
 import { AmountDialog, Button, ConfirmDialog, Dialog, RenameDialog, type SaveResult } from './ui'
 import { useCollapsed } from './ui/useCollapsed'
 import { fireReward } from '../rewards/rewards'
@@ -65,7 +67,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
   /** Open Edit-menu dialog (0009 §4). */
   const [dlg, setDlg] = useState<Dlg | null>(null)
   /** Open highlight dialog (0009 §3): a row with its children, or one Day purchase. */
-  const [hl, setHl] = useState<{ kind: 'row' | 'purchase'; id: number } | null>(null)
+  const [hl, setHl] = useState<{ id: number } | null>(null)
   const [value, setValue] = useState('')
   const [fieldError, setFieldError] = useState('')
   const [status, setStatus] = useState('')
@@ -211,21 +213,41 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
 
   /** Dialog Add/Subtract, New purchase and a purchase's Edit (0009 §4.1). */
   async function saveAmount(d: Dlg, amount: number, description: string): Promise<SaveResult> {
-    const { n, purchase } = d
+    const { n } = d
     try {
-      if (d.act === 'editPurchase') await budgetItemRepo.replace(purchase!.id!, { categoryId: n.cat.id, amount, date: purchase!.date, ...(description ? { description } : {}) })
-      else await budgetItemRepo.add({ categoryId: n.cat.id, amount, date: addDate, ...(description ? { description } : {}) })
+      await budgetItemRepo.add({ categoryId: n.cat.id, amount, date: addDate, ...(description ? { description } : {}) })
     } catch {
       return `Error: The amount for ${n.cat.name} wasn’t saved. Try again.`
     }
     const text = formatAmount(amount) || '0.00'
     setDlg(null)
-    setStatus(d.act === 'editPurchase' ? `Saved the ${say(n)} purchase of ${text}.`
-      : d.act === 'new' ? `Added a ${say(n)} purchase of ${text} on ${addDate}.` : `Added ${text} to ${say(n)} on ${addDate}.`)
-    // An edited purchase is a new record with a new id: focus its item's Edit menu instead.
+    setStatus(d.act === 'new' ? `Added a ${say(n)} purchase of ${text} on ${addDate}.` : `Added ${text} to ${say(n)} on ${addDate}.`)
     focusAfter.current = did('edit', n)
     onChanged?.()
-    if (d.act !== 'editPurchase') fireReward()
+    fireReward()
+  }
+
+  /** Day purchase dialog Save: the old record is removed and a new one added (all or nothing). A name clash is thrown to the dialog. */
+  async function savePurchase(old: BudgetItem, n: CatNode, p: PurchaseSave): Promise<SaveResult> {
+    let charity = 0
+    let target = n
+    try {
+      if (p.kind === 'existing') {
+        target = p.target
+        await budgetItemRepo.replace(old.id!, { categoryId: p.target.cat.id, amount: p.amount, date: p.date, ...(p.description ? { description: p.description } : {}) })
+      } else {
+        charity = (await addNewItem({ ...p.args, replaceId: old.id })).charityMoved
+      }
+    } catch (err) {
+      if (err instanceof NameTakenError) throw err
+      return `Error: The ${n.cat.name} purchase wasn’t saved. Try again.`
+    }
+    setDlg(null)
+    const text = formatAmount(p.kind === 'existing' ? p.amount : p.args.amount) || '0.00'
+    setStatus(`Saved the ${p.kind === 'existing' ? say(target) : p.name} purchase of ${text}.${charity ? ` Your ${charity} Charity purchase${charity === 1 ? '' : 's'} moved to Charity › Miscellaneous.` : ''}`)
+    // The purchase is a new record, maybe under another item: focus the item it was on.
+    focusAfter.current = did('edit', n)
+    onChanged?.()
   }
 
   async function deleteRow(n: CatNode) {
@@ -336,7 +358,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
                 <>
                   {expandable(n) && <Chevron open={open} onToggle={() => toggle(n.cat.id)} id={did('expand', n)} label={say(n)} />}
                   <button type="button" className="name-link" id={did('name', n)} aria-haspopup="dialog"
-                    onClick={() => setHl({ kind: 'row', id: n.cat.id })}>{label}</button>
+                    onClick={() => setHl({ id: n.cat.id })}>{label}</button>
                 </>
               )
             })()}
@@ -360,7 +382,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
           <th scope="row" className="name">
             {plain ? purchaseLabel(i)
               : <button type="button" className="name-link" id={`${editId(n, i)}-name`.replace('edit_purchase', 'name_purchase')} aria-haspopup="dialog"
-                onClick={() => setHl({ kind: 'purchase', id: i.id! })}>{purchaseLabel(i)}</button>}
+                onClick={() => act(n, 'editPurchase', i)}>{purchaseLabel(i)}</button>}
             {i.description && <span className="row-description">{i.description}</span>}
           </th>
           <td className={`num${i.amount < 0 ? ' neg' : ''}`}>{formatAmount(i.amount) || '0.00'}</td>
@@ -388,39 +410,18 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
     }
   }
 
-  const hlNode = hl?.kind === 'row' ? flatten(roots).find(x => x.cat.id === hl.id) : undefined
-  const hlPurchase = hl?.kind === 'purchase' ? items.find(x => x.id === hl.id) : undefined
-  const hlPurchaseNode = hlPurchase && flatten(roots).find(x => x.cat.id === hlPurchase.categoryId)
-  // The row or purchase can go away (deleted, or removed in another tab): its dialog then shows nothing.
-  const hlGone = !!hl && !(hlNode || (hlPurchase && hlPurchaseNode))
+  const hlNode = hl ? flatten(roots).find(x => x.cat.id === hl.id) : undefined
 
-  /** The highlight dialog (0009 §3): the row as this table shows it, with the same functions; or one Day purchase. */
+  /** The highlight dialog (0009 §3): the row as this table shows it, with the same functions. A Day purchase opens its own dialog (Edit). */
   function highlightDialog(): ReactNode {
-    if (!hl || hlGone) return null
+    if (!hlNode) return null
     const close = () => setHl(null)
-    const closeBtn = <><span /><Button type="button" className="secondary" onClick={close}>Close</Button></>
-    if (hlNode) {
-      return (
-        <Dialog id={`${idBase}-highlight`} title={hlNode.cat.name} className="highlight-dialog" onClose={close} buttons={closeBtn}>
-          <p className="help">{hlNode.children.length || (range === 'day' && purchasesOf(hlNode).length) ? `${say(hlNode)} and the rows under it.` : `${say(hlNode)} has nothing under it.`}</p>
-          <BudgetTable roots={[hlNode]} items={items} range={range} showEstimates={wantEstimates} calendar={calendar} date={date}
-            idBase={`${idBase}-hl`} highlight allRoots={tree} onChanged={onChanged} />
-        </Dialog>
-      )
-    }
-    const i = hlPurchase!, n = hlPurchaseNode!
     return (
-      <Dialog id={`${idBase}-highlight_purchase`} title={`${purchaseLabel(i)}, ${say(n)}`} className="highlight-dialog narrow" onClose={close} buttons={closeBtn}>
-        <dl className="detail">
-          <dt>Amount</dt><dd>{formatAmount(i.amount) || '0.00'}</dd>
-          <dt>Date</dt><dd>{i.date}</dd>
-          {i.description && <><dt>Description</dt><dd>{i.description}</dd></>}
-        </dl>
-        {actions && (
-          <div className="actions">
-            <Button type="button" onClick={() => act(n, 'editPurchase', i)}>Edit</Button>
-          </div>
-        )}
+      <Dialog id={`${idBase}-highlight`} title={hlNode.cat.name} className="highlight-dialog" onClose={close}
+        buttons={<><span /><Button type="button" className="secondary" onClick={close}>Close</Button></>}>
+        <p className="help">{hlNode.children.length || (range === 'day' && purchasesOf(hlNode).length) ? `${say(hlNode)} and the rows under it.` : `${say(hlNode)} has nothing under it.`}</p>
+        <BudgetTable roots={[hlNode]} items={items} range={range} showEstimates={wantEstimates} calendar={calendar} date={date}
+          idBase={`${idBase}-hl`} highlight allRoots={tree} onChanged={onChanged} />
       </Dialog>
     )
   }
@@ -430,7 +431,6 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
     const { n, purchase } = d
     const id = `${idBase}-edit_${d.act}`
     const close = () => setDlg(null)
-    const spoken = purchase ? `${say(n)} purchase` : say(n)
     switch (d.act) {
       case 'rename':
         return <RenameDialog id={id} spoken={say(n)} name={n.cat.name} parentId={n.parent!.cat.id} parents={parentChoices(n)}
@@ -444,10 +444,8 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
           intro={`Adds to or subtracts from the ${say(n)} total as a new amount dated ${addDate}. Use a minus sign to subtract, e.g. -12.50, or type a sum, e.g. 12.50+3.`}
           onSave={(amount, description) => saveAmount(d, amount, description)} onCancel={close} />
       case 'editPurchase':
-        return <AmountDialog id={id} title={`Edit ${spoken}`} spoken={spoken} withDescription submitLabel="Save"
-          initial={purchase!.amount.toFixed(2)} initialDescription={purchase!.description ?? ''}
-          intro={`Saving replaces this purchase with a new record. The date stays ${purchase!.date}. Type a sum to work it out, e.g. 12.50+3.`}
-          onSave={(amount, description) => saveAmount(d, amount, description)}
+        return <PurchaseDialog id={id} title={`${purchaseLabel(purchase!)}, ${say(n)}`} roots={tree} node={n} purchase={purchase!}
+          onSave={p => savePurchase(purchase!, n, p) as Promise<string | void>}
           onDelete={() => setDlg({ act: 'delete', n, purchase })} onCancel={close} />
       case 'delete': {
         const confirmDelete = purchase

@@ -12,6 +12,7 @@
   --color-border: #e5e7eb; /* borders, dividers, input outlines */
   --color-alert: #b91c1c; /* high-priority alerts, error text (popups/banners/tooltips) */
   --color-success: #15803d; /* success messages (popups/banners/tooltips) */
+  --color-warn: #a16207; /* warning banners (border and accents) */
   --color-info: #0284c7; /* info messages (popups/banners/tooltips) */
   --color-text: #000000; /* standard text color */
   --color-text-description: #4b5563; /* purchase description: dark grey, 7.6:1 on white */

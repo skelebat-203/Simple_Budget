@@ -226,7 +226,8 @@
 
 /* Non-error notices (storage warnings, review lists). */
 .banner { display: flex; flex-direction: column; gap: var(--space-sm); }
-.banner-warn, .banner-info { border-color: var(--color-info); background: color-mix(in srgb, var(--color-info), white 92%); }
+.banner-info { border-color: var(--color-info); background: color-mix(in srgb, var(--color-info), white 92%); }
+.banner-warn { border-color: var(--color-warn); background: color-mix(in srgb, var(--color-warn), white 90%); }
 .banner-success { border-color: var(--color-success); background: color-mix(in srgb, var(--color-success), white 90%); }
 .banner-success .banner-title { color: var(--color-success); }
 .banner-warn .banner-title, .banner-info .banner-title { color: var(--color-foreground-page); }
@@ -476,3 +477,7 @@ nav .btn.icon:hover:not(:disabled) { background: var(--color-border); }
 .dialog-actions > .actions { gap: var(--space-sm); }
 .dialog .banner-warn { margin: 0; }
 .dialog .banner-warn .banner-title { margin: 0; }
+
+/* Day purchase dialog (0009 §3, §4): the Add purchase fields in one column. */
+.dialog.purchase-dialog { width: min(40rem, calc(100% - 2 * var(--space-md))); }
+.purchase-dialog .form-grid { display: flex; flex-direction: column; align-items: stretch; gap: var(--space-md); }

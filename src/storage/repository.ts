@@ -232,8 +232,11 @@ export async function addNewItem(o: {
   amount: number
   date: string
   description?: string
+  /** A purchase this one replaces (Day Edit dialog): deleted in the same transaction. */
+  replaceId?: number
 }): Promise<{ movedFrom?: string; charityMoved: number }> {
   return db.transaction('rw', db.categories, db.budgetItems, async () => {
+    if (o.replaceId != null) await db.budgetItems.delete(o.replaceId)
     let parent: { id: number; name: string }
     if ('newSub' in o.parent) {
       await assertFree(o.parent.root.id, o.parent.newSub, o.parent.root.name)
