@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ancestors, displayName, domId, flatten, isTotal, repeatedNames, spokenName, type CatNode } from '../../budget/tree'
+import { ancestors, displayName, domId, flatten, isSoloCharity, isTotal, repeatedNames, spokenName, type CatNode } from '../../budget/tree'
 
 interface Group { heading: CatNode; options: CatNode[] }
 
@@ -44,7 +44,9 @@ export function ItemSelector({ id, roots, mode = 'item', initial, onChange, onTe
     // Item mode: every row that takes amounts, grouped by parent (a top-level row is its own heading).
     const byParent = new Map<CatNode, CatNode[]>()
     for (const n of all) {
-      if (isTotal(n)) continue
+      if (isTotal(n) && !isSoloCharity(n)) continue
+      // While Charity takes purchases itself, its Miscellaneous child is not offered (0009 §6).
+      if (n.cat.name === 'Miscellaneous' && n.parent && isSoloCharity(n.parent)) continue
       const h = n.parent ?? n
       byParent.set(h, [...(byParent.get(h) ?? []), n])
     }

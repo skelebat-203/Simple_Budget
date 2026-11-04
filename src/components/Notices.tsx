@@ -7,12 +7,15 @@ export interface NoticeState {
   notPersisted?: boolean
   dbBlocked?: boolean
   dbChanged?: boolean
+  /** Set when a Budget setup save moved Charity purchases to Miscellaneous (0009 §6). */
+  charityMoved?: string
 }
 
 /** App-wide messages about storage and data health. */
-export function Notices({ state, onDismissPersist }: {
+export function Notices({ state, onDismissPersist, onDismissInfo }: {
   state: NoticeState
   onDismissPersist: () => void
+  onDismissInfo: () => void
 }) {
   useAnnounce([
     state.dbChanged && 'Error: The app was updated in another tab. Reload this page before making more changes.',
@@ -20,6 +23,7 @@ export function Notices({ state, onDismissPersist }: {
     state.loadError && `Error: Your budget couldn’t be loaded. ${state.loadError}`,
     !!state.skipped && 'Some saved records couldn’t be read.',
     state.notPersisted && 'Your browser may clear this budget. Export a backup regularly.',
+    state.charityMoved,
   ].filter(Boolean).join(' '))
   return (
     <>
@@ -45,6 +49,13 @@ export function Notices({ state, onDismissPersist }: {
         <div className="banner banner-warn">
           <h2 className="banner-title">Some saved records couldn’t be read</h2>
           <p>{state.skipped} damaged {state.skipped === 1 ? 'record was' : 'records were'} left out of your totals. Your other data is fine.</p>
+        </div>
+      )}
+      {state.charityMoved && (
+        <div className="banner banner-info">
+          <h2 className="banner-title">Charity purchases moved</h2>
+          <p>{state.charityMoved}</p>
+          <div className="actions"><Button type="button" className="secondary" onClick={onDismissInfo}>Got it</Button></div>
         </div>
       )}
       {state.notPersisted && (

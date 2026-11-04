@@ -6,6 +6,8 @@ import { useAnnounce } from '../components/ui/announcer'
 import { fireReward } from '../rewards/rewards'
 import { cleanDescription, cleanName, DESCRIPTION_MAX, dateBounds, moneyError, parseAmount } from '../budget/validate'
 
+import { charityMovedText } from '../budget/charity'
+
 const FIELDS = ['item', 'category', 'where', 'amount', 'description', 'date'] as const
 type Errors = Partial<Record<typeof FIELDS[number], string>>
 
@@ -31,12 +33,12 @@ export function AddBudget({ roots, onSaved }: {
   const [date, setDate] = useState(() => isoDate(new Date()))
   const [errors, setErrors] = useState<Errors>({})
   const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState<{ what: string; extra: string } | null>(null)
+  const [saved, setSaved] = useState<{ what: string; extra: string; info?: string } | null>(null)
   const [formKey, setFormKey] = useState(0)
   const bannerRef = useRef<HTMLDivElement>(null)
   const [saveError, setSaveError] = useState('')
   // The banner below is visual only; this is the one announcement (single live region).
-  useAnnounce(saved ? `Saved ${saved.what} ${saved.extra}`.trim() : '')
+  useAnnounce(saved ? `Saved ${saved.what} ${saved.extra} ${saved.info ?? ''}`.replace(/\s+/g, ' ').trim() : '')
   useAnnounce(saveError)
   const [bounds] = useState(() => dateBounds(new Date()))
 
@@ -87,7 +89,7 @@ export function AddBudget({ roots, onSaved }: {
       } else {
         const name = cleanName(itemText.text)
         const root = groups.find(g => g.cat.name === where)
-        const moved = await addNewItem({
+        const { movedFrom: moved, charityMoved } = await addNewItem({
           name,
           parent: category
             ? { id: category.cat.id, name: category.cat.name }
@@ -98,7 +100,7 @@ export function AddBudget({ roots, onSaved }: {
           date,
           description: cleanDescription(description) || undefined,
         })
-        setSaved({ what: `${name}: ${shownAmount} on ${date}.`, extra: moved ? `Your ${moved} estimate moved to ${moved} › Miscellaneous. ${moved} now totals its items.` : '' })
+        setSaved({ what: `${name}: ${shownAmount} on ${date}.`, extra: moved ? `Your ${moved} estimate moved to ${moved} › Miscellaneous. ${moved} now totals its items.` : '', info: charityMoved ? charityMovedText(charityMoved) : undefined })
       }
       reset()
       onSaved()
@@ -130,6 +132,12 @@ export function AddBudget({ roots, onSaved }: {
         <div className="banner banner-success">
           <p className="banner-title">Saved. Nice work keeping your budget up to date!</p>
           <p>{saved.what}{saved.extra && ` ${saved.extra}`}</p>
+        </div>
+      )}
+      {saved?.info && (
+        <div className="banner banner-info">
+          <p className="banner-title">Charity purchases moved</p>
+          <p>{saved.info}</p>
         </div>
       )}
       {/* Two columns from 1280px; fields keep their DOM (reading and tab) order (0007 §10). */}

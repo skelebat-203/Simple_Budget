@@ -107,7 +107,7 @@ tracked as a later-version item.
 - Refactor so each tab panel's header below the tab is visually hidden (still available to screen readers)
 - Add addition and subtraction to the amount fields: typed expressions (decided 2026-11-04)
 - Optional description field below Amount
-- Generic "Miscellaneous" item in Charity exists even when Charity has no other items; when it is the only item, purchases go in it directly instead of creating a separate Miscellaneous stuff category (changes the auto-created Miscellaneous behavior in `0007` §2.1; spec update needed before build)
+- Charity takes purchases itself until it gets its first item; then its purchases move to Charity › Miscellaneous and Charity becomes a roll-up (`0009` §6, draft pending human review)
 - UI/UX for the upload flow
 - Deep subcategory nesting (subcategories containing subitems)
 - Add upload step to onboarding once it works

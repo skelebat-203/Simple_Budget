@@ -5,6 +5,7 @@ import { BudgetSetup } from './screens/BudgetSetup'
 import { RewardLayer } from './rewards/RewardLayer'
 import { Onboarding } from './screens/Onboarding'
 import { Backup } from './components/Backup'
+import { charityMovedText } from './budget/charity'
 import { Notices, type NoticeState } from './components/Notices'
 import { Tabs } from './components/ui'
 import { budgetItemRepo, categoryRepo, settingsRepo, skipped } from './storage/repository'
@@ -101,7 +102,7 @@ function App() {
         </button>
       </div>
       <RewardLayer enabled={rewardsEnabled} />
-      <Notices state={notices} onDismissPersist={dismissPersist} />
+      <Notices state={notices} onDismissPersist={dismissPersist} onDismissInfo={() => note({ charityMoved: undefined })} />
       <Tabs label="Sections" actions={[{ id: 'setup-budget', label: 'Setup Budget', onSelect: () => setSetupOpen(true) }]} tabs={[
         { id: 'add', label: 'Add purchase', panel: <AddBudget roots={roots} onSaved={() => { reloadItems(); reloadCats() }} /> },
         { id: 'budget', label: 'Budget', panel: <Budget roots={roots} items={items} range={range} onRangeChange={setRange} calendar={calendar} onChanged={() => { reloadItems(); reloadCats() }} /> },
@@ -123,7 +124,7 @@ function App() {
           rewardsEnabled={rewardsEnabled}
           notificationsEnabled={notificationsEnabled}
           onClose={() => setSetupOpen(false)}
-          onSaved={() => { reloadCats(); reloadSettings(); setSetupOpen(false) }}
+          onSaved={moved => { reloadCats(); reloadItems(); reloadSettings(); setSetupOpen(false); note({ charityMoved: moved ? charityMovedText(moved) : undefined }) }}
         />
       )}
     </main>

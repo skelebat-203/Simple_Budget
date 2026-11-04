@@ -40,11 +40,11 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
    - Files: `src/storage/structure.ts`, `src/storage/db.ts`, `src/storage/repository.ts`, `src/screens/AddBudget.tsx`, `src/budget/validate.ts`, backup restore
    - Verify: persists across reload and backup restore; length limit and sanitising; Dexie bump only if needed
    - Deps: 5; **needs human decision**: where it is stored and shown (decided with this item per `0009` §4)
-7. **Charity "Miscellaneous" item** (v0.6/7) — generic Miscellaneous item exists in Charity even with no other items; when it is the only item, purchases go in it directly.
-   - Source: roadmap v0.6; replaces auto-created behavior in `0007` §2.1
-   - Files: `src/storage/seed.ts`, `src/storage/preselected.ts`, `src/screens/AddBudget.tsx`, `src/budget/tree.ts`
-   - Verify: no extra Miscellaneous stuff category when it is the only item; behavior with other Charity items unchanged
-   - Deps: **replan signal**: update `0007` §2.1 (or `0009`) first, then build
+7. **Charity purchases** (v0.6/7) ✅ (v0.6.10) — Charity takes purchases until its first item; then they move to Charity › Miscellaneous and Charity becomes a roll-up (not selectable).
+   - Source: roadmap v0.6; `0009` §6 (replaces the Charity part of `0007` §2.1)
+   - Files: `src/storage/repository.ts`, `src/components/ui/ItemSelector.tsx`, `src/budget/tree.ts`
+   - Verify: purchases move once, at the first item; Charity leaves the dropdown; Medical unchanged; restore of a backup keeps the rule
+   - Deps: spec decided in `0009` §6 (2026-11-04)
 8. **Budget setup "Add" buttons** (v0.6/8) — one Add button per category replaces the four "Create in" field rows; selecting it shows that category's fields above the button; announces "Fields added above".
    - Source: `0009` §2
    - Files: `src/screens/BudgetSetup.tsx`, `src/App.css`
@@ -104,13 +104,13 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
 
 ### Execution
 - ✅ **A — Small fixes** (steps 1, 2, 3, 4; MultiSelect, repository, AddBudget, App): parallel-safe, sequential in one session.
-- **B — Amounts and descriptions** (steps 5, 6, 7; AddBudget, structure, seed): after A step 3 (same `AddBudget.tsx`).
+- ✅ **B — Amounts and descriptions** (steps 5, 6, 7; AddBudget, structure, seed): after A step 3 (same `AddBudget.tsx`).
 - **C — Setup and table dialogs** (steps 8, 9, 10, 9a; BudgetSetup, BudgetTable, App.css): after B; design settled. Step 9a (hover styling) last.
 - **D — Nesting** (step 12; tree, BudgetTable, BudgetSetup, structure): after C; spec first.
 - ✅ **E — Wizard** (step 11; Onboarding): after A; design settled, so it can run any time after A (before C or D if wanted).
 - **F — Import** (steps 13, 14, 15, 16; import, Backup, BudgetSetup, Onboarding): after D and E.
 - **Reviews** (steps 17–19): main session with the user.
-- Status: ✅ A · ☐ B · ☐ C · ☐ D · ✅ E · ☐ F · ☐ reviews
+- Status: ✅ A · ✅ B · ☐ C · ☐ D · ✅ E · ☐ F · ☐ reviews
 
 ### Session process
 Run option 1: one session per group, fresh start at each group boundary. A session starts by reading this file and the roadmap, then:

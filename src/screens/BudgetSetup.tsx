@@ -33,7 +33,7 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, rewardsEnable
   defaultRange: DefaultRange
   calendar: Calendar
   onClose: () => void
-  onSaved: () => void
+  onSaved: (charityMoved: number) => void
 }) {
   const ref = useRef<HTMLDialogElement>(null)
   const headingRef = useRef<HTMLHeadingElement>(null)
@@ -172,14 +172,15 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, rewardsEnable
     const list: FieldError[] = Object.entries(errs).map(([fieldId, message]) => ({ fieldId, message }))
     if (list.length) { requestAnimationFrame(() => focusFirstError(list, bannerRef.current)); return }
     setSaving(true)
+    let moved = 0
     try {
-      await saveSetup(final, original, { defaultRange: range, weekStart, monthBoundary: boundary, rewardsEnabled: rewards, notificationsEnabled: notify })
+      moved = await saveSetup(final, original, { defaultRange: range, weekStart, monthBoundary: boundary, rewardsEnabled: rewards, notificationsEnabled: notify })
     } catch {
       setSaving(false)
       setSaveError('Error: Your budget setup wasn’t saved, and nothing was changed. Check that your device has free storage space, then try again.')
       return
     }
-    onSaved()
+    onSaved(moved)
   }
 
   // Preview reflects typed estimates that are already valid.

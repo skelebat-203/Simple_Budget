@@ -40,6 +40,14 @@ export const subtree = (n: CatNode): CatNode[] => [n, ...n.children.flatMap(subt
 /** Total row: a top-level computed row, or a subcategory that has items (0007 §2.1). */
 export const isTotal = (n: CatNode) => !!n.cat.computed || n.children.length > 0
 
+/**
+ * Charity takes purchases itself while Miscellaneous is its only selected child;
+ * once another child is selected it only totals them for good (0009 §6).
+ */
+export const isSoloCharity = (n: CatNode) =>
+  n.cat.name === 'Charity' && n.parent?.cat.name === 'Expenses' && !n.parent.parent && !n.cat.rollup
+  && n.children.every(c => c.cat.name === 'Miscellaneous' || !c.cat.selected)
+
 const BILL_GROUPS = new Set(['Debt', 'Utilities', 'Subscriptions'])
 const rootOf = (n: CatNode): CatNode => (n.parent ? rootOf(n.parent) : n)
 const inBillGroup = (n: CatNode) => ancestors(n).some(a => BILL_GROUPS.has(a.cat.name))

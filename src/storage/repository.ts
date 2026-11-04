@@ -41,7 +41,7 @@ function validCategory(r: unknown): r is Category {
     && (x.dueDate === undefined || (typeof x.dueDate === 'string' && DATE_RE.test(x.dueDate)))
     && (x.dueWeekday === undefined || (Number.isInteger(x.dueWeekday) && x.dueWeekday >= 0 && x.dueWeekday <= 6))
     && [x.dueDay, x.dueDay2].every(d => d === undefined || d === 'last' || (Number.isInteger(d) && (d as number) >= 1 && (d as number) <= 27))
-    && ['autopay', 'selected', 'computed'].every(k => x[k as keyof Category] === undefined || typeof x[k as keyof Category] === 'boolean')
+    && ['autopay', 'selected', 'computed', 'rollup'].every(k => x[k as keyof Category] === undefined || typeof x[k as keyof Category] === 'boolean')
 }
 
 /** Deepest level the app supports: category › subcategory › item (deep nesting: v0.6). */
@@ -85,6 +85,35 @@ export const budgetItemRepo = {
     return db.budgetItems.update(id, { ...patch, updatedAt: Date.now() })
   },
   async remove(id: number) { return db.budgetItems.delete(id) },
+}
+
+/**
+ * Charity rule (0009 §6): Charity takes purchases itself until a child other than
+ * Miscellaneous is selected; then it is a roll-up for good (`rollup`) and its
+ * purchases move to Charity › Miscellaneous, now and whenever any reappear.
+ * Safe to run after any change. Returns how many purchases moved.
+ * Run inside a transaction that includes categories and budgetItems.
+ */
+async function settleCharity(): Promise<number> {
+  const cats = await db.categories.toArray()
+  const expenses = cats.find(c => c.parentId == null && c.name === 'Expenses')
+  const charity = expenses && cats.find(c => c.parentId === expenses.id && c.name === 'Charity')
+  if (!charity) return 0
+  const kids = cats.filter(c => c.parentId === charity.id)
+  if (!charity.rollup) {
+    if (!kids.some(c => c.selected && c.name !== 'Miscellaneous')) return 0
+    await db.categories.update(charity.id!, { rollup: true })
+  }
+  const own = db.budgetItems.where('categoryId').equals(charity.id!)
+  const count = await own.count()
+  if (!count) return 0
+  let misc = kids.find(c => c.name === 'Miscellaneous')?.id
+  if (misc == null) {
+    const order = kids.reduce((m, c) => Math.max(m, (c.order ?? -1) + 1), 0)
+    misc = await db.categories.add({ name: 'Miscellaneous', color: kids[0]?.color ?? charity.color, parentId: charity.id!, order })
+  }
+  await own.modify({ categoryId: misc })
+  return count
 }
 
 export const categoryRepo = {
@@ -183,7 +212,7 @@ export async function addNewItem(o: {
   amount: number
   date: string
   description?: string
-}): Promise<string | undefined> {
+}): Promise<{ movedFrom?: string; charityMoved: number }> {
   return db.transaction('rw', db.categories, db.budgetItems, async () => {
     let parent: { id: number; name: string }
     if ('newSub' in o.parent) {
@@ -194,9 +223,11 @@ export async function addNewItem(o: {
       parent = o.parent
     }
     await assertFree(parent.id, o.name, parent.name)
-    const r = await categoryRepo.add({ name: o.name, parentId: parent.id, color: o.color, selected: o.selected || undefined })
+    // A new item under Charity always counts as selected, so Charity stops taking purchases (0009 §6).
+    const r = await categoryRepo.add({ name: o.name, parentId: parent.id, color: o.color, selected: o.selected || parent.name === 'Charity' || undefined })
     await budgetItemRepo.add({ categoryId: r.id, amount: o.amount, date: o.date, description: o.description })
-    return r.movedFrom
+    const charityMoved = await settleCharity()
+    return { movedFrom: r.movedFrom, charityMoved }
   })
 }
 
@@ -226,9 +257,10 @@ export const settingsRepo = {
  * transaction (security-v0.2 8.3). Rows with negative ids are new; they are
  * added parents-first and their temporary ids are swapped for real ones.
  */
-export async function saveSetup(working: Category[], original: Category[], settings: Partial<Settings>) {
+/** Returns how many Charity purchases moved to Miscellaneous (0009 §6). */
+export async function saveSetup(working: Category[], original: Category[], settings: Partial<Settings>): Promise<number> {
   const before = new Map(original.map(c => [c.id, JSON.stringify(c)]))
-  await db.transaction('rw', db.categories, db.settings, async () => {
+  return db.transaction('rw', db.categories, db.budgetItems, db.settings, async () => {
     const real = new Map<number, number>()
     const mapId = (id: number | null) => (id != null && id < 0 ? real.get(id)! : id)
     const fresh = working.filter(c => c.id! < 0)
@@ -243,7 +275,9 @@ export async function saveSetup(working: Category[], original: Category[], setti
       if (c.id! < 0 || before.get(c.id) === JSON.stringify(c)) continue
       await db.categories.put({ ...c, name: cleanName(c.name), parentId: mapId(c.parentId) })
     }
+    const moved = await settleCharity()
     await settingsRepo.update(settings)
+    return moved
   })
 }
 

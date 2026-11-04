@@ -45,6 +45,8 @@ export interface Category {
   order?: number
   /** Picked in Budget setup as a regularly used item. */
   selected?: boolean
+  /** Charity only: once set, Charity only totals its children and purchases are kept in Miscellaneous (0009 §6). */
+  rollup?: boolean
   estimate?: number
   frequency?: Frequency
   autopay?: boolean

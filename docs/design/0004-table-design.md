@@ -111,7 +111,7 @@ itself. The same applies to Pay, Incidental Income and Taxes.
 - Gas
 - Gifts
 - Charity  `*` (sum of Charity items)
-  - user amounts route to the Charity subcategory "Miscellaneous"
+  - purchases: see `0009` §6 (Charity itself until it has an item, then Miscellaneous)
 - Incidentals `*` (sum of incidentals items)
 - Medical  `*` (sum of Medical items)
   - user amounts route to the Medical subcategory "Miscellaneous"
