@@ -95,6 +95,12 @@ tracked as a later-version item.
 - CSV/HTML upload + auto-categorization parsing; an Import button on the Budget setup page accepts the 3 most common spreadsheet file types (formats to confirm, likely CSV, XLSX, ODS) so a user can import an existing budget. Large effort: expect several testing and refinement rounds
 - (Primary User Request) More informative "Saved" confirmation: the text says what was saved and how much (e.g. the item name and amount), not just "Saved"
 - Combine "Budget setup" and help (exact merge to confirm with the user before building)
+- UI/UX changes from the v0.5 review (`0009-v0.6-design-updates.md`; prototypes `0010` and `0011` are reviewed and refined before building):
+  - Onboarding as a three-step wizard with a progress bar
+  - Budget setup: "Add" buttons in place of the four "Create in" fields
+  - Highlight dialog: clicking an item name opens a dialog with the item and its children and the table's functions; the chevron alone expands and collapses
+  - Budget tables (not Annual): the Actions menu is renamed "Edit" with Description, Rename (moves the item to its right category), Add/Subtract and Delete (Day and Week only), each opening a dialog
+  - Backup and upload described in the help dialog
 - Refactor so each tab panel's header below the tab is visually hidden (still available to screen readers)
 - Add addition and subtraction to the amount fields/buttons
 - Optional description field below Amount
@@ -108,6 +114,7 @@ tracked as a later-version item.
 - Security review
 
 ## v0.7 — Graphs and charts
+- Rewrite the supporting text under the tables, which is out of date (decide its final content first)
 - Chart view (Table/Chart switch)
 - Chart types for Budget screen
 - UI/UX review (human approval)

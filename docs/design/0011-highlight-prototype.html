@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>0011 Highlight prototype</title>
+<style>
+  :root { --brown:#5c2d0a; --text:#1a1a1a; --border:#d1d5db; --muted:#4b5563; --orange:#a04a00; }
+  * { box-sizing: border-box; }
+  body { font: 16px/1.5 system-ui, sans-serif; color: var(--text); background: #f3ece6; margin: 0; padding: 16px; }
+  main { max-width: 64rem; margin: 0 auto; background: #fff; padding: 24px; border-radius: 8px; }
+  h1 { color: var(--brown); margin-top: 0; }
+  .note { background: #fff7e6; border: 1px solid #e0b252; padding: 12px; border-radius: 6px; }
+  .tabs { display: flex; gap: 8px; margin: 16px 0; }
+  .btn { font: inherit; font-weight: 700; padding: 6px 14px; min-height: 44px; border-radius: 6px; border: 2px solid var(--brown); background: #fff; color: var(--brown); cursor: pointer; }
+  .btn.primary, .btn[aria-pressed=true] { background: var(--brown); color: #fff; }
+  .btn.small { min-height: 36px; padding: 2px 10px; }
+  .btn.danger { background: #b42318; border-color: #b42318; color: #fff; }
+  .btn:focus-visible, .nameBtn:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid #0b72b9; outline-offset: 2px; }
+  table { border-collapse: collapse; width: 100%; }
+  caption { text-align: left; font-weight: 700; padding-bottom: 8px; }
+  th, td { border-bottom: 1px solid var(--border); padding: 6px 10px; text-align: right; white-space: nowrap; }
+  thead th { background: #f3f4f6; font-size: .9rem; }
+  th[scope=row], th.name { text-align: left; font-weight: 700; }
+  .name-line { display: inline-flex; align-items: center; gap: 4px; }
+  .chev { background: none; border: 0; font: inherit; width: 44px; height: 44px; cursor: pointer; color: var(--orange); }
+  .chev:focus-visible { outline: 3px solid #0b72b9; }
+  .nameBtn { background: none; border: 0; font: inherit; font-weight: 700; color: var(--orange); text-decoration: underline dotted; cursor: pointer; padding: 6px 4px; min-height: 44px; text-align: left; }
+  .exp { background: none; border: 0; font: inherit; font-weight: 700; color: var(--orange); cursor: pointer; min-height: 44px; padding: 0 6px; }
+  .d1 th[scope=row] { padding-left: 32px; } .d2 th[scope=row] { padding-left: 56px; }
+  .menu { position: relative; display: inline-block; text-align: left; }
+  .menu ul { position: absolute; right: 0; top: 100%; z-index: 3; background: #fff; border: 2px solid var(--brown); border-radius: 6px; list-style: none; margin: 4px 0 0; padding: 4px; min-width: 11rem; }
+  .menu li button { width: 100%; text-align: left; background: none; border: 0; font: inherit; padding: 8px 10px; min-height: 40px; cursor: pointer; }
+  .menu li button:hover, .menu li button:focus-visible { background: #f3ece6; }
+  .inline { display: inline-flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  input[type=text], input[type=number], select { font: inherit; padding: 8px; min-height: 40px; border: 1px solid #6b7280; border-radius: 4px; }
+  dialog { width: min(46rem, calc(100% - 24px)); max-height: calc(100dvh - 24px); border: 0; border-radius: 8px; padding: 0; box-shadow: 0 8px 32px rgb(0 0 0 / .35); }
+  dialog::backdrop { background: rgb(0 0 0 / .5); }
+  dialog.nested { width: min(30rem, calc(100% - 24px)); }
+  .dbody { padding: 20px 24px; overflow: auto; max-height: calc(100dvh - 130px); }
+  .dfoot { display: flex; justify-content: space-between; padding: 12px 24px; border-top: 1px solid var(--border); }
+  h2 { margin: 0 0 8px; color: var(--brown); }
+  .help { color: var(--muted); }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  @media (max-width: 800px) { .grid { grid-template-columns: 1fr; } }
+  .box { border: 1px solid var(--border); border-radius: 6px; padding: 12px; overflow-x: auto; }
+  .status { margin-top: 12px; padding: 10px; border: 1px dashed var(--brown); border-radius: 6px; }
+  .tbl-wrap { overflow-x: auto; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Simple Budget</h1>
+  <p class="note"><strong>Prototype 0011.</strong> Compares the table today with the proposed highlight (<code>0009</code> §3, §4). Nothing is saved.
+  <strong>Current</strong>: the item name expands and collapses; each row has an Actions menu whose forms open inside the row.
+  <strong>Proposed</strong>: the chevron expands and collapses; clicking the item name opens a dialog with the item and its children; the menu is “Edit” and each choice opens a dialog.</p>
+
+  <div class="tabs" role="group" aria-label="Compare">
+    <button class="btn" id="tab-cur" aria-pressed="true">Current</button>
+    <button class="btn" id="tab-new" aria-pressed="false">Proposed</button>
+  </div>
+
+  <section id="cur">
+    <div class="tbl-wrap"><table id="t-cur"><caption>Week of November 1 (current)</caption></table></div>
+  </section>
+  <section id="new" hidden>
+    <div class="tbl-wrap"><table id="t-new"><caption>Week of November 1 (proposed)</caption></table></div>
+  </section>
+  <div class="status" id="status" role="status" aria-live="polite">Actions you take show here.</div>
+
+  <h2 style="margin-top:32px">Open questions for you</h2>
+  <ol>
+    <li>Highlight dialog contents: the item plus its children (shown). Should it also list recent purchases of that item?</li>
+    <li>Does clicking a <em>purchase</em> row open its own dialog (Day view), or only items and categories?</li>
+    <li>The name is a button with a dotted underline so it reads as clickable. Is that clear enough?</li>
+    <li>Delete in the dialog: a confirm step appears first (shown). In Month and Annual, Delete is hidden.</li>
+    <li>Edit → Rename that changes category moves the item. Shown as a “Category” select in the Rename dialog; confirm this is the right control.</li>
+  </ol>
+</main>
+
+<dialog id="hl" aria-labelledby="hl-title"><div class="dbody"><h2 id="hl-title"></h2><p class="help" id="hl-help"></p><div class="tbl-wrap"><table id="t-hl"></table></div></div>
+  <div class="dfoot"><span></span><button class="btn primary" id="hl-close">Close</button></div></dialog>
+<dialog id="ed" class="nested" aria-labelledby="ed-title"><div class="dbody"><h2 id="ed-title"></h2><div id="ed-body"></div></div>
+  <div class="dfoot"><button class="btn" id="ed-cancel">Cancel</button><button class="btn primary" id="ed-ok">Save</button></div></dialog>
+
+<script>
+// Mock data: name, depth, est, act, kind (total|item), children implied by order
+const ROWS = [
+  { id:'exp', name:'Expenses', d:0, est:812.5, act:330.0, total:true },
+  { id:'groc', name:'Groceries', d:1, est:300, act:120, parent:'exp' },
+  { id:'util', name:'Utilities', d:1, est:512.5, act:210, total:true, parent:'exp' },
+  { id:'pow', name:'Power', d:2, est:180, act:90, parent:'util' },
+  { id:'wat', name:'Water', d:2, est:62.5, act:40, parent:'util' },
+  { id:'int', name:'Internet', d:2, est:270, act:80, parent:'util' },
+];
+const open = new Set(['exp','util']); let view = 'cur'; let openMenu = null;
+const $ = id => document.getElementById(id);
+const say = m => $('status').textContent = m;
+const kids = id => ROWS.filter(r => r.parent === id);
+const money = n => n.toFixed(2);
+const visible = () => ROWS.filter(r => { let p = r.parent; while (p) { if (!open.has(p)) return false; p = ROWS.find(x=>x.id===p).parent } return true });
+const menuItems = r => ['Description','Rename','Add/Subtract'].concat(r.d>0 ? ['Delete'] : []);
+
+function head(t, actions) { return `<thead><tr><th class="name" scope="col">Item</th><th scope="col">Estimated</th><th scope="col">Actual</th><th scope="col" class="name">${actions}</th></tr></thead>`; }
+
+/* ---------- CURRENT ---------- */
+function renderCur() {
+  const t = $('t-cur'); const cap = t.querySelector('caption').outerHTML;
+  t.innerHTML = cap + head(t,'Actions') + '<tbody>' + visible().map(r => {
+    const has = kids(r.id).length > 0;
+    const name = has ? `<button class="exp" aria-expanded="${open.has(r.id)}" data-tog="${r.id}">${open.has(r.id)?'▾':'▸'} ${r.name}</button>` : r.name;
+    const form = r.form ? formCur(r) : '';
+    return `<tr class="d${r.d}"><th scope="row">${name}</th><td>${money(r.est)}</td><td>${money(r.act)}</td><td>${form || `
+      <span class="menu"><button class="btn small" aria-haspopup="menu" aria-expanded="${openMenu==='c'+r.id}" data-menu="c${r.id}">Actions ▾</button>
+      ${openMenu==='c'+r.id ? `<ul role="menu">${['Add value','Rename'].concat(r.d>0?['Delete']:[]).map(a=>`<li role="none"><button role="menuitem" data-cur="${r.id}|${a}">${a}</button></li>`).join('')}</ul>`:''}</span>`}</td></tr>`;
+  }).join('') + '</tbody>';
+}
+function formCur(r) {
+  if (r.form === 'Delete') return `<span class="inline">Delete ${r.name}? <button class="btn small danger" data-curdo="${r.id}|del">Delete</button><button class="btn small" data-curdo="${r.id}|cancel">Cancel</button></span>`;
+  return `<span class="inline"><input type="text" aria-label="${r.form} for ${r.name}" size="8"><button class="btn small primary" data-curdo="${r.id}|ok">Save</button><button class="btn small" data-curdo="${r.id}|cancel">Cancel</button></span>`;
+}
+
+/* ---------- PROPOSED ---------- */
+function rowNew(r, inDialog) {
+  const has = kids(r.id).length > 0;
+  const chev = !inDialog && has ? `<button class="chev" aria-expanded="${open.has(r.id)}" aria-label="${open.has(r.id)?'Collapse':'Expand'} ${r.name}" data-tog="${r.id}"><span aria-hidden="true">${open.has(r.id)?'▾':'▸'}</span></button>` : (!inDialog ? '<span style="display:inline-block;width:44px"></span>' : '');
+  const nameBtn = inDialog ? r.name : `<button class="nameBtn" data-hl="${r.id}" aria-haspopup="dialog">${r.name}</button>`;
+  const mid = (inDialog?'h':'n')+r.id;
+  return `<tr class="d${inDialog ? Math.max(0, r.d - (inDialog.base||0)) : r.d}"><th scope="row"><span class="name-line">${chev}${nameBtn}</span></th><td>${money(r.est)}</td><td>${money(r.act)}</td>
+    <td><span class="menu"><button class="btn small" aria-haspopup="menu" aria-expanded="${openMenu===mid}" data-menu="${mid}">Edit ▾</button>
+    ${openMenu===mid ? `<ul role="menu">${menuItems(r).map(a=>`<li role="none"><button role="menuitem" data-new="${r.id}|${a}">${a}</button></li>`).join('')}</ul>`:''}</span></td></tr>`;
+}
+function renderNew() {
+  const t = $('t-new'); const cap = t.querySelector('caption').outerHTML;
+  t.innerHTML = cap + head(t,'Edit') + '<tbody>' + visible().map(r => rowNew(r,false)).join('') + '</tbody>';
+}
+function renderHl(id) {
+  const r = ROWS.find(x=>x.id===id); const all = [r].concat(descend(id));
+  $('hl-title').textContent = r.name;
+  $('hl-help').textContent = kids(id).length ? `${r.name} and the items under it.` : `${r.name} has no items under it.`;
+  $('t-hl').innerHTML = `<caption class="sr-only" style="position:absolute;left:-9999px">${r.name} details</caption>` + head(null,'Edit') + '<tbody>' + all.map(x=>rowNew(x,{base:r.d})).join('') + '</tbody>';
+}
+const descend = id => kids(id).flatMap(k => [k].concat(descend(k.id)));
+let hlId = null;
+
+/* ---------- edit dialogs ---------- */
+let pending = null;
+function editDialog(id, action) {
+  const r = ROWS.find(x=>x.id===id); pending = { id, action };
+  $('ed-title').textContent = `${action}: ${r.name}`;
+  const b = $('ed-body'); $('ed-ok').textContent = action==='Delete' ? 'Delete' : 'Save'; $('ed-ok').className = 'btn ' + (action==='Delete'?'danger':'primary');
+  b.innerHTML = {
+    'Description': `<label for="f1">Description</label><br><input id="f1" type="text" style="width:100%" placeholder="e.g. Winter bills"><p class="help">Shown with the item. Optional.</p>`,
+    'Rename': `<label for="f1">New name</label><br><input id="f1" type="text" style="width:100%" value="${r.name}"><p><label for="f2">Category</label><br><select id="f2"><option>Utilities</option><option>Groceries</option><option>Insurance</option></select></p><p class="help">Choose a different category to move the item there.</p>`,
+    'Add/Subtract': `<label for="f1">Amount</label><br><input id="f1" type="text" inputmode="decimal" placeholder="12.50 or -12.50"><p class="help">Use a minus sign to subtract.</p>`,
+    'Delete': `<p>Delete ${r.name}${kids(id).length ? ' and the items under it' : ''}? This can’t be undone.</p>`,
+  }[action];
+  $('ed').showModal(); (b.querySelector('input,select') || $('ed-ok')).focus();
+}
+$('ed-cancel').onclick = () => { $('ed').close(); say(`Cancelled ${pending.action}.`); };
+$('ed-ok').onclick = () => { $('ed').close(); say(`${pending.action} saved for ${ROWS.find(x=>x.id===pending.id).name}. (Prototype: nothing stored.)`); };
+
+/* ---------- events ---------- */
+document.addEventListener('click', e => {
+  const t = e.target.closest('button'); if (!t) { if (openMenu) { openMenu = null; draw(); } return; }
+  if (t.dataset.tog) { const id = t.dataset.tog; open.has(id) ? open.delete(id) : open.add(id); draw(); document.querySelector(`[data-tog="${id}"]`)?.focus(); say(`${ROWS.find(x=>x.id===id).name} ${open.has(id)?'expanded':'collapsed'}.`); }
+  else if (t.dataset.menu) { const m = t.dataset.menu; openMenu = openMenu === m ? null : m; draw(); document.querySelector(`[data-menu="${m}"]`)?.focus(); }
+  else if (t.dataset.hl) { hlId = t.dataset.hl; renderHl(hlId); $('hl').showModal(); say(`Opened details for ${ROWS.find(x=>x.id===hlId).name}.`); }
+  else if (t.dataset.cur) { const [id,a] = t.dataset.cur.split('|'); openMenu = null; ROWS.find(x=>x.id===id).form = a; draw(); document.querySelector('#t-cur input, #t-cur .danger')?.focus(); }
+  else if (t.dataset.curdo) { const [id,a] = t.dataset.curdo.split('|'); const r = ROWS.find(x=>x.id===id); const f = r.form; r.form = null; draw(); say(a==='cancel' ? `Cancelled ${f}.` : `${f} done for ${r.name}. (Prototype.)`); }
+  else if (t.dataset.new) { const [id,a] = t.dataset.new.split('|'); openMenu = null; draw(); editDialog(id,a); }
+  else if (openMenu) { openMenu = null; draw(); }
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && openMenu) { const m = openMenu; openMenu = null; draw(); document.querySelector(`[data-menu="${m}"]`)?.focus(); } });
+function draw() { renderCur(); renderNew(); if ($('hl').open) renderHl(hlId); const el = openMenu && document.querySelector(`[data-menu="${openMenu}"]`); if (el) el.setAttribute('aria-expanded','true'); }
+$('hl-close').onclick = () => $('hl').close();
+$('tab-cur').onclick = () => setView('cur'); $('tab-new').onclick = () => setView('new');
+function setView(v) { view = v; $('cur').hidden = v!=='cur'; $('new').hidden = v!=='new'; $('tab-cur').setAttribute('aria-pressed', v==='cur'); $('tab-new').setAttribute('aria-pressed', v==='new'); }
+draw();
+</script>
+</body>
+</html>

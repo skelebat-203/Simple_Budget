@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>0010 Onboarding wizard prototype</title>
+<style>
+  :root { --brown:#5c2d0a; --text:#1a1a1a; --bg:#fff; --border:#d1d5db; --muted:#4b5563; --ok:#116b3a; }
+  * { box-sizing: border-box; }
+  body { font: 16px/1.5 system-ui, sans-serif; color: var(--text); background: #f3ece6; margin: 0; padding: 16px; }
+  main { max-width: 56rem; margin: 0 auto; background: var(--bg); padding: 24px; border-radius: 8px; }
+  h1 { color: var(--brown); margin-top: 0; }
+  .note { background: #fff7e6; border: 1px solid #e0b252; padding: 12px; border-radius: 6px; }
+  .btn { font: inherit; font-weight: 700; padding: 8px 16px; min-height: 44px; border-radius: 6px; border: 2px solid var(--brown); background: #fff; color: var(--brown); cursor: pointer; }
+  .btn.primary { background: var(--brown); color: #fff; }
+  .btn.big { min-width: 12rem; padding: 12px 20px; }
+  .btn:focus-visible, input:focus-visible, summary:focus-visible { outline: 3px solid #0b72b9; outline-offset: 2px; }
+  dialog { width: min(44rem, calc(100% - 32px)); max-height: calc(100dvh - 32px); border: 0; border-radius: 8px; padding: 0; box-shadow: 0 8px 32px rgb(0 0 0 / .35); }
+  dialog::backdrop { background: rgb(0 0 0 / .5); }
+  .body { padding: 20px 24px; overflow: auto; max-height: calc(100dvh - 160px); }
+  .footer { display: flex; justify-content: space-between; gap: 12px; padding: 12px 24px; border-top: 1px solid var(--border); position: sticky; bottom: 0; background: #fff; }
+  .footer .right { display: flex; gap: 12px; }
+  h2 { margin: 0 0 4px; color: var(--brown); font-size: 1.35rem; }
+  .steps { display: flex; align-items: center; gap: 12px; margin: 8px 0 16px; }
+  .steps p { margin: 0; font-weight: 700; white-space: nowrap; }
+  .bar { flex: 1; height: 12px; background: #e5e7eb; border-radius: 6px; overflow: hidden; }
+  .bar > span { display: block; height: 100%; background: var(--brown); transition: width .2s; }
+  fieldset { border: 0; padding: 0; margin: 0; }
+  legend { font-weight: 700; font-size: 1.15rem; margin-bottom: 8px; padding: 0; }
+  .choices { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+  .choice input { position: absolute; opacity: 0; }
+  .choice label { display: inline-block; min-height: 44px; padding: 9px 16px; border: 2px solid var(--brown); border-radius: 6px; font-weight: 700; color: var(--brown); cursor: pointer; }
+  .choice input:checked + label { background: var(--brown); color: #fff; }
+  .choice input:focus-visible + label { outline: 3px solid #0b72b9; outline-offset: 2px; }
+  .step2 { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; }
+  .help { color: var(--muted); margin: 4px 0 12px; }
+  .layout { display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: start; }
+  @media (max-width: 600px) { .layout { grid-template-columns: 1fr; } }
+  .list { border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; max-height: 20rem; overflow: auto; }
+  .list details { margin: 4px 0; }
+  .list summary { cursor: pointer; font-weight: 700; padding: 4px 0; min-height: 32px; }
+  .list ul { list-style: none; margin: 0 0 8px 24px; padding: 0; }
+  .list label { display: flex; align-items: center; gap: 8px; min-height: 36px; cursor: pointer; }
+  .list input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--brown); }
+  .list summary label { display: inline-flex; }
+  .count { font-weight: 700; color: var(--ok); }
+  .toast { margin-top: 16px; padding: 12px; border: 1px dashed var(--brown); border-radius: 6px; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Simple Budget</h1>
+  <p class="note"><strong>Prototype 0010.</strong> Review the onboarding wizard (<code>0009</code> §1). Nothing is saved. Open the wizard, try both paths (Use presets, Add categories), Back, Advanced setup, and keyboard-only use.
+  Open questions are listed at the bottom.</p>
+  <p><button class="btn" id="open">Open the wizard (first run, or the ? button)</button></p>
+  <div class="toast" id="result" role="status" aria-live="polite">Result will show here.</div>
+
+  <h2 style="margin-top:32px">Open questions for you</h2>
+  <ol>
+    <li>Step 3 button labels: <strong>Back</strong> left, <strong>Done</strong> right, and <strong>Advanced setup</strong> beside the list (shown). Is that right?</li>
+    <li>Should step 3 keep an "Add your own" box (the v0.5 dialog has it)?</li>
+    <li>Is a grouped, collapsible list right, or one flat list with filter? (Grouped shown.)</li>
+    <li>Presets: should Use presets tell the user what the presets are (the shown list says so on step 2)?</li>
+    <li>When Advanced setup opens, does the wizard close, or return to step 3 afterwards?</li>
+  </ol>
+</main>
+
+<dialog id="wiz" aria-labelledby="wiz-title">
+  <div class="body">
+    <h2 id="wiz-title">Let’s set up your budget</h2>
+    <div class="steps">
+      <p id="step-label">Step 1 of 3</p>
+      <div class="bar" role="progressbar" aria-labelledby="step-label" aria-valuemin="1" aria-valuemax="3" aria-valuenow="1"><span id="fill" style="width:33%"></span></div>
+    </div>
+
+    <section id="s1">
+      <fieldset>
+        <legend>How often do you get paid?</legend>
+        <ul class="choices" id="pay"></ul>
+      </fieldset>
+    </section>
+
+    <section id="s2" hidden>
+      <fieldset>
+        <legend>Use presets, or choose your own categories?</legend>
+        <p class="help">Presets keep Income, Taxes, Emergency fund, Charity, Groceries, Mortgage, Power, Internet and Phone selected. You can change them later in Budget setup.</p>
+        <div class="step2">
+          <button type="button" class="btn primary big" id="presets">Use presets</button>
+          <button type="button" class="btn big" id="own">Add categories</button>
+        </div>
+      </fieldset>
+    </section>
+
+    <section id="s3" hidden>
+      <div class="layout">
+        <div>
+          <h3 style="margin:0 0 4px" id="s3-title">Choose the categories you track</h3>
+          <p class="help" id="s3-help">Select a group to select everything in it. Open a group to pick single items.</p>
+          <div class="list" id="list" role="group" aria-labelledby="s3-title" aria-describedby="s3-help"></div>
+          <p class="count" id="count" aria-live="polite"></p>
+        </div>
+        <div><button type="button" class="btn" id="adv">Advanced setup</button></div>
+      </div>
+    </section>
+  </div>
+  <div class="footer">
+    <button type="button" class="btn" id="back">Cancel</button>
+    <div class="right"><button type="button" class="btn primary" id="next">Next</button></div>
+  </div>
+</dialog>
+
+<script>
+const PAY = ['Daily','Weekly','Every 2 weeks','Bi-monthly (twice a month)','Monthly'];
+const TREE = {
+  'Savings': ['Emergency','Roth 401k','Traditional 401k','Roth IRA','IRA','403b','HSA','FSA'],
+  'Expenses › Groceries and gas': ['Groceries','Gas','Gifts'],
+  'Expenses › Charity': ['Miscellaneous','United Way','Wikipedia','Library'],
+  'Expenses › Insurance': ['Car','Life','Medical','Dental','Vision'],
+  'Expenses › Debt': ['Mortgage','Credit Card'],
+  'Expenses › Utilities': ['Power','Water','Internet','Phone','Trash'],
+  'Expenses › Subscriptions': ['Netflix','YouTube Premium','Prime','Gym'],
+};
+const PRESET = new Set(['Emergency','Groceries','Miscellaneous','Mortgage','Power','Internet','Phone']);
+const $ = id => document.getElementById(id);
+const dlg = $('wiz'); let step = 1; let pay = 'Monthly';
+$('pay').innerHTML = PAY.map((p,i)=>`<li class="choice"><input type="radio" name="pay" id="pay-${i}" value="${p}" ${p===pay?'checked':''}><label for="pay-${i}">${p}</label></li>`).join('');
+$('pay').addEventListener('change', e => pay = e.target.value);
+
+// list: groups with a tri-state group checkbox
+$('list').innerHTML = Object.entries(TREE).map(([g,items],gi)=>`
+  <details ${gi<2?'open':''}><summary><label><input type="checkbox" data-group="${gi}" id="g${gi}"> ${g}</label></summary>
+  <ul>${items.map((it,ii)=>`<li><label><input type="checkbox" data-g="${gi}" value="${it}" ${PRESET.has(it)?'checked':''}> ${it}</label></li>`).join('')}</ul></details>`).join('');
+function sync(){
+  document.querySelectorAll('[data-group]').forEach(g=>{
+    const kids=[...document.querySelectorAll(`[data-g="${g.dataset.group}"]`)]; const n=kids.filter(k=>k.checked).length;
+    g.checked = n===kids.length; g.indeterminate = n>0 && n<kids.length;
+  });
+  const n=document.querySelectorAll('[data-g]:checked').length; $('count').textContent = n + ' selected';
+}
+$('list').addEventListener('change', e=>{
+  if (e.target.dataset.group!==undefined) document.querySelectorAll(`[data-g="${e.target.dataset.group}"]`).forEach(k=>k.checked=e.target.checked);
+  sync();
+});
+sync();
+
+function show(){
+  [1,2,3].forEach(n=>$('s'+n).hidden = n!==step);
+  $('step-label').textContent = `Step ${step} of 3`;
+  $('fill').style.width = (step/3*100)+'%';
+  document.querySelector('[role=progressbar]').setAttribute('aria-valuenow', step);
+  $('back').textContent = step===1 ? 'Cancel' : 'Back';
+  $('next').hidden = step===2;           // step 2 advances through its two buttons
+  $('next').textContent = step===3 ? 'Done' : 'Next';
+  const first = {1:'#pay input:checked', 2:'#presets', 3:'#g0'}[step]; document.querySelector(first)?.focus();
+}
+function finish(msg){ dlg.close(); $('result').textContent = msg; $('open').focus(); }
+$('open').onclick = () => { step = 1; show(); dlg.showModal(); show(); };
+$('back').onclick = () => { if (step===1) finish('Cancelled. Nothing changed.'); else { step--; show(); } };
+$('next').onclick = () => { if (step===1) { step=2; show(); } else finish(`Done. Paid ${pay.toLowerCase()}; ${document.querySelectorAll('[data-g]:checked').length} items selected.`); };
+$('presets').onclick = () => finish(`Presets used. Paid ${pay.toLowerCase()}. Wizard closed (step 2 → close).`);
+$('own').onclick = () => { step = 3; show(); };
+$('adv').onclick = () => { dlg.close(); $('result').textContent = 'Budget setup would open here (Advanced setup).'; };
+</script>
+</body>
+</html>
