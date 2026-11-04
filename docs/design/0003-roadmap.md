@@ -102,8 +102,9 @@ tracked as a later-version item.
   - Highlight dialog: clicking an item name opens a dialog with the item and its children and the table's functions; the chevron alone expands and collapses
   - Budget tables (not Annual): the Actions menu is renamed "Edit" with Description, Rename (moves the item to its right category), Add/Subtract and Delete (Day and Week only), each opening a dialog
   - Backup and upload described in the help dialog
+  - Add/Subtract: updates a purchase's amount in Day (a New purchase button on category rows adds one) and adds to or subtracts from an item's total in Week and Month (`0009` §4.1)
 - Refactor so each tab panel's header below the tab is visually hidden (still available to screen readers)
-- Add addition and subtraction to the amount fields/buttons
+- Add addition and subtraction to the amount fields: typed expressions (decided 2026-11-04)
 - Optional description field below Amount
 - Generic "Miscellaneous" item in Charity exists even when Charity has no other items; when it is the only item, purchases go in it directly instead of creating a separate Miscellaneous stuff category (changes the auto-created Miscellaneous behavior in `0007` §2.1; spec update needed before build)
 - UI/UX for the upload flow
@@ -138,6 +139,6 @@ tracked as a later-version item.
 - Security review
 
 ## Post v1.0
-- Correct a single purchase's amount or date (today: delete it and add it again)
+- Correct a single purchase's date (today: delete it and add it again; the amount moves to v0.6)
 - Receipt photo capture (camera API / Capacitor if needed)
 - Daily end-of-day reminder: needs a delivery outside the web app (phone reminder, or Capacitor APK build with local notifications)
