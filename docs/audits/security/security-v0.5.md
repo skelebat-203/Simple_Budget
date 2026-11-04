@@ -1,6 +1,6 @@
 # Security Review — v0.5 (NETWORKED matrix)
 
-Scope: v0.5 at v0.5.9 — PWA (Vite + React + Dexie IndexedDB), no backend yet. Rated under `issue-severity-matrix_NETWORKED.md` as in v0.1–v0.4. Domains per `security-domains.md`, ASVS 5.0.0 chapter names. Open items from earlier reviews are carried forward with their original IDs (prefixed `v0.2` / `v0.3` / `v0.4`); new findings are numbered in this file. Awaiting the human's approval.
+Scope: v0.5 at v0.5.9 — PWA (Vite + React + Dexie IndexedDB), no backend yet. Rated under `issue-severity-matrix_NETWORKED.md` as in v0.1–v0.4. Domains per `security-domains.md`, ASVS 5.0.0 chapter names. Open items from earlier reviews are carried forward with their original IDs (prefixed `v0.2` / `v0.3` / `v0.4`); new findings are numbered in this file. Approved by the human 2026-11-04.
 
 ## Summary
 
@@ -18,7 +18,7 @@ Totals (new): 1 Low (held), 7 Info (6 fixed, 1 not fixed). Carried: v0.2 3.4 sta
 | --- | --- | --- | --- | --- |
 | 3.1 | Info | CWE-20 | Fixed | The new schedule fields (weekday 0–6, day 1–27 or 'last', next date) are shape-checked when rows are read and when a backup is restored, and the placement code only loops over the shown period, so a bad stored value cannot hang the table. |
 | 3.2 | Low | CWE-367 | Held till v0.8 | Onboarding Done and Budget setup Save write rows from a snapshot and check new names only in the UI (storage has no check, as in v0.3 3.4), so a second tab can cause a duplicate sibling name or overwritten fields; merge rules are a v0.8 sync task. |
-| 3.3 | Info | CWE-20 | Fixed | The one new free-text input, "add your own" in onboarding, goes through `cleanName` (NFC, control and format characters removed, 60-character cap) and a duplicate check; a 200-character entry was stored as 60 characters in the production build. |
+| 3.3 | Info | CWE-20 | Fixed (limit behaviour logged as defect D001, v0.6) | The one new free-text input, "add your own" in onboarding, goes through `cleanName` (NFC, control and format characters removed, 60-character cap) and a duplicate check; a 200-character entry was stored as 60 characters in the production build. |
 | 4.1 | Info | — | Fixed | The production CSP reports no violations or console errors across onboarding, rewards, the live region moving into dialogs, Preferences, the notification toggle and all four tables; no inline script or style was added. |
 | 4.2 | Info | CWE-940 | Fixed | The notification permission is requested only from a click on the Daily reminder box, the notification text is a fixed string with no budget data, and `sendReminder()` is not called anywhere, so nothing is shown yet. |
 | 4.3 | Info | CWE-770 | Not Fixed [informational: each reward makes one short-lived audio context, closed after 1.5 s; browsers cap open contexts, but creation sits in try/catch so a refusal only means no sound, and 9 saves in about 1 s produced no error] | Every reward creates a new `AudioContext`; many rapid saves could reach the browser's limit on open audio contexts, in which case the sound is skipped and the image still shows. |

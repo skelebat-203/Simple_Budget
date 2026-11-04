@@ -80,18 +80,19 @@ tracked as a later-version item.
 - ✅ Accessibility pass (Lighthouse 100 on 15 states; keyboard and screen reader tests passed; `docs/audits/a11y/a11y-v0.4.md`)
 - ✅ Security review (`docs/audits/security/security-v0.4.md`, approved): rename re-checked when it saves; estimate scaling (v0.2 3.4) fixed → transition to v0.5.0
 
-## v0.5 — Rewards, settings, onboarding
-- Rewards hooks + `rewardsEnabled` toggle (`0008` §6, §7): placeholder image, animation and sound; final design after user testing
-- `notificationsEnabled` toggle with permission request and `sendReminder()` hook (`0008` §6); no scheduling in v0.5
-- Table fixes (`0008` §1–4): expanders as real buttons (icon + name); Budget setup without its own keyboard shortcuts (treegrid role kept); due dates place the full amount on the expected day/week/month, with the "Schedule" control set by recurrence; borders between time periods in Week, Month and Annual
-- Date navigation refinement (`0008` §5): chevron Previous/Next; the range title opens the calendar directly
-- Abbreviation audit: find abbreviations in visible text and accessible names (e.g. "Est.", "Act.", short dates); give each a full accessible name or spell it out
-- Onboarding questionnaire (pay frequency, category opt-in multi-select with autocomplete), skippable, reopened by a ? help button next to the heading (`0008` §8)
-- UI/UX review (human approval)
-- Accessibility pass
-- Security review
+## v0.5 — Rewards, settings, onboarding (complete)
+- ✅ Rewards hooks + `rewardsEnabled` toggle (`0008` §6, §7): placeholder image, animation and sound; final design after user testing
+- ✅ `notificationsEnabled` toggle with permission request and `sendReminder()` hook (`0008` §6); no scheduling in v0.5
+- ✅ Table fixes (`0008` §1–4): expanders as real buttons (icon + name); Budget setup without its own keyboard shortcuts (treegrid role kept); due dates place the full amount on the expected day/week/month, with the "Schedule" control set by recurrence; borders between time periods in Week, Month and Annual
+- ✅ Date navigation refinement (`0008` §5): chevron Previous/Next; the range title opens the calendar directly
+- ✅ Abbreviation audit: find abbreviations in visible text and accessible names (e.g. "Est.", "Act.", short dates); give each a full accessible name or spell it out
+- ✅ Onboarding questionnaire (pay frequency, category opt-in multi-select with autocomplete), skippable, reopened by a ? help button next to the heading (`0008` §8)
+- ✅ UI/UX review (approved)
+- ✅ Accessibility pass (`docs/audits/a11y/a11y-v0.5.md`; one live region, table keyboard shortcuts removed, preview header fixed)
+- ✅ Security review (`docs/audits/security/security-v0.5.md`, approved): no Medium or higher → transition to v0.6.0
 
 ## v0.6 — Data import + deep nesting
+- Defects (`docs/defects/`): D001 onboarding name length limit; D002 duplicate settings rows
 - CSV/HTML upload + auto-categorization parsing; an Import button on the Budget setup page accepts the 3 most common spreadsheet file types (formats to confirm, likely CSV, XLSX, ODS) so a user can import an existing budget. Large effort: expect several testing and refinement rounds
 - (Primary User Request) More informative "Saved" confirmation: the text says what was saved and how much (e.g. the item name and amount), not just "Saved"
 - Combine "Budget setup" and help (exact merge to confirm with the user before building)
