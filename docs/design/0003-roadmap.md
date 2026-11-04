@@ -120,6 +120,7 @@ tracked as a later-version item.
 - Rewrite the supporting text under the tables, which is out of date (decide its final content first)
 - Form field alignment class: adds the same space between a label and its control as appears when supporting (help) text sits between them, so fields shown side by side in columns line up in even rows (decided 2026-11-04)
 - Negative purchases (refunds or credits, `0007` §9) are listed in the Day table as a return (decided 2026-11-04; the exact label and styling are decided when built)
+- Input parsing for typed names: spell check and common abbreviations (e.g. "Misc." is tracked as "Miscellaneous") (decided 2026-11-04; the abbreviation list, where it runs and whether it corrects silently or asks are decided when built)
 - Chart view (Table/Chart switch)
 - Chart types for Budget screen
 - UI/UX review (human approval)

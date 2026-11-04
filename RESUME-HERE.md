@@ -114,6 +114,7 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
 
 ### Session process
 Run option 1: one session per group, fresh start at each group boundary. A session starts by reading this file and the roadmap, then:
+0. **Work in a worktree** (`.claude/CLAUDE.md` "Workflow agents use a worktree"): create `.claude/worktrees/v0.6-group-<x>` from the latest `main`, build there, merge back with a fast-forward at the end of the group or an approved step, then remove it.
 1. **Find the start:** the first group in the order below that is not ✅ and whose dependencies are met. Within it, the first step not marked ✅. Stop and ask if the status line and the step marks disagree.
 2. **Check blockers** listed on the steps of the group ("needs human decision", "needs spec", "blocked"). Do not build a blocked step: skip it, or stop and tell the user if it is the only one left.
 3. **Build one step at a time:** re-read the latest version on `main`, build and lint, commit with the next patch version and the `Plan-Step: v0.6/N` trailer, mark the step ✅ with its version(s). Check `git diff --cached --stat` before each commit.
