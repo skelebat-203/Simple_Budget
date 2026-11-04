@@ -152,19 +152,31 @@ export const categoryRepo = {
     return db.categories.update(id, patch.name === undefined ? patch : { ...patch, name: cleanName(patch.name) })
   },
   /**
-   * Rename a subcategory or item. Checked inside the transaction, since the confirm
-   * dialog can stay open while another tab changes the tree (security-v0.4 3.1):
-   * the row must still exist and have a parent, and no sibling may have the name.
+   * Rename a subcategory or item, and optionally move it under another parent of the
+   * same level (0009 §4). Checked inside the transaction, since the dialog can stay open
+   * while another tab changes the tree (security-v0.4 3.1): the row must still exist and
+   * have a parent, and no sibling at the destination may have the name. `recolor` sets
+   * the colors of the moved rows. Moving runs the Charity rule; returns purchases moved.
    */
-  async rename(id: number, name: string) {
-    await db.transaction('rw', db.categories, async () => {
+  async rename(id: number, name: string, move?: { parentId: number; recolor: { id: number; color: string }[] }): Promise<number> {
+    return db.transaction('rw', db.categories, db.budgetItems, async () => {
       const c = await db.categories.get(id)
       if (!c) throw new RowInUseError('it no longer exists.')
       if (c.parentId == null) throw new RowInUseError('top-level rows can’t be renamed.')
-      const parent = await db.categories.get(c.parentId)
-      const sibs = await db.categories.where('parentId').equals(c.parentId).toArray()
+      const target = move && move.parentId !== c.parentId ? await db.categories.get(move.parentId) : undefined
+      if (move && move.parentId !== c.parentId && !target) throw new RowInUseError('the category it was moving to no longer exists.')
+      const parentId = target ? target.id! : c.parentId
+      const parent = target ?? await db.categories.get(c.parentId)
+      const sibs = await db.categories.where('parentId').equals(parentId).toArray()
       if (sibs.some(s => s.id !== id && slug(s.name) === slug(name))) throw new NameTakenError(`“${cleanName(name)}” already exists in ${parent?.name ?? 'this category'}`)
-      await db.categories.update(id, { name: cleanName(name) })
+      if (!target) { await db.categories.update(id, { name: cleanName(name) }); return 0 }
+      // The destination must hold items already, or be empty of purchases and estimate, so nothing is stranded.
+      if (sibs.length === 0 && target.parentId != null && (target.estimate != null || await db.budgetItems.where('categoryId').equals(target.id!).count()))
+        throw new RowInUseError(`${target.name} holds its own amounts, so nothing can be moved into it.`)
+      const order = sibs.reduce((m, s) => Math.max(m, (s.order ?? -1) + 1), 0)
+      await db.categories.update(id, { name: cleanName(name), parentId, order })
+      for (const r of move!.recolor) await db.categories.update(r.id, { color: r.color })
+      return settleCharity()
     })
   },
   async remove(id: number) { return db.categories.delete(id) },

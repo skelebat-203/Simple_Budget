@@ -436,3 +436,7 @@ nav .btn.icon:hover:not(:disabled) { background: var(--color-border); }
 .day-table { min-width: 500px; table-layout: fixed; }
 .day-table thead th:first-child { width: 60%; }
 .day-table .row-actions { white-space: normal; }
+
+/* --- Edit-menu dialogs (0009 §4) --- */
+.dialog-form { display: flex; flex-direction: column; gap: var(--space-md); }
+.dialog.form-dialog { width: min(32rem, calc(100% - 2 * var(--space-md))); }

@@ -12,11 +12,13 @@ export type MenuAction<T extends string = string> = { id: string; label: string;
  *   Tab closes. Focus returns to the button, then the picked action may move it.
  * - Keys it handles don't reach a surrounding treegrid.
  */
-export function ActionsMenu<T extends string>({ id, label, items, onSelect }: {
+export function ActionsMenu<T extends string>({ id, label, buttonLabel = 'Actions', items, onSelect }: {
   /** Button id; the menu is `{id}-menu`. */
   id: string
   /** Accessible name of the button, e.g. "Actions for Rent". */
   label: string
+  /** Visible text of the button; default "Actions". */
+  buttonLabel?: string
   items: MenuAction<T>[]
   onSelect: (value: T) => void
 }) {
@@ -52,7 +54,7 @@ export function ActionsMenu<T extends string>({ id, label, items, onSelect }: {
       <button ref={button} type="button" id={id} className="btn secondary small menu-button"
         aria-label={label} aria-haspopup="menu" aria-expanded={open} aria-controls={open ? `${id}-menu` : undefined}
         onClick={() => (open ? close() : show(0))} onKeyDown={onButtonKey}>
-        Actions <span aria-hidden="true">▾</span>
+        {buttonLabel} <span aria-hidden="true">▾</span>
       </button>
       {open && (
         <ul id={`${id}-menu`} role="menu" aria-labelledby={id} className="menu" onKeyDown={onMenuKey}>

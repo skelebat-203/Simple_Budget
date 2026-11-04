@@ -1,19 +1,21 @@
 import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react'
 import type { BudgetItem, Range } from '../storage/db'
-import { actualFor, ancestors, domId, estimateTotal, isoDate, formatAmount, isTotal, periodsFor, rangeHasEstimates, repeatedNames, scheduleText, spokenName, type Calendar, type CatNode, type Period } from '../budget/tree'
-import { cleanName, moneyError, NAME_MAX, parseAmount, slug } from '../budget/validate'
+import { actualFor, ancestors, childColor, domId, flatten, estimateTotal, isoDate, formatAmount, isTotal, periodsFor, rangeHasEstimates, repeatedNames, scheduleText, spokenName, type Calendar, type CatNode, type Period } from '../budget/tree'
+import { cleanName, NAME_MAX, slug } from '../budget/validate'
 import { budgetItemRepo, categoryRepo, NameTakenError, RowInUseError } from '../storage/repository'
-import { AmountField, Button, ConfirmDialog } from './ui'
+import { AmountDialog, Button, ConfirmDialog, DescriptionDialog, RenameDialog, type SaveResult } from './ui'
 import { useCollapsed } from './ui/useCollapsed'
 import { fireReward } from '../rewards/rewards'
 import { useAnnounce } from './ui/announcer'
 import { Expander } from './ui/Expander'
 import { ActionsMenu, type MenuAction } from './ui/ActionsMenu'
 
-/** Open row action: Add value / Delete (Week, Month, §9.2) or Rename (all but Day, §9.3, v0.4 step 8). */
-type Kind = 'add' | 'delete' | 'rename'
-const fieldOf: Record<Kind, string> = { add: 'add_value', delete: 'delete_row', rename: 'rename_value' }
-const buttonOf: Record<Kind, string> = { add: 'add', delete: 'delete_row', rename: 'rename' }
+/** Annual rename: the pencil button opens the name's inline form (§9.3, v0.4 step 8). */
+type Kind = 'rename'
+
+/** Edit-menu actions (0009 §4): each opens a dialog. 'new' is Day's New purchase, 'adjust' is Add/Subtract on an item's total, 'replace' is Add/Subtract on a purchase. */
+type Act = 'rename' | 'new' | 'adjust' | 'replace' | 'description' | 'delete'
+type Dlg = { act: Act; n: CatNode; purchase?: BudgetItem }
 
 const GRID = '__grid__'
 
@@ -50,9 +52,10 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
   const repeated = repeatedNames(roots)
   const say = (n: CatNode) => spokenName(n, repeated)
   const payWord = (n: CatNode) => (ancestors(n)[0] ?? n).cat.name === 'Income' ? 'Pay' : 'Due'
-  const [confirm, setConfirm] = useState<number | null>(null)
-  /** Row with an open action: Add value or Delete (Week/Month, §9.2). */
+  /** Annual's inline rename (the only row form left; everything else is a dialog). */
   const [rowEdit, setRowEdit] = useState<{ id: number; kind: Kind } | null>(null)
+  /** Open Edit-menu dialog (0009 §4). */
+  const [dlg, setDlg] = useState<Dlg | null>(null)
   const [value, setValue] = useState('')
   const [fieldError, setFieldError] = useState('')
   const [status, setStatus] = useState('')
@@ -80,20 +83,15 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
     : []
   const purchaseLabel = (i: BudgetItem) =>
     `Purchase, ${new Date(i.createdAt).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`
-  const deleteId = (n: CatNode, i: BudgetItem) => ['delete', n.parent && slug(n.parent.cat.name), slug(n.cat.name), i.id].filter(Boolean).join('-')
+  const editId = (n: CatNode, i: BudgetItem) => ['edit_purchase', n.parent && slug(n.parent.cat.name), slug(n.cat.name), i.id].filter(Boolean).join('-')
 
-  /** Day purchase Delete: show (id) or hide (null) its confirmation, then focus `focus`. */
-  function askDelete(id: number | null, focus: string) { setConfirm(id); focusAfter.current = focus }
-
-  async function remove(n: CatNode, i: BudgetItem, next: string) {
-    setError('')
+  async function removePurchase(n: CatNode, i: BudgetItem, next: string): Promise<SaveResult> {
     try {
       await budgetItemRepo.remove(i.id!)
     } catch {
-      setError(`Error: The ${n.cat.name} purchase wasn’t deleted. Try again.`)
-      return
+      return `Error: The ${n.cat.name} purchase wasn’t deleted. Try again.`
     }
-    setConfirm(null)
+    setDlg(null)
     setStatus(`Deleted the ${say(n)} purchase of ${formatAmount(i.amount) || '0.00'}.`)
     focusAfter.current = next
     onChanged?.()
@@ -105,31 +103,76 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
   const addDate = todayIso >= span.from && todayIso <= span.to ? todayIso : span.to
 
   function openRow(n: CatNode, kind: Kind) {
-    setRowEdit({ id: n.cat.id, kind }); setValue(kind === 'rename' ? n.cat.name : ''); setFieldError(''); setError('')
-    focusAfter.current = domId(fieldOf[kind], n) + (kind === 'delete' ? '-cancel' : '')
+    setRowEdit({ id: n.cat.id, kind }); setValue(n.cat.name); setFieldError(''); setError('')
+    focusAfter.current = domId('rename_value', n)
   }
-  function closeRow(n: CatNode, kind: Kind) {
+  function closeRow(n: CatNode) {
     setRowEdit(null); setFieldError('')
-    // Back to what opened it: the row's Actions menu button, or its single action button.
-    focusAfter.current = range !== 'annual' && menuActions(n).length > 1 ? domId('actions', n) : domId(buttonOf[kind], n)
+    focusAfter.current = domId('rename', n)
   }
 
-  /** Week/Month row actions (§9.2). More than one goes in an Actions menu so rows line up (v0.4 step 7). */
-  function menuActions(n: CatNode): MenuAction<Kind>[] {
-    const list: MenuAction<Kind>[] = []
-    if (!isTotal(n) && n.cat.name !== 'Net Income') list.push({ value: 'add', id: domId('add', n), label: 'Add value' })
-    if (n.parent) list.push({ value: 'rename', id: domId('rename', n), label: 'Rename' })
-    if (n.parent) list.push({ value: 'delete', id: domId('delete_row', n), label: 'Delete' })
+  /** Edit menu for a Day, Week or Month category row (0009 §4). Delete: Day and Week only. */
+  function menuActions(n: CatNode): MenuAction<Act>[] {
+    const list: MenuAction<Act>[] = []
+    const item = (value: Act, label: string) => list.push({ value, label, id: domId(`edit_${value}`, n) })
+    if (!isTotal(n) && n.cat.name !== 'Net Income') item(range === 'day' ? 'new' : 'adjust', range === 'day' ? 'New purchase' : 'Add/Subtract')
+    if (n.parent) item('rename', 'Rename')
+    if (n.parent && range !== 'month') item('delete', 'Delete')
     return list
   }
-  function act(n: CatNode, kind: Kind) { if (kind === 'delete') tryDelete(n); else openRow(n, kind) }
+  /** Edit menu for a purchase row (Day): Description, Add/Subtract, Delete. */
+  function purchaseActions(n: CatNode, i: BudgetItem): MenuAction<Act>[] {
+    return (['description', 'replace', 'delete'] as const).map(value => ({
+      value, label: value === 'description' ? 'Description' : value === 'replace' ? 'Add/Subtract' : 'Delete',
+      id: [`edit_purchase_${value}`, n.parent && slug(n.parent.cat.name), slug(n.cat.name), i.id].filter(Boolean).join('-'),
+    }))
+  }
+  function act(n: CatNode, a: Act, purchase?: BudgetItem) {
+    if (a === 'delete' && !purchase) {
+      const why = n.children.length ? 'delete its items first'
+        : items.filter(i => i.categoryId === n.cat.id).length > 1 ? 'it has more than one purchase; delete them in the Day table first' : ''
+      if (why) { setStatus(`${say(n)} can’t be deleted yet: ${why}.`); return }
+    }
+    setError('')
+    setDlg({ act: a, n, purchase })
+  }
+
+  /** Where a row may be moved by Rename: its parent's level (0009 §4). Computed roots are left out. */
+  function parentChoices(n: CatNode): { id: number; label: string }[] {
+    const here = n.parent!
+    if (n.depth === 1) return roots.filter(r => !r.cat.computed || r === here).map(r => ({ id: r.cat.id, label: r.cat.name }))
+    return roots.filter(r => !r.cat.computed || r === here.parent)
+      .flatMap(r => r.children.map(c => ({ id: c.cat.id, label: `${r.cat.name} › ${c.cat.name}` })))
+  }
+
+  /** Dialog rename, with a move when the Category select changed. */
+  async function saveRename(n: CatNode, name: string, parentId: number): Promise<SaveResult> {
+    let move: { parentId: number; recolor: { id: number; color: string }[] } | undefined
+    const dest = flatten(roots).find(x => x.cat.id === parentId)!
+    if (parentId !== n.parent!.cat.id) {
+      const moved = { ...n, parent: dest }
+      move = { parentId, recolor: [{ id: n.cat.id, color: childColor(dest) }, ...n.children.map(c => ({ id: c.cat.id, color: childColor(moved) }))] }
+    }
+    let charity = 0
+    try {
+      charity = await categoryRepo.rename(n.cat.id, name, move)
+    } catch (err) {
+      if (err instanceof NameTakenError) return `Invalid: Name ${err.message}`
+      if (err instanceof RowInUseError) { setDlg(null); setError(`Error: ${n.cat.name} wasn’t renamed because ${err.message}`); onChanged?.(); return }
+      return `Error: ${n.cat.name} wasn’t renamed. Try again.`
+    }
+    setDlg(null)
+    setStatus(`${move ? `Renamed ${say(n)} to ${name} and moved it to ${dest.cat.name}.` : `Renamed ${say(n)} to ${name}.`}${charity ? ` Your ${charity} Charity purchase${charity === 1 ? '' : 's'} moved to Charity › Miscellaneous.` : ''}`)
+    focusAfter.current = ['edit', slug(dest.cat.name), slug(name), n.cat.id].join('-')
+    onChanged?.()
+  }
 
   async function rename(n: CatNode) {
     const name = cleanName(value)
     const fail = (msg: string) => { setFieldError(msg); focusAfter.current = domId('rename_value', n) }
     if (!name) return fail(`Error: Name for ${say(n)} cannot be empty`)
     if (n.parent!.children.some(c => c !== n && slug(c.cat.name) === slug(name))) return fail(`Invalid: Name “${name}” already exists in ${n.parent!.cat.name}`)
-    if (name === n.cat.name) return closeRow(n, 'rename')
+    if (name === n.cat.name) return closeRow(n)
     // Ask first: the name changes everywhere (v0.4 step 8; Annual too, v0.4 review).
     setPending({ n, name })
   }
@@ -145,7 +188,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
         focusAfter.current = domId('rename_value', n)
       } else if (err instanceof RowInUseError) {
         setError(`Error: ${n.cat.name} wasn’t renamed because ${err.message}`)
-        closeRow(n, 'rename')
+        closeRow(n)
         onChanged?.()
       } else {
         setError(`Error: ${n.cat.name} wasn’t renamed. Try again.`)
@@ -154,29 +197,40 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
       return
     }
     setStatus(`Renamed ${say(n)} to ${name}.`)
-    closeRow(n, 'rename')
+    closeRow(n)
     // The row's ids carry its name: focus the control under the new name.
-    focusAfter.current = focusAfter.current!.replace(`-${slug(n.cat.name)}-${n.cat.id}`, `-${slug(name)}-${n.cat.id}`)
+    focusAfter.current = domId('rename', n).replace(`-${slug(n.cat.name)}-${n.cat.id}`, `-${slug(name)}-${n.cat.id}`)
     onChanged?.()
   }
 
-  async function addValue(n: CatNode) {
-    const r = parseAmount(value, { allowNegative: true })
-    if (!r.ok) {
-      setFieldError(moneyError(`Value for ${say(n)}`, r, '12.50, 12.50+3 or -12.50'))
-      focusAfter.current = domId('add_value', n)
-      return
-    }
+  /** Dialog Add/Subtract and New purchase (0009 §4.1). */
+  async function saveAmount(d: Dlg, amount: number, description: string): Promise<SaveResult> {
+    const { n, purchase } = d
     try {
-      await budgetItemRepo.add({ categoryId: n.cat.id, amount: r.value, date: addDate })
+      if (d.act === 'replace') await budgetItemRepo.update(purchase!.id!, { amount })
+      else await budgetItemRepo.add({ categoryId: n.cat.id, amount, date: addDate, ...(description ? { description } : {}) })
     } catch {
-      setError(`Error: The value for ${n.cat.name} wasn’t saved. Try again.`)
-      return
+      return `Error: The amount for ${n.cat.name} wasn’t saved. Try again.`
     }
-    setStatus(`Added ${formatAmount(r.value) || '0.00'} to ${say(n)} on ${addDate}.`)
-    closeRow(n, 'add')
+    const text = formatAmount(amount) || '0.00'
+    setDlg(null)
+    setStatus(d.act === 'replace' ? `Changed the ${say(n)} purchase to ${text}.`
+      : d.act === 'new' ? `Added a ${say(n)} purchase of ${text} on ${addDate}.` : `Added ${text} to ${say(n)} on ${addDate}.`)
+    focusAfter.current = purchase ? editId(n, purchase) : domId('edit', n)
     onChanged?.()
-    fireReward()
+    if (d.act !== 'replace') fireReward()
+  }
+
+  async function saveDescription(n: CatNode, i: BudgetItem, description: string): Promise<SaveResult> {
+    try {
+      await budgetItemRepo.update(i.id!, { description: description || undefined })
+    } catch {
+      return `Error: The description for the ${n.cat.name} purchase wasn’t saved. Try again.`
+    }
+    setDlg(null)
+    setStatus(description ? `Saved the description for the ${say(n)} purchase.` : `Removed the description from the ${say(n)} purchase.`)
+    focusAfter.current = editId(n, i)
+    onChanged?.()
   }
 
   async function deleteRow(n: CatNode) {
@@ -185,11 +239,11 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
     } catch (err) {
       // Name the reason when the row changed since it was shown (e.g. a purchase added in another tab).
       setError(err instanceof RowInUseError ? `Error: ${n.cat.name} wasn’t deleted because ${err.message}` : `Error: ${n.cat.name} wasn’t deleted. Try again.`)
-      setRowEdit(null)
+      setDlg(null)
       onChanged?.()
       return
     }
-    setRowEdit(null)
+    setDlg(null)
     setStatus(`Deleted ${say(n)}.`)
     focusAfter.current = GRID
     onChanged?.()
@@ -200,19 +254,11 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
     return p ? ` and its purchase of ${formatAmount(p.amount) || '0.00'}` : ''
   }
 
-  function tryDelete(n: CatNode) {
-    const why = n.children.length ? 'delete its items first'
-      : items.filter(i => i.categoryId === n.cat.id).length > 1 ? 'it has more than one purchase; delete them in the Day table first' : ''
-    if (why) { setStatus(`${say(n)} can’t be deleted yet: ${why}.`); return }
-    openRow(n, 'delete')
-  }
-
   /** Name cell: the rename form, or (Annual) the name's pencil Rename button (0007 §9.3, §10; Week/Month: v0.4 step 8). */
   function renameControls(n: CatNode): ReactNode {
-    if (!actions || range === 'day' || !n.parent) return null
+    if (!actions || range !== 'annual' || !n.parent) return null
     const id = domId('rename_value', n)
     if (rowEdit?.id !== n.cat.id || rowEdit.kind !== 'rename') {
-      if (range !== 'annual') return null
       return (
         <Button type="button" className="secondary icon" id={domId('rename', n)} aria-label={`Rename ${say(n)}`}
           onClick={() => openRow(n, 'rename')}>
@@ -229,60 +275,22 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
           <input id={id} className="input" maxLength={NAME_MAX} value={value} autoComplete="off"
             aria-invalid={!!fieldError || undefined} aria-describedby={fieldError ? `${id}-error_msg` : undefined}
             onChange={e => setValue(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); rename(n) } else if (e.key === 'Escape') closeRow(n, 'rename') }} />
+            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); rename(n) } else if (e.key === 'Escape') closeRow(n) }} />
           <Button type="button" className="small" onClick={() => rename(n)}>Save</Button>
-          <Button type="button" className="secondary small" onClick={() => closeRow(n, 'rename')}>Cancel</Button>
+          <Button type="button" className="secondary small" onClick={() => closeRow(n)}>Cancel</Button>
         </span>
         {fieldError && <p id={`${id}-error_msg`} className="error">{fieldError}</p>}
       </>
     )
   }
 
-  /** Actions cell for a category row: Week/Month add value and delete (§9.2), Annual rename (§9.3). */
+  /** Edit cell for a Day, Week or Month category row (0009 §4); Annual edits names in the name cell. */
   function rowActions(n: CatNode): ReactNode {
-    if (!actions) return null
-    const kind = rowEdit?.id === n.cat.id ? rowEdit.kind : null
-    if (range === 'annual') return null
-    if (range !== 'week' && range !== 'month') return <td />
-    if (kind === 'add') {
-      const id = domId('add_value', n)
-      return (
-        <td className="row-actions">
-          <span className="inline-form">
-            <label className="sr-only" htmlFor={id}>Value to add to {say(n)}</label>
-            <AmountField id={id} className="amount" allowNegative value={value}
-              aria-invalid={!!fieldError || undefined}
-              aria-describedby={fieldError ? `${id}-error_msg ${idBase}-add-help` : `${idBase}-add-help`}
-              onChange={e => setValue(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addValue(n) } else if (e.key === 'Escape') closeRow(n, 'add') }} />
-            <Button type="button" className="small" onClick={() => addValue(n)}>Save</Button>
-            <Button type="button" className="secondary small" onClick={() => closeRow(n, 'add')}>Cancel</Button>
-          </span>
-          {fieldError && <p id={`${id}-error_msg`} className="error">{fieldError}</p>}
-        </td>
-      )
-    }
-    const del = domId('delete_row', n)
-    if (kind === 'delete') {
-      return (
-        <td className="row-actions">
-          <span className="confirm" role="group" aria-label={`Delete ${say(n)}${withOne(n)}?`}>
-            <span aria-hidden="true">Delete {n.cat.name}{withOne(n)}?</span>
-            <Button type="button" className="danger small" id={`${del}-confirm`} onClick={() => deleteRow(n)}>Delete</Button>
-            <Button type="button" className="secondary small" id={`${del}-cancel`} onClick={() => closeRow(n, 'delete')}>Cancel</Button>
-          </span>
-        </td>
-      )
-    }
+    if (!actions || range === 'annual') return null
     const list = menuActions(n)
-    const one = list.length === 1 ? list[0] : null
     return (
       <td className="row-actions">
-        {list.length > 1 && <ActionsMenu id={domId('actions', n)} label={`Actions for ${say(n)}`} items={list} onSelect={k => act(n, k)} />}
-        {one && (
-          <Button type="button" className="secondary small" id={one.id} aria-label={`${one.label} ${one.value === 'add' ? 'to ' : ''}${say(n)}`}
-            onClick={() => act(n, one.value)}>{one.label}</Button>
-        )}
+        {list.length > 0 && <ActionsMenu id={domId('edit', n)} label={`Edit ${say(n)}`} buttonLabel="Edit" items={list} onSelect={k => act(n, k)} />}
       </td>
     )
   }
@@ -344,11 +352,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
     )
     if (!open) return
     const bought = purchasesOf(n)
-    bought.forEach((i, k) => {
-      const id = deleteId(n, i)
-      // After a delete, focus the next purchase's Delete, else the previous, else the table's first cell.
-      const next = bought[k + 1] ? deleteId(n, bought[k + 1]) : bought[k - 1] ? deleteId(n, bought[k - 1]) : GRID
-      const asking = confirm === i.id
+    bought.forEach(i => {
       rows.push(
         <tr key={`p${i.id}`} className={`row purchase depth-${n.depth + 1}`} {...(preview ? {} : { "aria-level": n.depth + 2 })}>
           <th scope="row" className="name">
@@ -358,16 +362,8 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
           <td className={`num${i.amount < 0 ? ' neg' : ''}`}>{formatAmount(i.amount) || '0.00'}</td>
           {actionCol && (
             <td className="row-actions">
-              {asking
-                ? <span className="confirm" role="group" aria-label={`Delete the ${say(n)} purchase of ${formatAmount(i.amount) || '0.00'}?`}>
-                  <span aria-hidden="true">Delete this purchase?</span>
-                  <Button type="button" className="danger small" id={`${id}-confirm`} onClick={() => remove(n, i, next)}>Delete</Button>
-                  <Button type="button" className="secondary small" id={`${id}-cancel`}
-                    onClick={() => askDelete(null, id)}>Cancel</Button>
-                </span>
-                : <Button type="button" className="secondary small" id={id}
-                  aria-label={`Delete ${say(n)} purchase of ${formatAmount(i.amount) || '0.00'}`}
-                  onClick={() => askDelete(i.id!, `${id}-cancel`)}>Delete</Button>}
+              <ActionsMenu id={editId(n, i)} label={`Edit ${say(n)} purchase of ${formatAmount(i.amount) || '0.00'}`} buttonLabel="Edit"
+                items={purchaseActions(n, i)} onSelect={a => act(n, a, i)} />
             </td>
           )}
         </tr>,
@@ -385,6 +381,46 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
           {actionCol && <td />}
         </tr>,
       )
+    }
+  }
+
+  /** The open Edit-menu dialog (0009 §4). */
+  function editDialog(d: Dlg): ReactNode {
+    const { n, purchase } = d
+    const id = `${idBase}-edit_${d.act}`
+    const close = () => setDlg(null)
+    const spoken = purchase ? `${say(n)} purchase` : say(n)
+    switch (d.act) {
+      case 'rename':
+        return <RenameDialog id={id} spoken={say(n)} name={n.cat.name} parentId={n.parent!.cat.id} parents={parentChoices(n)}
+          level={n.depth === 1 ? 'Category' : 'Subcategory'} onSave={(name, parent) => saveRename(n, name, parent)} onCancel={close} />
+      case 'new':
+        return <AmountDialog id={id} title={`New purchase for ${say(n)}`} spoken={say(n)} withDescription
+          intro={`Adds a purchase to ${say(n)}, dated ${addDate}. Use a minus sign for a refund, or type a sum, e.g. 12.50+3.`}
+          onSave={(amount, description) => saveAmount(d, amount, description)} onCancel={close} />
+      case 'adjust':
+        return <AmountDialog id={id} title={`Add or subtract for ${say(n)}`} spoken={say(n)}
+          intro={`Adds to or subtracts from the ${say(n)} total as a new amount dated ${addDate}. Use a minus sign to subtract, e.g. -12.50, or type a sum, e.g. 12.50+3.`}
+          onSave={(amount, description) => saveAmount(d, amount, description)} onCancel={close} />
+      case 'replace':
+        return <AmountDialog id={id} title={`Change ${spoken}`} spoken={spoken} initial={String(purchase!.amount)}
+          intro="The amount you enter replaces this purchase’s amount. The date stays the same. Type a sum to work it out, e.g. 12.50+3."
+          onSave={(amount, description) => saveAmount(d, amount, description)} onCancel={close} />
+      case 'description':
+        return <DescriptionDialog id={id} spoken={spoken} initial={purchase!.description ?? ''}
+          onSave={text => saveDescription(n, purchase!, text)} onCancel={close} />
+      case 'delete': {
+        const confirmDelete = purchase
+          ? () => { const bought = purchasesOf(n); const k = bought.indexOf(purchase)
+            removePurchase(n, purchase, bought[k + 1] ? editId(n, bought[k + 1]) : bought[k - 1] ? editId(n, bought[k - 1]) : GRID) }
+          : () => deleteRow(n)
+        return (
+          <ConfirmDialog id={id} title={purchase ? `Delete the ${say(n)} purchase?` : `Delete ${say(n)}?`} confirmLabel="Delete"
+            onConfirm={confirmDelete} onCancel={close}>
+            {purchase ? `This deletes the purchase of ${formatAmount(purchase.amount) || '0.00'}.` : `This deletes ${n.cat.name}${withOne(n)}.`}
+          </ConfirmDialog>
+        )
+      }
     }
   }
 
@@ -415,7 +451,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
                     <th scope="col" className={`num${showEstimates ? '' : start}`}><span aria-hidden="true">Act.</span><span className="sr-only">Actual</span></th>
                   </Fragment>
                 ))}
-              {actionCol && <th scope="col" className="name">Actions</th>}
+              {actionCol && <th scope="col" className="name">Edit</th>}
             </tr>
           </thead>
           <tbody>
@@ -425,16 +461,17 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
       </div>
       <p id={`${idBase}-key`} className="help">Only rows with an amount appear. Every row totals the rows under it.{range === 'day' && ' Each purchase is listed under its item.'}</p>
       {actions && (range === 'week' || range === 'month') && (
-        <p id={`${idBase}-add-help`} className="help">Add value records a new amount on that item, dated {addDate}. Use a minus sign to subtract, e.g. -12.50, or type a sum, e.g. 12.50+3. A row can be deleted when it has no items and at most one purchase.</p>
+        <p id={`${idBase}-add-help`} className="help">Add/Subtract records a new amount on that item, dated {addDate}. A row can be deleted when it has no items and at most one purchase{range === 'month' ? '; Delete is in the Week table' : ''}.</p>
       )}
       {actions && <p className="status">{status}</p>}
       {pending && (
         <ConfirmDialog id={`${idBase}-rename_confirm`} title={`Rename ${pending.n.cat.name}?`}
           onConfirm={() => commitRename(pending.n, pending.name)}
-          onCancel={() => { setPending(null); closeRow(pending.n, 'rename') }}>
+          onCancel={() => { setPending(null); closeRow(pending.n) }}>
           This will change the name of all instances of {pending.n.cat.name} to {pending.name} across the application.
         </ConfirmDialog>
       )}
+      {dlg && editDialog(dlg)}
       {error && <p className="error">{error}</p>}
     </div>
   )
