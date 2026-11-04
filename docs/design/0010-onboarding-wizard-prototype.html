@@ -56,13 +56,13 @@
   <p><button class="btn" id="open">Open the wizard (first run, or the ? button)</button></p>
   <div class="toast" id="result" role="status" aria-live="polite">Result will show here.</div>
 
-  <h2 style="margin-top:32px">Open questions for you</h2>
+  <h2 style="margin-top:32px">Human answers (2026-11-04)</h2>
   <ol>
-    <li>Step 3 button labels: <strong>Back</strong> left, <strong>Done</strong> right, and <strong>Advanced setup</strong> beside the list (shown). Is that right?</li>
-    <li>Should step 3 keep an "Add your own" box (the v0.5 dialog has it)?</li>
-    <li>Is a grouped, collapsible list right, or one flat list with filter? (Grouped shown.)</li>
-    <li>Presets: should Use presets tell the user what the presets are (the shown list says so on step 2)?</li>
-    <li>When Advanced setup opens, does the wizard close, or return to step 3 afterwards?</li>
+    <li>Step 3: Back left, Done right, Advanced setup beside the list. Confirmed.</li>
+    <li>No "Add your own" box in the wizard; that stays in Advanced setup.</li>
+    <li>Grouped, collapsible list. Confirmed.</li>
+    <li>Step 2 does not list the presets. Its only help text is "You can change presets later in Budget setup."</li>
+    <li>Advanced setup closes the wizard. The wizard opens on first run.</li>
   </ol>
 </main>
 
@@ -84,7 +84,7 @@
     <section id="s2" hidden>
       <fieldset>
         <legend>Use presets, or choose your own categories?</legend>
-        <p class="help">Presets keep Income, Taxes, Emergency fund, Charity, Groceries, Mortgage, Power, Internet and Phone selected. You can change them later in Budget setup.</p>
+        <p class="help">You can change presets later in Budget setup.</p>
         <div class="step2">
           <button type="button" class="btn primary big" id="presets">Use presets</button>
           <button type="button" class="btn big" id="own">Add categories</button>

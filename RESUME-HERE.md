@@ -6,7 +6,7 @@ Design: `0004-table-design.md` (table), `0006-prototype.html` (v0.2 UI), `0007-v
 ## v0.6 plan of action
 Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per completed-work commit; trailer `Plan-Step: v0.6/N`). The final step bumps to v0.7.0. UI steps need human approval (`0005-ui-ux-review-checklist.md`). Baseline: v0.6.0; v0.5 complete (`docs/audits/security/security-v0.5.md`, `docs/audits/a11y/a11y-v0.5.md`). Data: Dexie v8 (`src/storage/structure.ts`; schedule fields and `Settings.onboarded` unindexed). Testing: headless Chromium via host flatpak + puppeteer-core; scripts in the session scratchpad.
 
-**Before building (human):** review prototypes `0010` (wizard) and `0011` (highlight) and settle `0009` (not final; not authoritative until then). Steps 10 and 11 wait on it. Confirmed formats for import (step 13) and the Budget setup + help merge (step 15) also need the human.
+**Before building (human):** the wizard (`0010`) is settled. For the highlight (`0011`), the human still picks the name underline and a Day view (purchase row dialog) is added to the prototype; step 10 waits on both. Confirmed formats for import (step 13) and the Budget setup + help merge (step 15) also need the human.
 
 **Run option (estimate):** single session with fresh restarts. The steps share a few files (`BudgetTable.tsx`, `BudgetSetup.tsx`, `App.css`, `structure.ts`), so parallel subagents would collide, and most UI steps need approval mid-way.
 
@@ -61,15 +61,15 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
    - Verify: dialog focus trap and return; rename-to-other-category moves the item; delete only where allowed; five tables
    - Deps: 5, 6; behavior decided 2026-11-04 in `0009` §4.1 (Day: New purchase button on category rows, amount update on purchase rows; Week/Month: add to or subtract from the item total; supersedes `0007` §9.1/§9.4 for the amount, so the roadmap's Post v1.0 item now covers the date only)
 10. **Highlight dialog** (v0.6/10) — clicking an item name opens a dialog with the row, its children and the table's functions; the chevron alone expands and collapses.
-    - Source: `0009` §3; prototype `0011`; decided 2026-11-04: dialog shows the row as in the table viewed (Day lists purchases; Week/Month/Annual do not); Delete confirms first, hidden in Month/Annual; Rename not offered for top-level categories
+    - Source: `0009` §3; prototype `0011`; decided 2026-11-04: dialog shows the row as in the table viewed (Day lists purchases; Week/Month/Annual do not); Delete confirms first, hidden in Month/Annual; Rename not offered for top-level categories; a purchase row in Day opens its own dialog (Add/Subtract, Delete)
     - Files: `src/components/BudgetTable.tsx`, new dialog component, `src/App.css`
     - Verify: the name's clickable cue is the one the human picks from `0011`; name click no longer toggles (supersedes nothing in `0008` §1 except the name-toggle); same functions as the Edit menu; keyboard and screen reader
     - Deps: 9; **blocked** until the human picks the name underline in `0011` (the rest of `0009` §3 is answered)
 11. **Onboarding wizard** (v0.6/11) — three-step dialog wizard with progress bar replacing the single-dialog questionnaire.
     - Source: `0009` §1; prototype `0010`; replaces `0008` §8
     - Files: `src/screens/Onboarding.tsx`, `src/storage/seed.ts`, `src/storage/preselected.ts`, `src/App.css`
-    - Verify: progress "step X of 3" announced; Back, Done, presets and Advanced setup paths; shows on empty DB only
-    - Deps: 1; **blocked** until the human settles `0010` (Back position, Done at step 3, "Add your own", step 3 grouping)
+    - Verify: progress "step X of 3" announced; Back, Done, presets and Advanced setup (closes the wizard) paths; no "Add your own" box; step 2 text is only "You can change presets later in Budget setup."; shows on empty DB only
+    - Deps: 1; decided 2026-11-04 in `0009` §1 (not blocked)
 12. **Deep subcategory nesting** (v0.6/12) — subcategories containing subitems, in the tables and Budget setup.
     - Source: roadmap v0.6
     - Files: `src/storage/structure.ts`, `src/storage/db.ts`, `src/budget/tree.ts`, `src/components/BudgetTable.tsx`, `src/screens/BudgetSetup.tsx`, `src/screens/AddBudget.tsx`
@@ -107,7 +107,7 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
 - **B — Amounts and descriptions** (steps 5, 6, 7; AddBudget, structure, seed): after A step 3 (same `AddBudget.tsx`).
 - **C — Setup and table dialogs** (steps 8, 9, 10; BudgetSetup, BudgetTable): after B; step 10 waits for the human's `0011` decision.
 - **D — Nesting** (step 12; tree, BudgetTable, BudgetSetup, structure): after C; spec first.
-- **E — Wizard** (step 11; Onboarding): after A; waits for `0010`. Can run before C or D if the human settles it early.
+- **E — Wizard** (step 11; Onboarding): after A; design settled, so it can run any time after A (before C or D if wanted).
 - **F — Import** (steps 13, 14, 15, 16; import, Backup, BudgetSetup, Onboarding): after D and E.
 - **Reviews** (steps 17–19): main session with the user.
 - Status: ⏳ A (1, 2, 4 ✅; 3 awaiting approval) · ☐ B · ☐ C · ☐ D · ☐ E · ☐ F · ☐ reviews
@@ -119,7 +119,7 @@ Run option 1: one session per group, fresh start at each group boundary. A sessi
 3. **Build one step at a time:** re-read the latest version on `main`, build and lint, commit with the next patch version and the `Plan-Step: v0.6/N` trailer, mark the step ✅ with its version(s). Check `git diff --cached --stat` before each commit.
 4. **UI steps** pause for human approval before they are marked ✅ (`0005`).
 5. **At the end of the group:** update the Execution status line (e.g. `✅ A · ☐ B`), commit, and tell the user the group is done so they can start a fresh session.
-6. **Group order:** A → B → C → D → F. E (wizard) can run any time after A once the human settles `0010`; F needs D and E. Small groups (A) may share a session with the next group if context is light. F spans several sessions, each resuming at a step boundary.
+6. **Group order:** A → B → C → D → F. E (wizard) can run any time after A (design settled); F needs D and E. Small groups (A) may share a session with the next group if context is light. F spans several sessions, each resuming at a step boundary.
 7. **Reviews** (17–19) are run in the main session with the user, not by a worker.
 
 ## Rules
