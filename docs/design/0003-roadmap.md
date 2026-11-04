@@ -92,7 +92,13 @@ tracked as a later-version item.
 - Security review
 
 ## v0.6 — Data import + deep nesting
-- CSV/HTML upload + auto-categorization parsing
+- CSV/HTML upload + auto-categorization parsing; an Import button on the Budget setup page accepts the 3 most common spreadsheet file types (formats to confirm, likely CSV, XLSX, ODS) so a user can import an existing budget. Large effort: expect several testing and refinement rounds
+- (Primary User Request) More informative "Saved" confirmation: the text says what was saved and how much (e.g. the item name and amount), not just "Saved"
+- Combine "Budget setup" and help (exact merge to confirm with the user before building)
+- Refactor so each tab panel's header below the tab is visually hidden (still available to screen readers)
+- Add addition and subtraction to the amount fields/buttons
+- Optional description field below Amount
+- Generic "Miscellaneous" item in Charity exists even when Charity has no other items; when it is the only item, purchases go in it directly instead of creating a separate Miscellaneous stuff category (changes the auto-created Miscellaneous behavior in `0007` §2.1; spec update needed before build)
 - UI/UX for the upload flow
 - Deep subcategory nesting (subcategories containing subitems)
 - Add upload step to onboarding once it works

@@ -6,6 +6,7 @@ import { budgetItemRepo, categoryRepo, NameTakenError, RowInUseError } from '../
 import { Button, ConfirmDialog } from './ui'
 import { useCollapsed, useTreegrid } from './ui/useTreegrid'
 import { fireReward } from '../rewards/rewards'
+import { useAnnounce } from './ui/announcer'
 import { Expander } from './ui/Expander'
 import { ActionsMenu, type MenuAction } from './ui/ActionsMenu'
 
@@ -56,6 +57,8 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
   const [fieldError, setFieldError] = useState('')
   const [status, setStatus] = useState('')
   const [error, setError] = useState('')
+  useAnnounce(status)
+  useAnnounce(error)
   /** Rename waiting on the confirm dialog (all ranges, v0.4 step 8 + review). */
   const [pending, setPending] = useState<{ n: CatNode; name: string } | null>(null)
   const focusAfter = useRef<string | null>(null)
@@ -422,7 +425,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
       {actions && (range === 'week' || range === 'month') && (
         <p id={`${idBase}-add-help`} className="help">Add value records a new amount on that item, dated {addDate}. Use a minus sign to subtract, e.g. -12.50. A row can be deleted when it has no items and at most one purchase.</p>
       )}
-      {actions && <p className="status" role="status">{status}</p>}
+      {actions && <p className="status">{status}</p>}
       {pending && (
         <ConfirmDialog id={`${idBase}-rename_confirm`} title={`Rename ${pending.n.cat.name}?`}
           onConfirm={() => commitRename(pending.n, pending.name)}
@@ -430,7 +433,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
           This will change the name of all instances of {pending.n.cat.name} to {pending.name} across the application.
         </ConfirmDialog>
       )}
-      {error && <p className="error" role="alert">{error}</p>}
+      {error && <p className="error">{error}</p>}
     </div>
   )
 }

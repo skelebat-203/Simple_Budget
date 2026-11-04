@@ -205,7 +205,7 @@
 .dialog.setup[open] { display: flex; }
 .dialog.setup:not([open]) { display: none; }
 .dialog-footer {
-  position: sticky; bottom: 0; display: flex; justify-content: space-between; gap: var(--space-md);
+  position: sticky; bottom: 0; z-index: 5; display: flex; justify-content: space-between; gap: var(--space-md);
   padding: var(--space-md); background: var(--color-background-page); border-top: 1px solid var(--color-border);
 }
 .dialog.setup { scroll-padding-bottom: 6rem; }

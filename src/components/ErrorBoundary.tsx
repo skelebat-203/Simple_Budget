@@ -1,4 +1,5 @@
-import { Component, type ReactNode } from 'react'
+import { Component, useEffect, type ReactNode } from 'react'
+import { announce } from './ui/announcer'
 
 /** Keeps a render error from blanking the page (security-v0.2 8.5). */
 export class ErrorBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
@@ -19,10 +20,11 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, { failed: 
 
 /** Full-page message used when the app can't start or render. */
 export function StartupError({ message }: { message: string }) {
+  useEffect(() => announce(`Error: The app couldn’t load. ${message}`), [message])
   return (
     <main className="main">
       <h1 className="title">Simple Budget</h1>
-      <div className="banner" role="alert">
+      <div className="banner">
         <h2 className="banner-title">Error: The app couldn’t load</h2>
         <p>{message}</p>
       </div>

@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { useAnnounce } from './ui/announcer'
 import { Button } from './ui'
 import { BACKUP_MAX_BYTES, BackupError, checkBackup, exportBackup, restoreBackup, type Backup as BackupData } from '../storage/repository'
 import { isoDate } from '../budget/tree'
@@ -9,6 +10,9 @@ export function Backup({ onRestored }: { onRestored: () => void }) {
   const [pending, setPending] = useState<BackupData | null>(null)
   const [status, setStatus] = useState('')
   const [error, setError] = useState('')
+  useAnnounce(status)
+  useAnnounce(error)
+  useAnnounce(pending ? 'Replace all data with this backup? Choose Cancel or Replace my data.' : '')
 
   async function download() {
     setError(''); setStatus('')
@@ -68,7 +72,7 @@ export function Backup({ onRestored }: { onRestored: () => void }) {
         {error && <p id="backup-error" className="error">{error}</p>}
       </div>
       {pending && (
-        <div className="banner banner-warn" role="alert">
+        <div className="banner banner-warn">
           <h3 className="banner-title">Replace all data with this backup?</h3>
           <p>It has {pending.budgetItems.length} amounts and {pending.categories.length} categories, exported {new Date(pending.exportedAt).toLocaleString()}. Everything now in the app will be replaced.</p>
           <div className="actions">
@@ -77,7 +81,7 @@ export function Backup({ onRestored }: { onRestored: () => void }) {
           </div>
         </div>
       )}
-      <p className="status" role="status">{status}</p>
+      <p className="status">{status}</p>
     </section>
   )
 }

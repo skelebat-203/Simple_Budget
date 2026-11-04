@@ -1,5 +1,6 @@
 import { useEffect, useId, useState } from 'react'
 import { Button } from './Button'
+import { useAnnounce } from './announcer'
 
 export interface MultiOption {
   key: string
@@ -57,6 +58,8 @@ export function MultiSelect({ id, label, options, selected, onToggle, onAdd, add
   }
 
   const chosen = options.filter(o => selected.has(o.key))
+  useAnnounce(`${chosen.length} selected`, true)
+  useAnnounce(error)
   return (
     <div className="multi">
       <div className="combo">
@@ -93,7 +96,7 @@ export function MultiSelect({ id, label, options, selected, onToggle, onAdd, add
       </div>
       <p id={hint} className="help">Type to search; Up and Down arrows move; Enter picks or removes the highlighted item.</p>
       {error && <p id={errId} className="error">{error}</p>}
-      <p className="status" role="status">{chosen.length} selected</p>
+      <p className="status">{chosen.length} selected</p>
       {chosen.length > 0 && (
         <ul className="plain-list chips" aria-label="Selected items">
           {chosen.map(o => (

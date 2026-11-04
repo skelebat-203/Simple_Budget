@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { AmountInput, Button, DatePicker, ErrorSummary, focusFirstError, ItemSelector, type FieldError } from '../components/ui'
 import { addNewItem, budgetItemRepo, NameTakenError } from '../storage/repository'
 import { childColor, isoDate, type CatNode } from '../budget/tree'
+import { useAnnounce } from '../components/ui/announcer'
 import { fireReward } from '../rewards/rewards'
 import { cleanName, dateBounds, moneyError, parseMoney } from '../budget/validate'
 
@@ -33,6 +34,8 @@ export function AddBudget({ roots, onSaved }: {
   const [formKey, setFormKey] = useState(0)
   const bannerRef = useRef<HTMLDivElement>(null)
   const [saveError, setSaveError] = useState('')
+  useAnnounce(status)
+  useAnnounce(saveError)
   const [bounds] = useState(() => dateBounds(new Date()))
 
   // A typed name that matches no item starts the new-item flow (§4.2).
@@ -168,7 +171,7 @@ export function AddBudget({ roots, onSaved }: {
       </div>
       </div>
       <div className="actions actions-end">
-        <p className="status" role="status">{status}</p>
+        <p className="status">{status}</p>
         {isNew && (
           <label className="check">
             <input type="checkbox" id="use_in_future" checked={useInFuture} onChange={e => setUseInFuture(e.target.checked)} />
@@ -177,7 +180,7 @@ export function AddBudget({ roots, onSaved }: {
         )}
         <Button type="button" onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Save'}</Button>
       </div>
-      {saveError && <p className="error" role="alert">{saveError}</p>}
+      {saveError && <p className="error">{saveError}</p>}
     </section>
   )
 }

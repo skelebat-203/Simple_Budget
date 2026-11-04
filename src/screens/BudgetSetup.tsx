@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Button, ErrorSummary, focusFirstError, type FieldError } from '../components/ui'
 import { Expander } from '../components/ui/Expander'
 import { BudgetTable } from '../components/BudgetTable'
+import { useAnnounce } from '../components/ui/announcer'
 import { fireReward } from '../rewards/rewards'
 import { requestNotifications } from '../notifications'
 import { saveSetup } from '../storage/repository'
@@ -65,6 +66,9 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, rewardsEnable
   const [status, setStatus] = useState('')
   const [saveError, setSaveError] = useState('')
   const [saving, setSaving] = useState(false)
+  useAnnounce(status)
+  useAnnounce(notifyMsg)
+  useAnnounce(saveError)
   const [bounds] = useState(() => dateBounds(new Date()))
   /** Add tooltip dismissed with Escape until the pointer or focus leaves it (WCAG 1.4.13, v0.4 review). */
   const [tipOff, setTipOff] = useState<string | null>(null)
@@ -365,7 +369,7 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, rewardsEnable
         <h2 id="setup-heading" ref={headingRef} tabIndex={-1} className="section-title">Budget setup</h2>
         <ErrorSummary ref={bannerRef} errors={errorList} />
         <p id="setup-help" className="help">If you’d like to skip ahead just select “Save” at the bottom of the screen. Income, Tax, Emergency fund, Charity, and a few other items have been preselected for you.</p>
-        <p className="status" role="status">{status}</p>
+        <p className="status">{status}</p>
 
         <div className="table-box setup-table-box">
           <table className="table setup-table" aria-labelledby="setup-heading" role="treegrid" aria-describedby="setup-help setup-key">
@@ -449,7 +453,7 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, rewardsEnable
               Daily reminder
             </label>
             <p id="notifications-help" className="help">Asks your browser for permission to show a reminder each evening. Reminders at a set time aren’t available yet; this saves your choice for when they are.</p>
-            <p className="status" role="status">{notifyMsg}</p>
+            <p className="status">{notifyMsg}</p>
           </div>
         </fieldset>
 
@@ -459,7 +463,7 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, rewardsEnable
             calendar={{ weekStart, monthBoundary: boundary }} />
         </section>
 
-        {saveError && <p className="error" role="alert">{saveError}</p>}
+        {saveError && <p className="error">{saveError}</p>}
       </div>
       <div className="dialog-footer" ref={footerRef}>
         <Button type="button" className="secondary" onClick={onClose}>Cancel</Button>

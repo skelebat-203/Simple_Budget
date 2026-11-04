@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Button, Dialog } from '../components/ui'
+import { useAnnounce } from '../components/ui/announcer'
 import { MultiSelect, type MultiOption } from '../components/ui/MultiSelect'
 import { saveSetup } from '../storage/repository'
 import type { Category, Frequency } from '../storage/db'
@@ -38,6 +39,7 @@ export function Onboarding({ cats, firstRun, onClose, onSkip, onDone }: {
   const options = [...base, ...extras]
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  useAnnounce(error)
 
   const toggle = (key: string) => setSelected(s => { const n = new Set(s); if (n.has(key)) n.delete(key); else n.add(key); return n })
 
@@ -118,7 +120,7 @@ export function Onboarding({ cats, firstRun, onClose, onSkip, onDone }: {
           </div>
         )}
       </fieldset>
-      {error && <p className="error" role="alert">{error}</p>}
+      {error && <p className="error">{error}</p>}
     </Dialog>
   )
 }
