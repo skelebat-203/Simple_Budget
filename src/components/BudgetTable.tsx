@@ -4,7 +4,7 @@ import { actualFor, ancestors, domId, estimateTotal, isoDate, formatAmount, isTo
 import { cleanName, moneyError, NAME_MAX, parseMoney, slug } from '../budget/validate'
 import { budgetItemRepo, categoryRepo, NameTakenError, RowInUseError } from '../storage/repository'
 import { Button, ConfirmDialog } from './ui'
-import { useCollapsed, useTreegrid } from './ui/useTreegrid'
+import { useCollapsed } from './ui/useCollapsed'
 import { fireReward } from '../rewards/rewards'
 import { useAnnounce } from './ui/announcer'
 import { Expander } from './ui/Expander'
@@ -39,7 +39,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
 }) {
   const showEstimates = wantEstimates && rangeHasEstimates(range)
   const [collapsed, toggle] = useCollapsed()
-  const { ref: gridRef, ...gridProps } = useTreegrid(toggle, !preview)
+  const gridRef = useRef<HTMLTableElement>(null)
   const [today] = useState(() => new Date())
   const { columns, total, title } = periodsFor(range, date ?? today, calendar)
   const periods = total ? [...columns, total] : columns
@@ -66,7 +66,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
   useEffect(() => {
     if (!focusAfter.current) return
     // GRID: focus the table's first cell (e.g. after the last purchase in a list is deleted).
-    const el = focusAfter.current === GRID ? gridRef.current?.querySelector<HTMLElement>('tbody th, tbody td') : document.getElementById(focusAfter.current)
+    const el = focusAfter.current === GRID ? gridRef.current?.querySelector<HTMLElement>('tbody button, tbody input, tbody select') : document.getElementById(focusAfter.current)
     // A renamed row gets a new id only after the reload renders it, so wait a few renders for it.
     if (!el && ++focusTries.current < 4) return
     el?.focus()
@@ -391,7 +391,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
       {/* Only the table scrolls sideways; the help text below stays in the page width (v0.4 review). */}
       <div className="table-box">
         <table className="table budget-table" aria-labelledby={`${idBase}-heading ${idBase}-caption`}
-          aria-describedby={preview ? `${idBase}-key` : `${idBase}-key ${idBase}-keys`} ref={gridRef} {...gridProps}>
+          aria-describedby={`${idBase}-key`} ref={gridRef} role={preview ? undefined : 'treegrid'}>
           <caption id={`${idBase}-caption`}>{title}</caption>
           <thead>
             {range !== 'day' && range !== 'annual' && showEstimates && (
@@ -421,7 +421,6 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
         </table>
       </div>
       <p id={`${idBase}-key`} className="help">Only rows with an amount appear. Every row totals the rows under it.{range === 'day' && ' Each purchase is listed under its item.'}</p>
-      {!preview && <p id={`${idBase}-keys`} className="help">Keyboard: arrow keys move between cells; Right and Left open and close a row; Enter reaches a cell’s buttons; Escape returns to the cell.</p>}
       {actions && (range === 'week' || range === 'month') && (
         <p id={`${idBase}-add-help`} className="help">Add value records a new amount on that item, dated {addDate}. Use a minus sign to subtract, e.g. -12.50. A row can be deleted when it has no items and at most one purchase.</p>
       )}
