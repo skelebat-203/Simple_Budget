@@ -114,12 +114,12 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
 
 ### Session process
 Run option 1: one session per group, fresh start at each group boundary. A session starts by reading this file and the roadmap, then:
-0. **Work in a worktree** (`.claude/CLAUDE.md` "Workflow agents use a worktree"): create `.claude/worktrees/v0.6-group-<x>` from the latest `main`, build there, merge back with a fast-forward at the end of the group or an approved step, then remove it.
+0. **Work in a worktree** (`.claude/CLAUDE.md` "Workflow agents use a worktree"): create `.claude/worktrees/v0.6-group-<x>` from the latest `main`, build there, and at the end of the group or step stop and ask the human to approve the merge. Never merge to `main` without that approval. After approval, fast-forward merge, then remove the worktree.
 1. **Find the start:** the first group in the order below that is not ✅ and whose dependencies are met. Within it, the first step not marked ✅. Stop and ask if the status line and the step marks disagree.
 2. **Check blockers** listed on the steps of the group ("needs human decision", "needs spec", "blocked"). Do not build a blocked step: skip it, or stop and tell the user if it is the only one left.
 3. **Build one step at a time:** re-read the latest version on `main`, build and lint, commit with the next patch version and the `Plan-Step: v0.6/N` trailer, mark the step ✅ with its version(s). Check `git diff --cached --stat` before each commit.
 4. **UI steps** pause for human approval before they are marked ✅ (`0005`).
-5. **At the end of the group:** update the Execution status line (e.g. `✅ A · ☐ B`), commit, and tell the user the group is done so they can start a fresh session.
+5. **At the end of the group:** update the Execution status line (e.g. `✅ A · ☐ B`), commit in the worktree, and tell the user the group is done and waiting for merge approval. The status line on `main` changes only after the merge.
 6. **Group order:** A → B → C → D → F. E (wizard) can run any time after A (design settled); F needs D and E. Small groups (A) may share a session with the next group if context is light. F spans several sessions, each resuming at a step boundary.
 7. **Reviews** (17–19) are run in the main session with the user, not by a worker.
 
