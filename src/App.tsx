@@ -111,7 +111,8 @@ function App() {
       }} />
       {showOnboarding && (
         <Onboarding cats={cats} firstRun={autoOnboard && !onboardOpen} onClose={() => setOnboardOpen(false)} onSkip={skipOnboarding}
-          onDone={() => { setOnboardOpen(false); setDismissed(true); setOnboarded(true); reloadCats() }} />
+          onDone={() => { setOnboardOpen(false); setDismissed(true); setOnboarded(true); reloadCats() }}
+          onAdvanced={() => { setOnboardOpen(false); setDismissed(true); setOnboarded(true); reloadCats().then(() => setSetupOpen(true)) }} />
       )}
       {setupOpen && (
         <BudgetSetup

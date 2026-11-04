@@ -414,4 +414,17 @@ nav .btn.icon:hover:not(:disabled) { background: var(--color-border); }
 .multi .listbox { max-height: 16rem; overflow: auto; }
 .chips { display: flex; flex-wrap: wrap; gap: var(--space-xs); }
 .chip { display: inline-flex; align-items: center; gap: var(--space-xs); border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: 0 0 0 var(--space-sm); }
-.dialog.onboarding { width: min(40rem, calc(100% - 2 * var(--space-md))); }
+.dialog.onboarding { width: min(44rem, calc(100% - 2 * var(--space-md))); }
+.wizard-steps { display: flex; align-items: center; gap: var(--space-md); margin: var(--space-sm) 0 var(--space-md); }
+.wizard-steps p { margin: 0; font-weight: var(--font-weight-bold); white-space: nowrap; }
+.wizard-bar { flex: 1; height: 0.75rem; background: var(--color-border); border-radius: var(--radius-md); overflow: hidden; }
+.wizard-bar > span { display: block; height: 100%; background: var(--color-primary-background); }
+.wizard-layout { display: grid; grid-template-columns: 1fr auto; gap: var(--space-md); align-items: start; }
+@media (max-width: 600px) { .wizard-layout { grid-template-columns: 1fr; } }
+.wizard-list { border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-sm) var(--space-md); max-height: 20rem; overflow: auto; }
+.wizard-list summary { cursor: pointer; font-weight: var(--font-weight-bold); min-height: 2.75rem; display: flex; align-items: center; }
+.wizard-list summary:has(:focus-visible), .wizard-list label:has(:focus-visible) { outline: 3px solid var(--color-info); outline-offset: 2px; }
+.wizard-list ul { margin: 0 0 var(--space-sm) var(--space-lg); }
+.wizard-list label { display: flex; align-items: center; gap: var(--space-sm); min-height: 2.75rem; cursor: pointer; }
+.wizard-list input[type=checkbox] { width: 1.375rem; height: 1.375rem; flex: none; accent-color: var(--color-primary-background); }
+.wizard-count { font-weight: var(--font-weight-bold); }

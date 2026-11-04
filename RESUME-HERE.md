@@ -65,7 +65,7 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
     - Files: `src/components/BudgetTable.tsx`, new dialog component, `src/App.css`
     - Verify: the name's clickable cue is a 2px dotted underline; name click no longer toggles (supersedes nothing in `0008` §1 except the name-toggle); same functions as the Edit menu; keyboard and screen reader
     - Deps: 9; `0009` §3 is decided (not blocked)
-11. **Onboarding wizard** (v0.6/11) — three-step dialog wizard with progress bar replacing the single-dialog questionnaire.
+11. **Onboarding wizard** (v0.6/11) ✅ (v0.6.7) — three-step dialog wizard with progress bar replacing the single-dialog questionnaire.
     - Source: `0009` §1; prototype `0010`; replaces `0008` §8
     - Files: `src/screens/Onboarding.tsx`, `src/storage/seed.ts`, `src/storage/preselected.ts`, `src/App.css`
     - Verify: progress "step X of 3" announced; Back, Done, presets and Advanced setup (closes the wizard) paths; no "Add your own" box; step 2 text is only "You can change presets later in Budget setup."; shows on empty DB only
@@ -107,10 +107,10 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
 - **B — Amounts and descriptions** (steps 5, 6, 7; AddBudget, structure, seed): after A step 3 (same `AddBudget.tsx`).
 - **C — Setup and table dialogs** (steps 8, 9, 10; BudgetSetup, BudgetTable): after B; step 10 waits for the human's `0011` decision.
 - **D — Nesting** (step 12; tree, BudgetTable, BudgetSetup, structure): after C; spec first.
-- **E — Wizard** (step 11; Onboarding): after A; design settled, so it can run any time after A (before C or D if wanted).
+- ✅ **E — Wizard** (step 11; Onboarding): after A; design settled, so it can run any time after A (before C or D if wanted).
 - **F — Import** (steps 13, 14, 15, 16; import, Backup, BudgetSetup, Onboarding): after D and E.
 - **Reviews** (steps 17–19): main session with the user.
-- Status: ✅ A · ☐ B · ☐ C · ☐ D · ☐ E · ☐ F · ☐ reviews
+- Status: ✅ A · ☐ B · ☐ C · ☐ D · ✅ E · ☐ F · ☐ reviews
 
 ### Session process
 Run option 1: one session per group, fresh start at each group boundary. A session starts by reading this file and the roadmap, then:
