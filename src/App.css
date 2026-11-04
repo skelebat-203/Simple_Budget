@@ -314,6 +314,8 @@
   border-left: 4px solid currentColor; border-radius: var(--radius-sm);
   background: color-mix(in srgb, var(--color-secondary-background), white 94%);
 }
+.setup-table .row.create .create-row { flex-direction: column; align-items: flex-start; }
+.create-fields { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-sm) var(--space-md); }
 .create-field { display: flex; flex-direction: column; gap: 2px; }
 .create-field:first-child { flex: 1 1 12rem; max-width: 18rem; }
 .setup-table .create-row .create-field .label { align-self: auto; font-size: var(--font-size-sm); color: var(--color-foreground-page); }

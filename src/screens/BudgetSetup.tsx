@@ -343,7 +343,7 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, rewardsEnable
       <tr key={`create-${root.cat.id}`} className={`row create depth-1 clr-${root.cat.color}`} aria-level={2}>
         <td colSpan={6}>
           <div className="create-row">
-            {open && <>
+            {open && <div className="create-fields">
             <div className="create-field">
               <label className="label" htmlFor={base}>Create in {root.cat.name}</label>
               <input id={base} className="input" maxLength={NAME_MAX} value={c.name}
@@ -357,17 +357,18 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, rewardsEnable
                 {[root, ...root.children].map(t => <option key={t.cat.id} value={t.cat.id}>{t.cat.name}</option>)}
               </select>
             </div>
-            </>}
-            {/* While disabled, Add shows and is described by a tooltip on hover or focus (v0.4 step 10). */}
-            <span className={`tip-wrap${tipOff === base ? ' tip-off' : ''}`} data-tip={base}
+            {/* While disabled, Save shows and is described by a tooltip on hover or focus (v0.4 step 10). */}
+            <span className={`tip-wrap create-save${tipOff === base ? ' tip-off' : ''}`} data-tip={base}
               onMouseLeave={() => setTipOff(t => t === base ? null : t)} onBlur={() => setTipOff(t => t === base ? null : t)}>
-              <Button type="button" className="secondary" id={`${base}-add`} aria-disabled={(open && empty) || undefined}
-                aria-label={`Add to ${root.cat.name}`}
-                aria-describedby={open ? (empty ? `${base}-tooltip` : base) : undefined}
-                onClick={() => open ? addRow(root) : reveal()}>Add</Button>
-              {open && empty && <span id={`${base}-tooltip`} role="tooltip" className="tooltip">First enter a value in ‘Create in {root.cat.name}’</span>}
+              <Button type="button" className="secondary" id={`${base}-save`} aria-disabled={empty || undefined}
+                aria-label={`Save new item in ${root.cat.name}`}
+                aria-describedby={empty ? `${base}-tooltip` : base} onClick={() => addRow(root)}>Save</Button>
+              {empty && <span id={`${base}-tooltip`} role="tooltip" className="tooltip">First enter a value in ‘Create in {root.cat.name}’</span>}
             </span>
-            {err && <p id={`${base}-error_msg`} className="error">{err}</p>}
+            </div>}
+            {err && open && <p id={`${base}-error_msg`} className="error">{err}</p>}
+            <Button type="button" className="secondary" id={`${base}-add`} aria-label={`Add to ${root.cat.name}`}
+              aria-expanded={open} onClick={reveal}>Add</Button>
           </div>
         </td>
       </tr>
