@@ -32,8 +32,9 @@ Thumbs.db
 # Testing
 coverage/
 
-# AI Files
-.claude/
+# AI Files (CLAUDE.md is tracked; everything else in .claude/ is not)
+.claude/*
+!.claude/CLAUDE.md
 .kilo/
 
 # Human trash files
