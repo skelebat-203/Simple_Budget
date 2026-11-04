@@ -202,10 +202,16 @@ export const settingsRepo = {
   async get(): Promise<Settings> {
     const s = await db.settings.toCollection().first()
     if (s) return cleanSettings(s)
-    const created = cleanSettings({})
-    delete created.id
-    const id = await db.settings.add(created)
-    return { ...created, id }
+    // Concurrent first loads (StrictMode, Budget setup) all land here; write
+    // transactions on the table run one at a time, so re-check before adding (D002).
+    return db.transaction('rw', db.settings, async () => {
+      const again = await db.settings.toCollection().first()
+      if (again) return cleanSettings(again)
+      const created = cleanSettings({})
+      delete created.id
+      const id = await db.settings.add(created)
+      return { ...created, id }
+    })
   },
   async update(patch: Partial<Settings>) {
     const s = await this.get()

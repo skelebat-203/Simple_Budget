@@ -15,7 +15,7 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
    - Files: `src/components/ui/MultiSelect.tsx`, `src/screens/Onboarding.tsx`
    - Verify: 200 typed characters stop at 60; help text read by screen reader; build + lint
    - Deps: none (step 11 replaces the onboarding screen; keep the fix in the shared component)
-2. **D002 duplicate settings rows** (v0.6/2) — create the default settings row inside one transaction that re-checks; ignore extra rows on restore.
+2. **D002 duplicate settings rows** (v0.6/2) ✅ (v0.6.2) — create the default settings row inside one transaction that re-checks; ignore extra rows on restore.
    - Source: `docs/defects/D002`
    - Files: `src/storage/repository.ts`, `checkBackup`
    - Verify: fresh database under StrictMode ends with one row; restore of a backup with two rows keeps one
