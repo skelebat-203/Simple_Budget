@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { AmountInput, Button, DatePicker, ErrorSummary, focusFirstError, ItemSelector, type FieldError } from '../components/ui'
 import { addNewItem, budgetItemRepo, NameTakenError } from '../storage/repository'
-import { childColor, isoDate, type CatNode } from '../budget/tree'
+import { childColor, displayName, formatAmount, isoDate, type CatNode } from '../budget/tree'
 import { useAnnounce } from '../components/ui/announcer'
 import { fireReward } from '../rewards/rewards'
 import { cleanName, dateBounds, moneyError, parseMoney } from '../budget/validate'
@@ -79,10 +79,11 @@ export function AddBudget({ roots, onSaved }: {
     setSaving(true)
     const amt = parseMoney(amount, { allowNegative: true })
     const value = amt.ok ? amt.value : 0
+    const shownAmount = formatAmount(value) || '0.00'
     try {
       if (target) {
         await budgetItemRepo.add({ categoryId: target.cat.id, amount: value, date })
-        setStatus(`Saved ${target.cat.name}.`)
+        setStatus(`Saved ${displayName(target)}: ${shownAmount} on ${date}.`)
       } else {
         const name = cleanName(itemText.text)
         const root = groups.find(g => g.cat.name === where)
@@ -96,7 +97,7 @@ export function AddBudget({ roots, onSaved }: {
           amount: value,
           date,
         })
-        setStatus(`Saved ${name}.` + (moved ? ` Your ${moved} estimate moved to ${moved} › Miscellaneous. ${moved} now totals its items.` : ''))
+        setStatus(`Saved ${name}: ${shownAmount} on ${date}.` + (moved ? ` Your ${moved} estimate moved to ${moved} › Miscellaneous. ${moved} now totals its items.` : ''))
       }
       reset()
       onSaved()
