@@ -226,6 +226,8 @@
 /* Non-error notices (storage warnings, review lists). */
 .banner { display: flex; flex-direction: column; gap: var(--space-sm); }
 .banner-warn { border-color: var(--color-info); background: color-mix(in srgb, var(--color-info), white 92%); }
+.banner-success { border-color: var(--color-success); background: color-mix(in srgb, var(--color-success), white 90%); }
+.banner-success .banner-title { color: var(--color-success); }
 .banner-warn .banner-title { color: var(--color-foreground-page); }
 
 /* --- Budget setup treegrid (0007 §10) --- */

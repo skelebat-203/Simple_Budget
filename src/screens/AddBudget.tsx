@@ -30,11 +30,12 @@ export function AddBudget({ roots, onSaved }: {
   const [date, setDate] = useState(() => isoDate(new Date()))
   const [errors, setErrors] = useState<Errors>({})
   const [saving, setSaving] = useState(false)
-  const [status, setStatus] = useState('')
+  const [saved, setSaved] = useState<{ what: string; extra: string } | null>(null)
   const [formKey, setFormKey] = useState(0)
   const bannerRef = useRef<HTMLDivElement>(null)
   const [saveError, setSaveError] = useState('')
-  useAnnounce(status)
+  // The banner below is visual only; this is the one announcement (single live region).
+  useAnnounce(saved ? `Saved ${saved.what} ${saved.extra}`.trim() : '')
   useAnnounce(saveError)
   const [bounds] = useState(() => dateBounds(new Date()))
 
@@ -66,7 +67,7 @@ export function AddBudget({ roots, onSaved }: {
   }
 
   async function save() {
-    setStatus('')
+    setSaved(null)
     setSaveError('')
     const e = validate()
     setErrors(e)
@@ -83,7 +84,7 @@ export function AddBudget({ roots, onSaved }: {
     try {
       if (target) {
         await budgetItemRepo.add({ categoryId: target.cat.id, amount: value, date })
-        setStatus(`Saved ${displayName(target)}: ${shownAmount} on ${date}.`)
+        setSaved({ what: `${displayName(target)}: ${shownAmount} on ${date}.`, extra: '' })
       } else {
         const name = cleanName(itemText.text)
         const root = groups.find(g => g.cat.name === where)
@@ -97,7 +98,7 @@ export function AddBudget({ roots, onSaved }: {
           amount: value,
           date,
         })
-        setStatus(`Saved ${name}: ${shownAmount} on ${date}.` + (moved ? ` Your ${moved} estimate moved to ${moved} › Miscellaneous. ${moved} now totals its items.` : ''))
+        setSaved({ what: `${name}: ${shownAmount} on ${date}.`, extra: moved ? `Your ${moved} estimate moved to ${moved} › Miscellaneous. ${moved} now totals its items.` : '' })
       }
       reset()
       onSaved()
@@ -125,6 +126,12 @@ export function AddBudget({ roots, onSaved }: {
     <section className="panel" aria-labelledby="add-heading">
       <h2 id="add-heading" className="sr-only">Add purchase</h2>
       <ErrorSummary ref={bannerRef} errors={toList(errors)} />
+      {saved && (
+        <div className="banner banner-success">
+          <p className="banner-title">Saved. Nice work keeping your budget up to date!</p>
+          <p>{saved.what}{saved.extra && ` ${saved.extra}`}</p>
+        </div>
+      )}
       {/* Two columns from 1280px; fields keep their DOM (reading and tab) order (0007 §10). */}
       <div className="form-grid">
       <div className="field">
@@ -172,7 +179,6 @@ export function AddBudget({ roots, onSaved }: {
       </div>
       </div>
       <div className="actions actions-end">
-        <p className="status">{status}</p>
         {isNew && (
           <label className="check">
             <input type="checkbox" id="use_in_future" checked={useInFuture} onChange={e => setUseInFuture(e.target.checked)} />

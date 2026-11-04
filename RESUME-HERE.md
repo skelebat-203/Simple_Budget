@@ -20,15 +20,20 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
    - Files: `src/storage/repository.ts`, `checkBackup`
    - Verify: fresh database under StrictMode ends with one row; restore of a backup with two rows keeps one
    - Deps: none
-3. **Informative "Saved" confirmation** (v0.6/3) — the message says what was saved and how much (item name and amount). Primary user request.
+3. **Informative "Saved" confirmation** (v0.6/3) ⏳ built v0.6.3, v0.6.5 (success banner), awaiting approval — the message says what was saved and how much (item name and amount). Primary user request.
    - Source: roadmap v0.6
    - Files: `src/screens/AddBudget.tsx`, `src/components/Notices.tsx`
    - Verify: text for each save type; announced once through the single live region; no rewards-animation overlap
    - Deps: none
-4. **Visually hidden panel headers** (v0.6/4) — each tab panel's header below the tab is hidden visually, kept for screen readers.
+4. **Visually hidden panel headers** (v0.6/4) ✅ (v0.6.4) — each tab panel's header below the tab is hidden visually, kept for screen readers.
    - Source: roadmap v0.6
    - Files: `src/App.tsx`, `src/screens/*`, `src/App.css`
    - Verify: headings still in the accessibility tree and in heading navigation; no layout shift; 320/640/1024px
+   - Deps: none
+4a. **Hover styling** (v0.6/4a) — hover state on every button and link across the app (today only some have one).
+   - Source: roadmap v0.6; human request 2026-11-04 (highlight review)
+   - Files: `src/App.css`, `src/styles/tokens.css`
+   - Verify: scripted list of every button/link class with a `:hover` rule; contrast 3:1 in both themes; no hover-only information; disabled buttons do not react
    - Deps: none
 5. **Add/subtract in amount fields** (v0.6/5) — amount fields accept typed expressions (e.g. `12.50+3`, `40-5.25`) and save the result.
    - Source: roadmap v0.6; decided 2026-11-04: typed expressions only (no +/- buttons), in every field that adds a value or purchase: Add purchase form, Budget setup estimate fields, and the Add/Subtract dialog (step 9)
@@ -56,10 +61,10 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
    - Verify: dialog focus trap and return; rename-to-other-category moves the item; delete only where allowed; five tables
    - Deps: 5, 6; behavior decided 2026-11-04 in `0009` §4.1 (Day: New purchase button on category rows, amount update on purchase rows; Week/Month: add to or subtract from the item total; supersedes `0007` §9.1/§9.4 for the amount, so the roadmap's Post v1.0 item now covers the date only)
 10. **Highlight dialog** (v0.6/10) — clicking an item name opens a dialog with the row, its children and the table's functions; the chevron alone expands and collapses.
-    - Source: `0009` §3; prototype `0011`
+    - Source: `0009` §3; prototype `0011`; decided 2026-11-04: dialog shows the row as in the table viewed (Day lists purchases; Week/Month/Annual do not); Delete confirms first, hidden in Month/Annual; Rename not offered for top-level categories
     - Files: `src/components/BudgetTable.tsx`, new dialog component, `src/App.css`
-    - Verify: name click no longer toggles (supersedes nothing in `0008` §1 except the name-toggle); same functions as the Edit menu; keyboard and screen reader
-    - Deps: 9; **blocked** until the human settles `0011` and `0009` §3
+    - Verify: the name's clickable cue is the one the human picks from `0011`; name click no longer toggles (supersedes nothing in `0008` §1 except the name-toggle); same functions as the Edit menu; keyboard and screen reader
+    - Deps: 9; **blocked** until the human picks the name underline in `0011` (the rest of `0009` §3 is answered)
 11. **Onboarding wizard** (v0.6/11) — three-step dialog wizard with progress bar replacing the single-dialog questionnaire.
     - Source: `0009` §1; prototype `0010`; replaces `0008` §8
     - Files: `src/screens/Onboarding.tsx`, `src/storage/seed.ts`, `src/storage/preselected.ts`, `src/App.css`
@@ -98,14 +103,14 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
     - Deps: 18
 
 ### Execution
-- **A — Small fixes** (steps 1, 2, 3, 4; MultiSelect, repository, AddBudget, App): parallel-safe, sequential in one session.
+- **A — Small fixes** (steps 1, 2, 3, 4, 4a; MultiSelect, repository, AddBudget, App): parallel-safe, sequential in one session.
 - **B — Amounts and descriptions** (steps 5, 6, 7; AddBudget, structure, seed): after A step 3 (same `AddBudget.tsx`).
 - **C — Setup and table dialogs** (steps 8, 9, 10; BudgetSetup, BudgetTable): after B; step 10 waits for the human's `0011` decision.
 - **D — Nesting** (step 12; tree, BudgetTable, BudgetSetup, structure): after C; spec first.
 - **E — Wizard** (step 11; Onboarding): after A; waits for `0010`. Can run before C or D if the human settles it early.
 - **F — Import** (steps 13, 14, 15, 16; import, Backup, BudgetSetup, Onboarding): after D and E.
 - **Reviews** (steps 17–19): main session with the user.
-- Status: ☐ A · ☐ B · ☐ C · ☐ D · ☐ E · ☐ F · ☐ reviews
+- Status: ⏳ A (1, 2, 4 ✅; 3 awaiting approval) · ☐ B · ☐ C · ☐ D · ☐ E · ☐ F · ☐ reviews
 
 ### Session process
 Run option 1: one session per group, fresh start at each group boundary. A session starts by reading this file and the roadmap, then:

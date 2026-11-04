@@ -25,7 +25,13 @@
   .name-line { display: inline-flex; align-items: center; gap: 4px; }
   .chev { background: none; border: 0; font: inherit; width: 44px; height: 44px; cursor: pointer; color: var(--orange); }
   .chev:focus-visible { outline: 3px solid #0b72b9; }
-  .nameBtn { background: none; border: 0; font: inherit; font-weight: 700; color: var(--orange); text-decoration: underline dotted; cursor: pointer; padding: 6px 4px; min-height: 44px; text-align: left; }
+  .nameBtn { background: none; border: 0; font: inherit; font-weight: 700; color: var(--orange); text-decoration: underline; cursor: pointer; padding: 6px 4px; min-height: 44px; text-align: left; }
+  /* Underline options under review: Groceries 1px dashed, Power solid, Internet 2px dashed */
+  .nameBtn.u-groc { text-decoration-style: dashed; text-decoration-thickness: 1px; }
+  .nameBtn.u-pow { text-decoration-style: solid; }
+  .nameBtn.u-int { text-decoration-style: dashed; text-decoration-thickness: 2px; }
+  .nameBtn:hover, .chev:hover, .exp:hover { background: #f1e3d3; }
+  .btn:hover { filter: brightness(0.93); }
   .exp { background: none; border: 0; font: inherit; font-weight: 700; color: var(--orange); cursor: pointer; min-height: 44px; padding: 0 6px; }
   .d1 th[scope=row] { padding-left: 32px; } .d2 th[scope=row] { padding-left: 56px; }
   .menu { position: relative; display: inline-block; text-align: left; }
@@ -69,13 +75,13 @@
   </section>
   <div class="status" id="status" role="status" aria-live="polite">Actions you take show here.</div>
 
-  <h2 style="margin-top:32px">Open questions for you</h2>
+  <h2 style="margin-top:32px">Human answers (2026-11-04)</h2>
   <ol>
-    <li>Highlight dialog contents: the item plus its children (shown). Should it also list recent purchases of that item?</li>
-    <li>Does clicking a <em>purchase</em> row open its own dialog (Day view), or only items and categories?</li>
-    <li>The name is a button with a dotted underline so it reads as clickable. Is that clear enough?</li>
-    <li>Delete in the dialog: a confirm step appears first (shown). In Month and Annual, Delete is hidden.</li>
-    <li>Edit → Rename that changes category moves the item. Shown as a “Category” select in the Rename dialog; confirm this is the right control.</li>
+    <li>The dialog shows the row as it appears in the table being viewed: in Day it includes the item's purchases (its children there); in Week, Month and Annual it does not, because purchases are not shown in those tables.</li>
+    <li>Purchase rows (Day) behave as in this prototype.</li>
+    <li>A plain dotted underline is not clear enough. Compare the three names in the table: Groceries (1px dashed), Power (solid), Internet (2px dashed). Hover styling is added for buttons and links across the app.</li>
+    <li>Delete asks for confirmation first; hidden in Month and Annual. Confirmed.</li>
+    <li>Rename with a Category select moves the item. Confirmed. Top-level categories (Income, Savings, Expenses) do not offer Rename.</li>
   </ol>
 </main>
 
@@ -100,7 +106,7 @@ const say = m => $('status').textContent = m;
 const kids = id => ROWS.filter(r => r.parent === id);
 const money = n => n.toFixed(2);
 const visible = () => ROWS.filter(r => { let p = r.parent; while (p) { if (!open.has(p)) return false; p = ROWS.find(x=>x.id===p).parent } return true });
-const menuItems = r => ['Description','Rename','Add/Subtract'].concat(r.d>0 ? ['Delete'] : []);
+const menuItems = r => ['Description'].concat(r.d>0 ? ['Rename'] : [], ['Add/Subtract'], r.d>0 ? ['Delete'] : []); // top-level categories (Income, Savings, Expenses) are never renamed or deleted
 
 function head(t, actions) { return `<thead><tr><th class="name" scope="col">Item</th><th scope="col">Estimated</th><th scope="col">Actual</th><th scope="col" class="name">${actions}</th></tr></thead>`; }
 
@@ -125,7 +131,7 @@ function formCur(r) {
 function rowNew(r, inDialog) {
   const has = kids(r.id).length > 0;
   const chev = !inDialog && has ? `<button class="chev" aria-expanded="${open.has(r.id)}" aria-label="${open.has(r.id)?'Collapse':'Expand'} ${r.name}" data-tog="${r.id}"><span aria-hidden="true">${open.has(r.id)?'▾':'▸'}</span></button>` : (!inDialog ? '<span style="display:inline-block;width:44px"></span>' : '');
-  const nameBtn = inDialog ? r.name : `<button class="nameBtn" data-hl="${r.id}" aria-haspopup="dialog">${r.name}</button>`;
+  const nameBtn = inDialog ? r.name : `<button class="nameBtn u-${r.id}" data-hl="${r.id}" aria-haspopup="dialog">${r.name}</button>`;
   const mid = (inDialog?'h':'n')+r.id;
   return `<tr class="d${inDialog ? Math.max(0, r.d - (inDialog.base||0)) : r.d}"><th scope="row"><span class="name-line">${chev}${nameBtn}</span></th><td>${money(r.est)}</td><td>${money(r.act)}</td>
     <td><span class="menu"><button class="btn small" aria-haspopup="menu" aria-expanded="${openMenu===mid}" data-menu="${mid}">Edit ▾</button>

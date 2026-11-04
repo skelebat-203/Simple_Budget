@@ -103,6 +103,7 @@ tracked as a later-version item.
   - Budget tables (not Annual): the Actions menu is renamed "Edit" with Description, Rename (moves the item to its right category), Add/Subtract and Delete (Day and Week only), each opening a dialog
   - Backup and upload described in the help dialog
   - Add/Subtract: updates a purchase's amount in Day (a New purchase button on category rows adds one) and adds to or subtracts from an item's total in Week and Month (`0009` §4.1)
+- Hover styling on buttons and links across the app (decided 2026-11-04; the Edit menu and highlight work add their own, this covers the rest)
 - Refactor so each tab panel's header below the tab is visually hidden (still available to screen readers)
 - Add addition and subtraction to the amount fields: typed expressions (decided 2026-11-04)
 - Optional description field below Amount
