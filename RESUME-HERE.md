@@ -50,7 +50,7 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
    - Files: `src/screens/BudgetSetup.tsx`, `src/App.css`
    - Verify: focus moves to first new field; polite announcement through the single live region; Tab order; 320px
    - Deps: none
-9. **Edit menu with dialogs** (v0.6/9) ⏳ built (v0.6.13, v0.6.17, v0.6.18), approved 2026-11-04 except the Week/Month date picker (added 2026-11-04, **not built**; ✅ when built) — Day, Week, Month rows: "Actions" becomes "Edit" with Rename (moves item to the right category; warning banner), Add/Subtract (Day: New purchase), Delete (Day and Week only); each opens a dialog. Day purchase rows: an Edit button opens one dialog with the Add purchase form prepopulated (Cancel, Save, Delete). Annual unchanged.
+9. **Edit menu with dialogs** (v0.6/9) ✅ (v0.6.13, v0.6.17, v0.6.18, v0.6.19) — Day, Week, Month rows: "Actions" becomes "Edit" with Rename (moves item to the right category; warning banner), Add/Subtract (Day: New purchase), Delete (Day and Week only); each opens a dialog. Day purchase rows: an Edit button opens one dialog with the Add purchase form prepopulated (Cancel, Save, Delete). Annual unchanged.
    - Source: `0009` §4, §4.1; roadmap v0.6
    - Files: `src/components/BudgetTable.tsx`, new dialog components in `src/components/ui/`, `src/budget/setupEdits.ts`, `src/App.css`
    - Verify: dialog focus trap and return; Week/Month date picker min/max are the viewed period's first and last day (custom month boundaries too); rename-to-other-category moves the item; delete only where allowed; five tables
@@ -110,7 +110,7 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
 - ✅ **E — Wizard** (step 11; Onboarding): after A; design settled, so it can run any time after A (before C or D if wanted).
 - **F — Import** (steps 13, 14, 15, 16; import, Backup, BudgetSetup, Onboarding): after D and E.
 - **Reviews** (steps 17–19): main session with the user.
-- Status: ✅ A · ✅ B · ⏳ C (date picker in step 9 left) · ☐ D · ✅ E · ☐ F · ☐ reviews
+- Status: ✅ A · ✅ B · ✅ C · ☐ D · ✅ E · ☐ F · ☐ reviews
 
 ### Session process
 Run option 1: one session per group, fresh start at each group boundary. A session starts by reading this file and the roadmap, then:
