@@ -212,16 +212,16 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
   }
 
   /** Dialog Add/Subtract, New purchase and a purchase's Edit (0009 §4.1). */
-  async function saveAmount(d: Dlg, amount: number, description: string): Promise<SaveResult> {
+  async function saveAmount(d: Dlg, amount: number, description: string, date: string): Promise<SaveResult> {
     const { n } = d
     try {
-      await budgetItemRepo.add({ categoryId: n.cat.id, amount, date: addDate, ...(description ? { description } : {}) })
+      await budgetItemRepo.add({ categoryId: n.cat.id, amount, date, ...(description ? { description } : {}) })
     } catch {
       return `Error: The amount for ${n.cat.name} wasn’t saved. Try again.`
     }
     const text = formatAmount(amount) || '0.00'
     setDlg(null)
-    setStatus(d.act === 'new' ? `Added a ${say(n)} purchase of ${text} on ${addDate}.` : `Added ${text} to ${say(n)} on ${addDate}.`)
+    setStatus(d.act === 'new' ? `Added a ${say(n)} purchase of ${text} on ${date}.` : `Added ${text} to ${say(n)} on ${date}.`)
     focusAfter.current = did('edit', n)
     onChanged?.()
     fireReward()
@@ -438,11 +438,11 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
       case 'new':
         return <AmountDialog id={id} title={`New purchase for ${say(n)}`} spoken={say(n)} withDescription
           intro={`Adds a purchase to ${say(n)}, dated ${addDate}. Use a minus sign for a refund, or type a sum, e.g. 12.50+3.`}
-          onSave={(amount, description) => saveAmount(d, amount, description)} onCancel={close} />
+          onSave={(amount, description, date) => saveAmount(d, amount, description, date || addDate)} onCancel={close} />
       case 'adjust':
-        return <AmountDialog id={id} title={`Add or subtract for ${say(n)}`} spoken={say(n)}
-          intro={`Adds to or subtracts from the ${say(n)} total as a new amount dated ${addDate}. Use a minus sign to subtract, e.g. -12.50, or type a sum, e.g. 12.50+3.`}
-          onSave={(amount, description) => saveAmount(d, amount, description)} onCancel={close} />
+        return <AmountDialog id={id} title={`Add or subtract for ${say(n)}`} spoken={say(n)} dateField={{ initial: addDate, min: span.from, max: span.to }}
+          intro={`Adds to or subtracts from the ${say(n)} total as a new amount on the date below, within ${title}. Use a minus sign to subtract, e.g. -12.50, or type a sum, e.g. 12.50+3.`}
+          onSave={(amount, description, date) => saveAmount(d, amount, description, date || addDate)} onCancel={close} />
       case 'editPurchase':
         return <PurchaseDialog id={id} title={`${purchaseLabel(purchase!)}, ${say(n)}`} roots={tree} node={n} purchase={purchase!}
           onSave={p => savePurchase(purchase!, n, p) as Promise<string | void>}
@@ -499,7 +499,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
       </div>
       {!highlight && <p id={`${idBase}-key`} className="help">Only rows with an amount appear. Every row totals the rows under it.{range === 'day' && ' Each purchase is listed under its item.'}</p>}
       {actions && !highlight && (range === 'week' || range === 'month') && (
-        <p id={`${idBase}-add-help`} className="help">Add/Subtract records a new amount on that item, dated {addDate}. A row can be deleted when it has no items and at most one purchase{range === 'month' ? '; Delete is in the Week table' : ''}.</p>
+        <p id={`${idBase}-add-help`} className="help">Add/Subtract records a new amount on that item, on a date you choose within the period shown (today by default). A row can be deleted when it has no items and at most one purchase{range === 'month' ? '; Delete is in the Week table' : ''}.</p>
       )}
       {actions && <p className="status">{status}</p>}
       {pending && (

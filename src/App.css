@@ -92,6 +92,7 @@
 }
 .input[aria-invalid="true"] { border: 2px solid var(--color-alert); }
 .input.amount { width: 8rem; font-variant-numeric: tabular-nums; }
+.amount-dialog .input.amount { width: 100%; }
 
 .check { display: flex; align-items: center; gap: var(--space-sm); min-height: 44px; cursor: pointer; }
 .check input, .checkbox { width: 22px; height: 22px; accent-color: var(--color-primary-background); }

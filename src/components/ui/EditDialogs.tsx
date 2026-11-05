@@ -2,6 +2,7 @@ import { useRef, useState, type ReactNode } from 'react'
 import { Button } from './Button'
 import { Dialog } from './Dialog'
 import { AmountField } from './AmountField'
+import { DatePicker } from './DatePicker'
 import { Input } from './Input'
 import { useAnnounce } from './announcer'
 import { cleanDescription, cleanName, DESCRIPTION_MAX, moneyError, NAME_MAX, parseAmount } from '../../budget/validate'
@@ -133,7 +134,7 @@ export function RenameDialog({ id, spoken, name, parentId, parents, level, onSav
  * purchase's amount (Day, purchase row), or a value added to or subtracted from an item's total
  * (Week, Month). Amounts accept typed sums.
  */
-export function AmountDialog({ id, title, spoken, intro, initial, initialDescription, withDescription, submitLabel = 'Save', onSave, onDelete, onCancel }: {
+export function AmountDialog({ id, title, spoken, intro, initial, initialDescription, withDescription, dateField, submitLabel = 'Save', onSave, onDelete, onCancel }: {
   id: string
   title: string
   spoken: string
@@ -142,17 +143,22 @@ export function AmountDialog({ id, title, spoken, intro, initial, initialDescrip
   initial?: string
   initialDescription?: string
   withDescription?: boolean
+  /** Shows a date picker limited to min..max (the period being viewed, 0009 §4.1). */
+  dateField?: { initial: string; min: string; max: string }
   submitLabel?: string
-  onSave: (amount: number, description: string) => SaveResult | Promise<SaveResult>
+  onSave: (amount: number, description: string, date: string) => SaveResult | Promise<SaveResult>
   /** When given, a Delete button shows at the right of the footer. */
   onDelete?: () => void
   onCancel: () => void
 }) {
   const [value, setValue] = useState(initial ?? '')
   const [description, setDescription] = useState(initialDescription ?? '')
+  const [date, setDate] = useState(dateField?.initial ?? '')
+  const [dateError, setDateError] = useState('')
   const [fieldError, setFieldError] = useState('')
   const saver = useSaver()
   const fieldId = `${id}-amount`
+  const dateId = `${id}-date`
   async function submit() {
     const r = parseAmount(value, { allowNegative: true })
     if (!r.ok) {
@@ -161,11 +167,18 @@ export function AmountDialog({ id, title, spoken, intro, initial, initialDescrip
       return
     }
     setFieldError('')
-    await saver.run(() => onSave(r.value, cleanDescription(description)))
+    if (dateField) {
+      const bad = date === '' ? 'Error: Date cannot be empty'
+        : date < dateField.min || date > dateField.max ? `Invalid: Date use a date from ${dateField.min} to ${dateField.max}` : ''
+      setDateError(bad)
+      if (bad) { document.getElementById(dateId)?.focus(); return }
+    }
+    await saver.run(() => onSave(r.value, cleanDescription(description), date))
   }
   useAnnounce(fieldError)
+  useAnnounce(dateError)
   return (
-    <FormDialog id={id} title={title} submitLabel={submitLabel} onCancel={onCancel} onSubmit={submit} error={saver.error} busy={saver.busy}
+    <FormDialog id={id} title={title} className="amount-dialog" submitLabel={submitLabel} onCancel={onCancel} onSubmit={submit} error={saver.error} busy={saver.busy}
       endButton={onDelete && <Button type="button" className="danger" onClick={onDelete}>Delete</Button>}>
       <p id={`${id}-intro`} className="help">{intro}</p>
       <Field id={fieldId} label="Amount" error={fieldError}>
@@ -174,6 +187,13 @@ export function AmountDialog({ id, title, spoken, intro, initial, initialDescrip
           onFocus={e => { if (initial) e.target.select() }}
           onChange={e => setValue(e.target.value)} />
       </Field>
+      {dateField && (
+        <Field id={dateId} label="Date" error={dateError} help={`From ${dateField.min} to ${dateField.max}.`}>
+          <DatePicker id={dateId} value={date} min={dateField.min} max={dateField.max}
+            aria-invalid={!!dateError || undefined} aria-describedby={[dateError && `${dateId}-error_msg`, `${dateId}-help`].filter(Boolean).join(' ')}
+            onChange={e => setDate(e.target.value)} />
+        </Field>
+      )}
       {withDescription && (
         <Field id={`${id}-description`} label="Description (optional)">
           <Input id={`${id}-description`} maxLength={DESCRIPTION_MAX} value={description} autoComplete="off"
