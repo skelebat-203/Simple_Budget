@@ -112,7 +112,7 @@ Other observed differences:
 2. A fixed space below the label and below the help, equal whether help is present or not (the v0.7 class: reserve the help line's height, so columns align).
 3. Required fields marked `*` everywhere, or optional fields marked "(optional)"
    everywhere — not both (G5).
-4. Control width: text fields fill their container up to one maximum; Amount and Date are  narrower (G4).
+4. Control width: every control fills its container minus its margin (G4).
 
 ![Add purchase with a new item typed](images/0012/d-a2-add-new-item.jpg)
 
@@ -142,7 +142,7 @@ Shared: padding 24 (16 side padding at 400px), radius 8, backdrop 50% black, tit
 Inconsistencies:
 
 - Three dialog widths for the same kind of task (512, 640, 704) with no stated rule (G6).
-- The purchase dialog puts Save next to Cancel and Delete far right; every other dialog puts the confirming action far right (G7).
+- The purchase dialog puts Save next to Cancel and Delete far right; every other dialog puts the confirming action far right. Kept as is (G7, decided).
 - The highlight dialog's only button is Close, at the right; every other dialog has a Cancel or Back at the left.
 - The New purchase dialog says the purchase is dated today but offers no date field, while Add/Subtract (Week and Month) shows a date field (G8).
 - The Highlight dialog's table in Week and Month scrolls sideways, and its Edit buttons are off-screen at 1024px (measured at x ≈ 2100).
@@ -225,7 +225,16 @@ Observed (`.banner` variants):
 - Banners use `h2` titles except in dialogs, where the Rename warning is a `p`.
 - `.status` text is green bold; it is used for a refusal in Annual ("Groceries can't be
   deleted yet…"), which reads as success (G12).
-- Banner padding 8 / 16, radius 4; no icon on any banner, so colour is the only cue beyond the title (G13).
+- Banner padding 8 / 16, radius 4; no icon on any banner, so colour is the only cue beyond the title (G13). Decided: add icons, below.
+
+**Banner icons (decided 2026-11-06, G13).** Icons are decorative (`aria-hidden`); the title text stays, and the shape carries the kind so colour is never the only cue. Colours come from this app's tokens.
+
+| Kind | Global rule (any app): allowed icons | This app uses |
+|---|---|---|
+| Info | (i) in a circle, or a lightbulb | lightbulb |
+| Warning | (!) in a triangle | (!) in a triangle |
+| Error / Alert | (!) in an octagon | (!) in an octagon |
+| Success | star, checkmark, target with an arrow in the centre, or thumbs up | thumbs up |
 
 ## 8. Navigation and chrome
 
@@ -248,21 +257,21 @@ Each has a recommendation. Answers from 2026-11-06 are marked on the row; the re
 | G1 | Are `color-mix` tints (90% vs 92%) a standard, or should they be tokens? | Tokens, one tint for all four banner kinds. **Decided 2026-11-06:** banner tints become a token, one tint for all four kinds. |
 | G2 | The 900px column and the planned 1440px: does 1440 apply to tables only, or the whole page including forms? | Tables and dialogs up to 1440; forms keep their own max (G4). **Decided 2026-11-06:** the 1440px maximum applies to the whole page; tables may be wider than the content and scroll sideways inside it (reading, to confirm: the page stops at 1440 and wide tables scroll within it). |
 | G3 | Delete button colour: danger red everywhere, or red only for permanent loss? | Red for every Delete. **Decided 2026-11-06:** red for every Delete. |
-| G4 | Widths: should Amount and Date be narrower than text fields, and what is the max text field width? | Text up to 40rem; Amount 10rem; Date 12rem. *Open: on hold.* |
+| G4 | Widths: should Amount and Date be narrower than text fields, and what is the max text field width? | Text up to 40rem; Amount 10rem; Date 12rem. **Decided 2026-11-06:** the maximum field width is 100% of the container minus its margin (no 40rem limit). **Decided 2026-11-08:** the rule applies to all form controls (Amount and Date included) by default; a different width is allowed only as an explicit part of a project's design. Added to the global component rules (`components.md`). |
 | G5 | Mark required (`*`) or optional ("(optional)")? | Optional is rarer here (Description). Mark required with `*` and add "(optional)" nowhere. **Decided 2026-11-06:** mark required fields (`*`); do not mark optional ones. |
 | G6 | Dialog widths: one rule? | Small 32rem (one or two fields), medium 40rem (forms with 4+ fields), large 64rem (tables), wizard follows medium. **Decided 2026-11-06:** small 32rem, medium 40rem, large 64rem; the wizard follows medium. |
-| G7 | Footer layout: Cancel left and confirm right always? Where does a secondary Delete go? | Cancel left, confirm right; Delete is a separate danger button at the far left of the footer, away from Save. Or: Delete in the purchase dialog opens the confirm (already does) and leaves the footer Cancel / Save. *Open: on hold.* |
-| G8 | New purchase dialog: include a date field like Add/Subtract? | Yes, same field and rules as Add/Subtract. *Open: on hold.* |
-| G9 | Annual rename: dialog or inline? Pencil icon or an "Edit" text button? | Dialog and an "Edit" text button, like the other tables. *Open: on hold.* |
+| G7 | Footer layout: Cancel left and confirm right always? Where does a secondary Delete go? | Cancel left, confirm right; Delete is a separate danger button at the far left of the footer, away from Save. Or: Delete in the purchase dialog opens the confirm (already does) and leaves the footer Cancel / Save. **Decided 2026-11-08:** option 1. The purchase dialog keeps `[Cancel][Save] ··· [Delete]` (red Delete far right, per G3); mockups: [option 1](images/0012/g7-option-1.jpg), [option 2, not chosen](images/0012/g7-option-2.jpg). |
+| G8 | New purchase dialog: include a date field like Add/Subtract? | Yes, same field and rules as Add/Subtract. **Decided 2026-11-06:** yes. |
+| G9 | Annual rename: dialog or inline? Pencil icon or an "Edit" text button? | Dialog and an "Edit" text button, like the other tables. **Decided 2026-11-08:** keep the pencil icon, but it opens the same Rename dialog as the other tables (no inline form). |
 | G10 | Edit column: one button width for "Edit ▾" and "Edit"? | Same min width (e.g. 5rem) in all tables. **Decided 2026-11-06:** one shared minimum width. |
 | G11 | At 400px: should the date navigation keep Previous, title, Next on one line, and should the Day table wrap rather than scroll? | Yes to the nav; the 250px item minimum already forces scroll, so keep scroll but pin the Actual column. **Decided 2026-11-06, for now:** keep Previous, title and Next on one line; pin the Actual column in Day. Testing may change this. |
 | G12 | A refusal message ("can't be deleted yet") — green status or the info/warning banner? | Info banner (not red; nothing failed). **Decided 2026-11-06:** info banner. |
-| G13 | Add icons to banners? | Yes, a decorative icon per kind; keep the text. *Open: on hold.* |
+| G13 | Add icons to banners? | Yes, a decorative icon per kind; keep the text. **Decided 2026-11-06:** yes; icons per §7. |
 | G14 | The Budget setup dialog is a fourth, separate dialog implementation. Fold it into the v0.7 consolidation? | Yes; it is the one the shared component must cope with (full screen, sticky footer). **Decided 2026-11-06:** Budget setup joins the dialog consolidation. |
 | G15 | Highlight dialog: table scrolls sideways with Edit off-screen at 1024px. Hide the Estimated and Actual columns' extra periods, or put Edit in the Item column? | Put Edit next to the name in the dialog (one column fewer). **Decided 2026-11-06:** put Edit next to the name in the highlight dialog. |
 | G16 | Label size: Schedule and Create-row labels (14px) in Budget setup versus 16px elsewhere. | One label size (16px bold) except the table headers. **Decided 2026-11-06:** one label size, 16px bold. |
 | G17 | Wizard step 3 heading indentation and button placement (Advanced setup top right). | Align the heading to the list; keep the button (decided in 0009 §1). **Decided 2026-11-06:** align the heading to the list; keep Advanced setup top right. |
-| G18 | Which of these should be roadmap items, and in which version? | Your call. Suggest one "design standards pass" item in v0.7 beside the dialog consolidation and field alignment class. *Open: on hold.* |
+| G18 | Which of these should be roadmap items, and in which version? | Your call. **Decided 2026-11-08:** one "Design standards pass" item in v0.7 that references this doc (added to the roadmap). |
 
 Not covered (could not check): dark theme (none exists), print, Month table (same
 structure as Week), keyboard focus order of every dialog, high-contrast mode, 320px width.
