@@ -93,9 +93,9 @@ tracked as a later-version item.
 
 ## v0.6 — Data import + deep nesting
 - Defects (`docs/defects/`): D001 onboarding name length limit; D002 duplicate settings rows
-- CSV/HTML upload + auto-categorization parsing; an Import button on the Budget setup page accepts the 3 most common spreadsheet file types (formats to confirm, likely CSV, XLSX, ODS) so a user can import an existing budget. Large effort: expect several testing and refinement rounds
+- CSV/HTML upload + auto-categorization parsing; an Import option in the Backup dialog accepts the 3 spreadsheet file types CSV, XLSX and ODS (decided 2026-11-08) so a user can import an existing budget. Large effort: expect several testing and refinement rounds
 - (Primary User Request) More informative "Saved" confirmation: the text says what was saved and how much (e.g. the item name and amount), not just "Saved"
-- Combine "Budget setup" and help (exact merge to confirm with the user before building)
+- Combine "Budget setup" and help (decided 2026-11-08, `0009` §5): the "?" button opens the onboarding wizard (automatically on first load); the wizard footer offers "Advanced options" (opens Budget setup); the "Setup Budget" tab action is removed; a "Backup" button takes its place and opens a dialog for export, restore and import
 - UI/UX changes from the v0.5 review (`0009-v0.6-design-updates.md`; prototypes `0010` and `0011` are reviewed and refined before building):
   - Onboarding as a three-step wizard with a progress bar
   - Budget setup: "Add" buttons in place of the four "Create in" fields
@@ -110,7 +110,7 @@ tracked as a later-version item.
 - Optional description field below Amount
 - Charity takes purchases itself until it gets its first item; then its purchases move to Charity › Miscellaneous and Charity becomes a roll-up (`0009` §6, draft pending human review)
 - UI/UX for the upload flow
-- Deep subcategory nesting (subcategories containing subitems)
+- ~~Deep subcategory nesting~~ dropped 2026-11-08: the Category › Subcategory › Item model is already built (a subcategory that has items is a total row and takes no purchases; an item is the deepest level)
 - Add upload step to onboarding once it works
 - Data import / export: build on the v0.2 JSON backup export/restore (`docs/audits/security/security-v0.2.md` 6.2; file-handling requirements in 1.1 and 2.2)
 - UI/UX review (human approval)
@@ -126,6 +126,8 @@ tracked as a later-version item.
 - Maximum app width of 1440px (decided 2026-11-04; content stays centered and the charts below use it)
 - Item column: sticky (left) in the Week, Month and Annual tables and the highlight dialog when the viewport is wider than 500px, and a persistent minimum width of 250px in every table in the app (decided 2026-11-04). Per the accessibility rules, sticky is removed at 500px and narrower, and focused cells must not be hidden behind the sticky column
 - Consolidate dialogs into one component (today three: form dialogs, confirm dialogs and a generic dialog); migrate the v0.6 dialogs (Edit menu, highlight, wizard) to it (decided 2026-11-04)
+- Design standards pass: bring the app in line with the decided standards in `0012-design-standards.md` (decided 2026-11-08; the open gaps in its §10 are settled first)
+- Read-only copy of the Day table under the Add purchase form (decided 2026-11-08, from user feedback; placed in v0.7 per the new-item rule)
 - Chart view (Table/Chart switch)
 - Chart types for Budget screen
 - UI/UX review (human approval)
@@ -142,6 +144,13 @@ tracked as a later-version item.
 
 ## v0.9 — Distribution + polish
 - Per-OS install instructions (web, Android, GrapheneOS)
+- Android app (the PWA ships to Android as an APK; packaging approach to decide: Capacitor, TWA or other). Rules: global `android-release.md`
+  - Signing: PKCS12 keystore in the git-ignored tools folder, generated password beside it; the human backs both up outside the machine (losing the key ends updates for the app ID)
+  - Reproducible release build (two clean builds byte-identical), signed with `apksigner --alignment-preserved true --v4-signing-enabled false`; test the signature copy with `apksigcopier` before submitting
+  - Until a store accepts the app: developer-signed APKs on GitHub Releases (same key, so users can update to the store build later)
+- F-Droid submission: earliest 2027-01-25 (the project must be maintained for at least 3 months from its first commit, 2026-10-25; re-check the live policy before submitting). Decide before the first submission whether to use reproducible builds with developer signing (a one-way choice; recommended when the build is reproducible). Recipe in fdroiddata, `fdroid lint` and `fdroid rewritemeta` locally, categories from the live list, merge request titled "New app: Simple Budget", signed APK uploaded to the GitHub release first
+- Google Play (optional): a new personal developer account must run a closed test with a minimum number of testers for a minimum number of days before production; check the current numbers on Play Console help and schedule the test period first
+- Store listing text for the public at reading grade 10 or lower (`digital_accessibility.md`)
 - Offline robustness + cache eviction handling
 - UI/UX review (human approval)
 - Final accessibility audit

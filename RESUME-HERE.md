@@ -70,26 +70,22 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
     - Files: `src/screens/Onboarding.tsx`, `src/storage/seed.ts`, `src/storage/preselected.ts`, `src/App.css`
     - Verify: progress "step X of 3" announced; Back, Done, presets and Advanced setup (closes the wizard) paths; no "Add your own" box; step 2 text is only "You can change presets later in Budget setup."; shows on empty DB only
     - Deps: 1; decided 2026-11-04 in `0009` §1 (not blocked)
-12. **Deep subcategory nesting** (v0.6/12) — subcategories containing subitems, in the tables and Budget setup.
-    - Source: roadmap v0.6
-    - Files: `src/storage/structure.ts`, `src/storage/db.ts`, `src/budget/tree.ts`, `src/components/BudgetTable.tsx`, `src/screens/BudgetSetup.tsx`, `src/screens/AddBudget.tsx`
-    - Verify: roll-ups and computed rows (`0004-table-design.md`) count each amount once at every depth; indent and `aria-level`; Dexie bump with migration tested
-    - Deps: 9, 10; **needs spec**: no design doc defines depth limit, indent, colours or the data shape; write it in a numbered design doc and the roadmap first
-13. **Import parsing** (v0.6/13) — read CSV, XLSX, ODS (to confirm), auto-categorize rows into categories/items, preview before writing; builds on the JSON backup export/restore.
+12. **Deep subcategory nesting** (v0.6/12) — dropped 2026-11-08: the Category › Subcategory › Item model is already built (`MAX_DEPTH = 2`; a subcategory with items is a total row, an item is the deepest level). No work.
+13. **Import parsing** (v0.6/13) — read CSV, XLSX and ODS (all 3 decided 2026-11-08), auto-categorize rows into categories/items, preview before writing; builds on the JSON backup export/restore.
     - Source: roadmap v0.6; `docs/audits/security/security-v0.2.md` 1.1, 2.2, 6.2
     - Files: new `src/import/`, `src/components/Backup.tsx`, `src/storage/repository.ts`
     - Verify: sample files per format; size/type limits and malformed files fail safely; formula and script content never run; no new dependency without asking (spreadsheet parser library)
-    - Deps: 12; **needs human decision**: the 3 formats and the categorization rules. Expect several test and refinement rounds
-14. **Import flow UI** (v0.6/14) — Import button on Budget setup, review/preview screen, error and success messages.
+    - Deps: none now that step 12 is dropped; **needs human decision**: the categorization rules. Expect several test and refinement rounds
+14. **Import flow UI** (v0.6/14) — Import section in the new Backup dialog (step 15), review/preview screen, error and success messages.
     - Source: roadmap v0.6 "UI/UX for the upload flow"
     - Files: `src/screens/BudgetSetup.tsx`, new import screen, `src/App.css`
     - Verify: keyboard and screen reader path; progress and error announcements; 320px
     - Deps: 13
-15. **Merge Budget setup and help; help text** (v0.6/15) — combine per the human's decision; help dialog describes backup and upload.
+15. **Merge Budget setup and help; help text** (v0.6/15) — decided 2026-11-08 (`0009` §5): "?" opens the wizard (auto on first load) with "Advanced options" (opens Budget setup) in its footer; "Setup Budget" tab action removed; a "Backup" button in its place opens one export/restore/import dialog; the bottom Backup section is removed. Mockups pending the human's comments.
     - Source: roadmap v0.6; `0009` §5
-    - Files: help dialog, `src/screens/BudgetSetup.tsx`, `src/App.tsx`
-    - Verify: all old help content kept; both entry points work
-    - Deps: 14; **needs human decision**: exact merge
+    - Files: `src/App.tsx`, `src/components/Backup.tsx`, `src/screens/Onboarding.tsx`, `src/components/ui/Tabs.tsx`
+    - Verify: all old help and backup content kept; wizard, Advanced options and Backup dialog work by keyboard
+    - Deps: 14 for the Import section (the rest can land earlier); **needs human comments** on the mockups
 16. **Upload step in onboarding** (v0.6/16) — add upload to the wizard once import works.
     - Source: roadmap v0.6
     - Files: `src/screens/Onboarding.tsx`, import components
@@ -106,11 +102,11 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
 - ✅ **A — Small fixes** (steps 1, 2, 3, 4; MultiSelect, repository, AddBudget, App): parallel-safe, sequential in one session.
 - ✅ **B — Amounts and descriptions** (steps 5, 6, 7; AddBudget, structure, seed): after A step 3 (same `AddBudget.tsx`).
 - **C — Setup and table dialogs** (steps 8, 9, 10, 9a; BudgetSetup, BudgetTable, App.css): after B; design settled. Step 9a (hover styling) last. Built in v0.6.11–v0.6.18 and approved; only the Week/Month Add/Subtract date picker (step 9) remains.
-- **D — Nesting** (step 12; tree, BudgetTable, BudgetSetup, structure): after C; spec first.
+- ~~**D — Nesting**~~ dropped 2026-11-08 (step 12; the model already exists).
 - ✅ **E — Wizard** (step 11; Onboarding): after A; design settled, so it can run any time after A (before C or D if wanted).
-- **F — Import** (steps 13, 14, 15, 16; import, Backup, BudgetSetup, Onboarding): after D and E.
+- **F — Import** (steps 13, 14, 15, 16; import, Backup, BudgetSetup, Onboarding): after E.
 - **Reviews** (steps 17–19): main session with the user.
-- Status: ✅ A · ✅ B · ✅ C · ☐ D · ✅ E · ☐ F · ☐ reviews
+- Status: ✅ A · ✅ B · ✅ C · — D dropped · ✅ E · ☐ F · ☐ reviews
 
 ### Session process
 Run option 1: one session per group, fresh start at each group boundary. A session starts by reading this file and the roadmap, then:
@@ -120,7 +116,7 @@ Run option 1: one session per group, fresh start at each group boundary. A sessi
 3. **Build one step at a time:** re-read the latest version on `main`, build and lint, commit with the next patch version and the `Plan-Step: v0.6/N` trailer, mark the step ✅ with its version(s). Check `git diff --cached --stat` before each commit.
 4. **UI steps** pause for human approval before they are marked ✅ (`0005`).
 5. **At the end of the group:** update the Execution status line (e.g. `✅ A · ☐ B`), commit in the worktree, and tell the user the group is done and waiting for merge approval. The status line on `main` changes only after the merge.
-6. **Group order:** A → B → C → D → F. E (wizard) can run any time after A (design settled); F needs D and E. Small groups (A) may share a session with the next group if context is light. F spans several sessions, each resuming at a step boundary.
+6. **Group order:** A → B → C → F. E (wizard) can run any time after A (design settled); F needs E. Small groups (A) may share a session with the next group if context is light. F spans several sessions, each resuming at a step boundary.
 7. **Reviews** (17–19) are run in the main session with the user, not by a worker.
 
 ## Rules
