@@ -71,13 +71,18 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
     - Verify: progress "step X of 3" announced; Back, Done, presets and Advanced setup (closes the wizard) paths; no "Add your own" box; step 2 text is only "You can change presets later in Budget setup."; shows on empty DB only
     - Deps: 1; decided 2026-11-04 in `0009` §1 (not blocked)
 12. **Deep subcategory nesting** (v0.6/12) — dropped 2026-11-08: the Category › Subcategory › Item model is already built (`MAX_DEPTH = 2`; a subcategory with items is a total row, an item is the deepest level). No work.
-13. **Import parsing** (v0.6/13) — read CSV, XLSX and ODS (all 3 decided 2026-11-08), auto-categorize rows into categories/items, preview before writing; builds on the JSON backup export/restore.
-    - Source: roadmap v0.6; `docs/audits/security/security-v0.2.md` 1.1, 2.2, 6.2
+13. **Import parsing** (v0.6/13) — read CSV and XLSX (ODS is step 13a), auto-categorize rows into categories/items, preview before writing; builds on the JSON backup export/restore.
+    - Source: roadmap v0.6; `0013` (mapping, reviewed); `docs/audits/security/security-v0.2.md` 1.1, 2.2, 6.2
     - Files: new `src/import/`, `src/components/Backup.tsx`, `src/storage/repository.ts`
     - Verify: sample files per format; size/type limits and malformed files fail safely; formula and script content never run; no new dependency without asking (spreadsheet parser library)
-    - Deps: none now that step 12 is dropped; **needs human decision**: the categorization rules. Expect several test and refinement rounds
+    - Deps: none now that step 12 is dropped; `0013` is decided; the library is chosen but installing it still needs the human's go-ahead. Test files: `docs/test_sheets/` (committed when `0013` is ready for work; the next commit when this step is done). Expect several test and refinement rounds
+13a. **ODS import** (v0.6/13a) — a valid ODS test file (the generated ones fail to open in OnlyOffice: "format error in content.xml") and an ODS reader using the `0013` rules.
+    - Source: roadmap v0.6; `0013` §1
+    - Files: `src/import/`, `docs/test_sheets/` (ODS files)
+    - Verify: the ODS test files open in OnlyOffice and import with the same results as the XLSX files
+    - Deps: 13; **needs human**: a valid ODS file (for example saved from OnlyOffice or LibreOffice from the XLSX test workbook)
 14. **Import flow UI** (v0.6/14) — Import section in the new Backup dialog (step 15), review/preview screen, error and success messages.
-    - Source: roadmap v0.6 "UI/UX for the upload flow"
+    - Source: roadmap v0.6 "UI/UX for the upload flow"; `0013` §5 and §9 (undated purchases are marked and the Day table shows a tooltip note on them)
     - Files: `src/screens/BudgetSetup.tsx`, new import screen, `src/App.css`
     - Verify: keyboard and screen reader path; progress and error announcements; 320px
     - Deps: 13
@@ -104,7 +109,7 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
 - **C — Setup and table dialogs** (steps 8, 9, 10, 9a; BudgetSetup, BudgetTable, App.css): after B; design settled. Step 9a (hover styling) last. Built in v0.6.11–v0.6.18 and approved; only the Week/Month Add/Subtract date picker (step 9) remains.
 - ~~**D — Nesting**~~ dropped 2026-11-08 (step 12; the model already exists).
 - ✅ **E — Wizard** (step 11; Onboarding): after A; design settled, so it can run any time after A (before C or D if wanted).
-- **F — Import** (steps 13, 14, 15, 16; import, Backup, BudgetSetup, Onboarding): after E.
+- **F — Import** (steps 13, 13a, 14, 15, 16; import, Backup, BudgetSetup, Onboarding): after E.
 - **Reviews** (steps 17–19): main session with the user.
 - Status: ✅ A · ✅ B · ✅ C · — D dropped · ✅ E · ☐ F · ☐ reviews
 

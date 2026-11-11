@@ -93,7 +93,7 @@ tracked as a later-version item.
 
 ## v0.6 — Data import + deep nesting
 - Defects (`docs/defects/`): D001 onboarding name length limit; D002 duplicate settings rows
-- CSV/HTML upload + auto-categorization parsing; an Import option in the Backup dialog accepts the 3 spreadsheet file types CSV, XLSX and ODS (decided 2026-11-08) so a user can import an existing budget. Large effort: expect several testing and refinement rounds
+- Spreadsheet upload + auto-categorization parsing (mapping rules in `0013`, test files in `docs/test_sheets/`); an Import option in the Backup dialog accepts CSV and XLSX here, and ODS in the next item (decided 2026-11-08, ODS split out 2026-11-11) so a user can import an existing budget. Large effort: expect several testing and refinement rounds
 - (Primary User Request) More informative "Saved" confirmation: the text says what was saved and how much (e.g. the item name and amount), not just "Saved"
 - Combine "Budget setup" and help (decided 2026-11-08, `0009` §5): the "?" button opens the onboarding wizard (automatically on first load); the wizard footer offers "Advanced options" (opens Budget setup); the "Setup Budget" tab action is removed; a "Backup" button takes its place and opens a dialog for export, restore and import
 - UI/UX changes from the v0.5 review (`0009-v0.6-design-updates.md`; prototypes `0010` and `0011` are reviewed and refined before building):
@@ -110,6 +110,9 @@ tracked as a later-version item.
 - Optional description field below Amount
 - Charity takes purchases itself until it gets its first item; then its purchases move to Charity › Miscellaneous and Charity becomes a roll-up (`0009` §6, draft pending human review)
 - UI/UX for the upload flow
+- ODS import: get a valid ODS test file (the generated ones fail to open in OnlyOffice) and build the importer for it, using the `0013` rules (decided 2026-11-11)
+- Import also reads Week and Day sheets (`0013` §3 and §5; invented test files in `docs/test_sheets/`, because the human has no real ones)
+- Imported purchases whose date was not in the file are placed on the first day of their week (or month) and marked; the Day table shows a tooltip note on each one (decided 2026-11-11, `0013` §5)
 - ~~Deep subcategory nesting~~ dropped 2026-11-08: the Category › Subcategory › Item model is already built (a subcategory that has items is a total row and takes no purchases; an item is the deepest level)
 - Add upload step to onboarding once it works
 - Data import / export: build on the v0.2 JSON backup export/restore (`docs/audits/security/security-v0.2.md` 6.2; file-handling requirements in 1.1 and 2.2)
@@ -128,6 +131,7 @@ tracked as a later-version item.
 - Consolidate dialogs into one component (today three: form dialogs, confirm dialogs and a generic dialog); migrate the v0.6 dialogs (Edit menu, highlight, wizard) to it (decided 2026-11-04)
 - Design standards pass: bring the app in line with the decided standards in `0012-design-standards.md` (decided 2026-11-08; the open gaps in its §10 are settled first)
 - Read-only copy of the Day table under the Add purchase form (decided 2026-11-08, from user feedback; placed in v0.7 per the new-item rule)
+- Annual table: a Misc row under Incidentals and a Misc. Breakdown table under the Annual table, with a December review highlight (decided 2026-11-11; spec `0014`; placed in v0.7 under the new-item rule)
 - Chart view (Table/Chart switch)
 - Chart types for Budget screen
 - UI/UX review (human approval)
@@ -160,3 +164,8 @@ tracked as a later-version item.
 - Correct a single purchase's date (today: delete it and add it again; the amount moves to v0.6)
 - Receipt photo capture (camera API / Capacitor if needed)
 - Daily end-of-day reminder: needs a delivery outside the web app (phone reminder, or Capacitor APK build with local notifications)
+
+## Unscoped ideas (not in any version; each needs review before it can be scoped)
+- Subscriptions table: a view of recurring subscriptions with state, billing day and cost (the human's spreadsheet has a " Subscriptions " sheet; logged 2026-11-11)
+- Search purchases by name, date or amount (logged 2026-11-11, from the import review)
+- Popup listing all purchases of an item, to find a specific purchase in the Week and Month tables (a design question, logged 2026-11-11; see the highlight dialog in `0009` §3)
