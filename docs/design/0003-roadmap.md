@@ -92,7 +92,7 @@ tracked as a later-version item.
 - ✅ Security review (`docs/audits/security/security-v0.5.md`, approved): no Medium or higher → transition to v0.6.0
 
 ## v0.6 — Data import + deep nesting
-- Defects (`docs/defects/`): D001 onboarding name length limit; D002 duplicate settings rows
+- Defects (`docs/defects/`): D001 onboarding name length limit; D002 duplicate settings rows; D003 editing a purchase resets its time and drops its import mark (found 2026-11-11 in import work; fixed with the import flow UI, confirmed 2026-11-11)
 - Spreadsheet upload + auto-categorization parsing (mapping rules in `0013`, test files in `docs/test_sheets/`); an Import option in the Backup dialog accepts CSV and XLSX here, and ODS in the next item (decided 2026-11-08, ODS split out 2026-11-11) so a user can import an existing budget. Large effort: expect several testing and refinement rounds
 - (Primary User Request) More informative "Saved" confirmation: the text says what was saved and how much (e.g. the item name and amount), not just "Saved"
 - Combine "Budget setup" and help (decided 2026-11-08, `0009` §5): the "?" button opens the onboarding wizard (automatically on first load); the wizard footer offers "Advanced options" (opens Budget setup); the "Setup Budget" tab action is removed; a "Backup" button takes its place and opens a dialog for export, restore and import
@@ -132,6 +132,7 @@ tracked as a later-version item.
 - Design standards pass: bring the app in line with the decided standards in `0012-design-standards.md` (decided 2026-11-08; the open gaps in its §10 are settled first)
 - Read-only copy of the Day table under the Add purchase form (decided 2026-11-08, from user feedback; placed in v0.7 per the new-item rule)
 - Annual table: a Misc row under Incidentals and a Misc. Breakdown table under the Annual table, with a December review highlight (decided 2026-11-11; spec `0014`; placed in v0.7 under the new-item rule)
+- Week and Day sheet import: regression test the import of Week and Day sheets, then find and fill the gaps (for example a week sheet and a day sheet that cover the same day are not checked against each other) (decided 2026-11-11)
 - Chart view (Table/Chart switch)
 - Chart types for Budget screen
 - UI/UX review (human approval)

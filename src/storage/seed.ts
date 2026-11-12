@@ -2,13 +2,13 @@ import { db } from './db'
 import { isPreselected } from './preselected'
 
 /** Seed tree from 0004-table-design.md with the 0007 §2 Income group. `computed` marks top-level totals. */
-interface SeedNode { name: string; color: string; computed?: boolean; children?: SeedNode[] }
+export interface SeedNode { name: string; color: string; computed?: boolean; children?: SeedNode[] }
 
 const items = (color: string, names: string[]): SeedNode[] => names.map(name => ({ name, color }))
 const sub = (name: string, names: string[]): SeedNode =>
   ({ name, color: 'lighter-orange', children: items('even-lighter-orange', names) })
 
-const TREE: SeedNode[] = [
+export const SEED_TREE: SeedNode[] = [
   { name: 'Income', color: 'blue', computed: true, children: items('blue', ['Pay', 'Incidental Income']) },
   { name: 'Taxes', color: 'red' },
   { name: 'Net Income', color: 'highlight-blue', computed: true },
@@ -49,6 +49,6 @@ export async function seedCategories(): Promise<void> {
         if (n.children) await insert(n.children, id, n.name)
       }
     }
-    await insert(TREE, null, null)
+    await insert(SEED_TREE, null, null)
   })
 }

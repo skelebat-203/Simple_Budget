@@ -36,7 +36,7 @@ Things in the files the importer must handle:
 2. **Date columns.** Each date header covers two columns, Est. then Act. In a month sheet the headers are week ranges and the Monthly header covers the last pair (4 or 5 weeks, from the headers, not from the month). In a week sheet the headers are the 7 days and the Weekly header covers the last pair (the sum of the days). Columns to the right of Monthly are ignored (§8).
 3. **Name columns.** Names are in columns A to D. A row's level is the first non-empty column among them (A = category, B = subcategory or item, C = item under a subcategory). Level builds the tree: a row belongs to the nearest row above it with a lower level.
 4. **Amounts.** Parse the text or number: strip `$`, spaces, thousands commas, a leading `_(` and trailing `_)`; `$-135.50` and `(135.50)` are negative; an empty cell and `$0.00` mean no amount.
-5. **Year.** The month sheets give month and day only (**open, Q1**).
+5. **Year.** The month sheets give month and day only. The preview asks for the year; the default is the current year (**Q1**).
 
 ## 4. Month sheet to budget tree
 
@@ -48,12 +48,13 @@ Things in the files the importer must handle:
 | Net Income | Skipped (computed) |
 | Savings and its items | Savings and items under it. The Savings row is a total, skipped |
 | "Expences" or "Expenses" and everything under it | Expenses and its subcategories and items |
+| Any other top-level row | **Decided 2026-11-11:** the preview asks where it goes: under an existing row (matched by name there, or created), onto an existing row, or skipped. Nothing is imported until every such row has an answer |
 | Any row with rows under it | A total. Skipped as an amount; its name creates a subcategory if none matches |
 | Any row without rows under it | An item (or a subcategory that takes purchases, when it sits directly under a top-level category, as Groceries does in the app) |
 
 **Names.** **Decided 2026-11-11:** remove parentheses and everything inside them ("Charity (cash / dd)" becomes "Charity", "Medical Ins. (ck)" becomes "Medical Ins."). Then trim and collapse spaces. Matching an existing node is case-insensitive and ignores spaces at the ends. Known spelling aliases are applied (Expences to Expenses, Maintainance to Maintenance); a general spell check belongs to the v0.7 input parsing item. Consequence to know: "Roth 401(k)" becomes "Roth 401", which does not match the monthly sheets' "Roth 401k". The preview shows the proposed target for every row and lets the user change it (§9).
 
-**Matching.** A row's parent chain is matched to the existing tree by name. A match uses the existing node. No match creates a new node under the matched parent, with the colour of its siblings.
+**Matching.** A row's parent chain is matched to the existing tree by name. A match uses the existing node. No match creates a new node under the matched parent, with the colour of its siblings. **Decided 2026-11-11:** names that are close but don't match ("Gen. Self Care", "Trad 401k") become new rows; there is no alias list. A top-level row that doesn't match follows the "Any other top-level row" rule above. A trailing due-day note ("Power 8th", "Life Ins 11th / 13th") is ignored when matching; a new row keeps the full name.
 
 **Miscellaneous.** In Incidentals, rows after the usual items hold one-off purchases (Drugs, Boardgame, Cup, and so on). In the sheet they have no estimate and appear in one week. **Proposed:** these become purchases in Incidentals › Miscellaneous, with the row's name as the purchase description, so the Annual Misc. Breakdown (`0014`) can group them. How to tell a Misc row from a normal item is **open, Q2**.
 
@@ -64,6 +65,8 @@ Things in the files the importer must handle:
 **Actuals (Act. columns).** Each non-empty, non-zero Act. cell becomes one purchase on a leaf row. A negative cell is a negative purchase (a credit; the Day table shows it as a return once that v0.7 item lands).
 
 **Dates. Decided 2026-11-11:** if the file has a date for a purchase, use it. If it has none, add the purchase to the first day of the week it appears in. For a month sheet that is the first date of the week header (for example `09/03`). For an annual sheet's month cell it is the first day of that month. A week sheet's day columns each have a date (month and day; the year comes from Q1), so those purchases are dated and not marked. A day sheet has a full date, so its purchases are dated and not marked.
+
+**Date limits. Decided 2026-11-11:** purchases dated from 1970-01-01 to one year from today are imported; others are skipped with a warning on the row. The app's own date limit moved from 2000-01-01 to 1970-01-01 for older data.
 
 **Day sheet rows.** A row with a value in the Time column is one purchase (the amount is in column D). Rows without a Time are the tree (§4). The row's name is matched against the items under the row above it: a match makes it a purchase of that item (Coffee Shops); no match makes it the description of a purchase on the row above, which takes purchases directly ("Weekly shop" on Groceries). The preview shows the choice and lets the user change it. The time is kept so the Day table shows the purchases in the same order and with the same times (**Q10**). Every purchase row in the Day test sheet has an amount and a time; the totals above it add up.
 
@@ -99,7 +102,7 @@ The Misc. Breakdown table sits under the annual table (header "Misc. Breakdown";
 ## 9. What the user sees (for step 14)
 
 1. Choose a file. Errors in plain text: type not supported, too large, could not be read, no budget sheets found.
-2. A preview table: sheets found (tick to include), the year, then one line per row with its proposed target (existing item, new item, Miscellaneous, skipped) and a dropdown to change it, the number and total of purchases, and warnings.
+2. A preview table: sheets found (tick to include), the year (default: the current year), rows that need a place (§4) with a place picker, then one line per row with its proposed target (existing item, new item, Miscellaneous, skipped) and a dropdown to change it, the number and total of purchases, and warnings.
 3. Confirm. Success message says how many purchases and new items were added (the `0009` "Saved" wording style).
 
 The UI is designed and approved in step 14, not here.
@@ -116,13 +119,13 @@ The UI is designed and approved in step 14, not here.
 
 ## 11. Test plan
 
-Each test sheet imports into an empty database and into the seeded one. Checks: the number of purchases and total per month match the sheet's Monthly Act. column; no `RV Spending` or `Mom Support` rows exist; Misc rows land in Incidentals › Miscellaneous with descriptions; every undated purchase shows its tooltip; the three formats give the same result; the annual-only import and the workbook import give the same totals; malformed, oversized and zip-bomb files fail safely; a formula cell never changes a value.
+The checks are committed in `tests/import/` (`npm run test:import`; decided 2026-11-11, kept for later import features). Each test sheet imports into an empty database and into the seeded one. Checks: the number of purchases and total per month match the sheet's Monthly Act. column; no `RV Spending` or `Mom Support` rows exist; Misc rows land in Incidentals › Miscellaneous with descriptions; every undated purchase shows its tooltip; the three formats give the same result; the annual-only import and the workbook import give the same totals; malformed, oversized and zip-bomb files fail safely; a formula cell never changes a value.
 
 ## 12. Questions and answers
 
 | # | Question | Answer |
 |---|---|---|
-| Q1 | The month sheets have no year. Which year do the dates get? | **Decided 2026-11-11:** ask in the preview. Default: the most recent year where the first week's start date falls on the user's week start day, otherwise last year |
+| Q1 | The month sheets have no year. Which year do the dates get? | **Decided 2026-11-11:** ask in the preview. Default: the current year for month, week and annual sheets (changed 2026-11-11 from "the most recent year whose first week starts on the week start day"). A day sheet's date has its own year |
 | Q2 | How does the importer tell a Misc row in Incidentals from a normal item? | **Decided 2026-11-11:** a row is Misc when its name is not an existing item (after the §4 name cleaning and aliases) and it has no estimate in the month. The preview shows each decision and lets the user change it with a dropdown. A dedicated "move to Incidentals" button is a v0.7 design question (`0014` M6) |
 | Q3 | Estimates: Monthly Est. total only, or also a schedule? | **Decided 2026-11-11:** the Monthly total only |
 | Q4 | A cell such as `=13.5+27+3`: one purchase or three? | **Decided 2026-11-11:** one. Individual purchases are tracked in the Day table. A popup listing an item's purchases and a search by name, date or amount are logged as unscoped ideas in the roadmap |

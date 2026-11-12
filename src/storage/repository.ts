@@ -1,6 +1,10 @@
 import { db, type BudgetItem, type Category, type Frequency, type DefaultRange, type MonthBoundary, type Settings } from './db'
-import { cleanName, DESCRIPTION_MAX, MONEY_MAX, slug } from '../budget/validate'
+import { cleanDescription, cleanName, DESCRIPTION_MAX, MONEY_MAX, slug } from '../budget/validate'
 import { toV7Structure } from './structure'
+import { ImportError } from '../import/grid'
+import type { ImportPlan } from '../import/plan'
+
+const MINUTES_PER_DAY = 1440
 
 const FREQS = new Set<Frequency>(['day', 'week', 'biweek', 'bimonthly', 'month', 'quarter', 'annual'])
 const RANGES = new Set<DefaultRange>(['day', 'week', 'month'])
@@ -29,6 +33,7 @@ function validItem(r: unknown): r is BudgetItem {
   const x = r as BudgetItem
   return !!x && Number.isInteger(x.categoryId) && isMoney(x.amount) && typeof x.date === 'string' && DATE_RE.test(x.date)
     && (x.description === undefined || (typeof x.description === 'string' && x.description.length <= DESCRIPTION_MAX))
+    && (x.undated === undefined || typeof x.undated === 'boolean')
 }
 
 function validCategory(r: unknown): r is Category {
@@ -348,10 +353,66 @@ export function checkBackup(data: unknown): Backup {
   if (badTreeRows(cats).size) throw new BackupError('has categories nested in a loop or more than three levels deep. Export a new backup and try again.')
   return {
     ...b,
-    budgetItems: b.budgetItems.map(({ id, categoryId, amount, date, description, createdAt, updatedAt }) => ({ id, categoryId, amount, date, ...(description ? { description } : {}), createdAt, updatedAt })),
+    budgetItems: b.budgetItems.map(({ id, categoryId, amount, date, description, undated, createdAt, updatedAt }) => ({ id, categoryId, amount, date, ...(description ? { description } : {}), ...(undated ? { undated } : {}), createdAt, updatedAt })),
     categories: cats.map(c => ({ ...c, name: cleanName(c.name) })),
     settings: b.settings.slice(0, 1).map(s => cleanSettings({ ...s, rewardsEnabled: !!s.rewardsEnabled })),
   }
+}
+
+// ---------- spreadsheet import (0013) ----------
+
+/**
+ * Write a confirmed import preview, all-or-nothing (0013 §2): new rows parents-first,
+ * moves of a row's own amounts to its new Miscellaneous, selections, estimates, then the
+ * purchases; then the Charity rule. Every row the preview named is checked again inside
+ * the transaction, since another tab may have changed the tree while the preview was open.
+ */
+export async function applyImport(plan: ImportPlan): Promise<{ purchases: number; categories: number; charityMoved: number }> {
+  if (plan.unplaced.length) throw new ImportError('has rows that need a place. Choose where they go in the preview, or skip them.')
+  return db.transaction('rw', db.categories, db.budgetItems, async () => {
+    const existing = new Map((await db.categories.toArray()).map(c => [c.id!, c]))
+    const changed = () => new ImportError('changed in another tab while the preview was open. Choose the file again.')
+    const real = new Map<number, number>()
+    const idOf = (id: number) => {
+      const r = id < 0 ? real.get(id) : existing.has(id) ? id : undefined
+      if (r == null) throw changed()
+      return r
+    }
+    for (const c of plan.newCategories) {
+      const parentId = c.parentId == null ? null : idOf(c.parentId)
+      const name = cleanName(c.name)
+      if (!name) throw changed()
+      real.set(c.id, await db.categories.add({ name, color: c.color, parentId, order: c.order, selected: true, ...(c.computed ? { computed: true } : {}) }))
+    }
+    for (const m of plan.moves) {
+      const from = existing.get(idOf(m.from))!
+      const to = idOf(m.to)
+      await db.budgetItems.where('categoryId').equals(from.id!).modify({ categoryId: to })
+      const held = { estimate: from.estimate, frequency: from.frequency, autopay: from.autopay, dueDate: from.dueDate, dueWeekday: from.dueWeekday, dueDay: from.dueDay, dueDay2: from.dueDay2 }
+      await db.categories.update(from.id!, { estimate: undefined, frequency: undefined, autopay: undefined, dueDate: undefined, dueWeekday: undefined, dueDay: undefined, dueDay2: undefined })
+      await db.categories.update(to, held)
+    }
+    for (const id of plan.select) await db.categories.update(idOf(id), { selected: true })
+    for (const e of plan.estimates) {
+      const id = idOf(e.categoryId)
+      if (!isMoney(e.estimate) || e.estimate <= 0) throw new ImportError('has an estimate that isn’t a valid amount.')
+      const now = await db.categories.get(id)
+      if (now?.estimate == null) await db.categories.update(id, { estimate: e.estimate, frequency: e.frequency })
+    }
+    const stamp = Date.now()
+    const rows: BudgetItem[] = plan.purchases.map((p, i) => {
+      const description = p.description ? cleanDescription(p.description) : ''
+      if (!isMoney(p.amount) || !DATE_RE.test(p.date)) throw new ImportError('has an amount or date that isn’t valid.')
+      // The sheet's time sets when the purchase shows in the Day table (Q10); others keep the sheet's order.
+      const createdAt = p.minutes != null && Number.isInteger(p.minutes) && p.minutes >= 0 && p.minutes < MINUTES_PER_DAY
+        ? new Date(`${p.date}T00:00:00`).getTime() + p.minutes * 60_000
+        : stamp + i
+      return { categoryId: idOf(p.categoryId), amount: p.amount, date: p.date, ...(description ? { description } : {}), ...(p.undated ? { undated: true } : {}), createdAt, updatedAt: stamp }
+    })
+    await db.budgetItems.bulkAdd(rows)
+    const charityMoved = await settleCharity()
+    return { purchases: rows.length, categories: plan.newCategories.length, charityMoved }
+  })
 }
 
 /** Replace all data with a checked backup, all-or-nothing. */

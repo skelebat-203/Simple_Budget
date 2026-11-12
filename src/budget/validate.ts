@@ -67,12 +67,12 @@ export function moneyError(field: string, r: Exclude<MoneyResult, { ok: true }>,
   }
 }
 
-/** Allowed date range for amounts: Jan 1 2000 to one year from today. */
+/** Allowed date range for amounts: Jan 1 1970 to one year from today (lower limit 1970 since 2026-11-11, for imports). */
 export function dateBounds(today: Date): { min: string; max: string } {
   const max = new Date(today)
   max.setFullYear(max.getFullYear() + 1)
   const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-  return { min: '2000-01-01', max: iso(max) }
+  return { min: '1970-01-01', max: iso(max) }
 }
 
 /** Name → id segment (CLAUDE.md id convention): lowercase, every run of other characters becomes '-'. */

@@ -4,7 +4,7 @@ Tracking file for current work status. Roadmap authority: `docs/design/0003-road
 Design: `0004-table-design.md` (table), `0006-prototype.html` (v0.2 UI), `0007-v0.3-design-updates.md` (v0.3 changes), `0008-v0.5-design-updates.md` (v0.5 changes; wins on conflict), `0009-v0.6-design-updates.md` (v0.6; wins on conflict).
 
 ## v0.6 plan of action
-Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per completed-work commit; trailer `Plan-Step: v0.6/N`). The final step bumps to v0.7.0. UI steps need human approval (`0005-ui-ux-review-checklist.md`). Baseline: v0.6.0; v0.5 complete (`docs/audits/security/security-v0.5.md`, `docs/audits/a11y/a11y-v0.5.md`). Data: Dexie v8 (`src/storage/structure.ts`; schedule fields and `Settings.onboarded` unindexed). Testing: headless Chromium via host flatpak + puppeteer-core; scripts in the session scratchpad.
+Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per completed-work commit; trailer `Plan-Step: v0.6/N`). The final step bumps to v0.7.0. UI steps need human approval (`0005-ui-ux-review-checklist.md`). Baseline: v0.6.0; v0.5 complete (`docs/audits/security/security-v0.5.md`, `docs/audits/a11y/a11y-v0.5.md`). Data: Dexie v8 (`src/storage/structure.ts`; schedule fields and `Settings.onboarded` unindexed). Testing: headless Chromium via host flatpak + puppeteer-core; scripts in the session scratchpad. Import has a committed harness: `npm run test:import` (Node with fake-indexeddb; `tests/import/README.md`).
 
 **Before building (human):** the wizard (`0010`) is settled. The highlight (`0011`) is settled too (2px dotted name underline). Confirmed formats for import (step 13) and the Budget setup + help merge (step 15) also need the human.
 
@@ -71,9 +71,9 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
     - Verify: progress "step X of 3" announced; Back, Done, presets and Advanced setup (closes the wizard) paths; no "Add your own" box; step 2 text is only "You can change presets later in Budget setup."; shows on empty DB only
     - Deps: 1; decided 2026-11-04 in `0009` §1 (not blocked)
 12. **Deep subcategory nesting** (v0.6/12) — dropped 2026-11-08: the Category › Subcategory › Item model is already built (`MAX_DEPTH = 2`; a subcategory with items is a total row, an item is the deepest level). No work.
-13. **Import parsing** (v0.6/13) — read CSV and XLSX (ODS is step 13a), auto-categorize rows into categories/items, preview before writing; builds on the JSON backup export/restore.
+13. **Import parsing** (v0.6/13) ✅ (v0.6.20) — read CSV and XLSX (ODS is step 13a), auto-categorize rows into categories/items, preview before writing; builds on the JSON backup export/restore.
     - Source: roadmap v0.6; `0013` (mapping, reviewed); `docs/audits/security/security-v0.2.md` 1.1, 2.2, 6.2
-    - Files: new `src/import/`, `src/components/Backup.tsx`, `src/storage/repository.ts`
+    - Files: new `src/import/`, `src/storage/repository.ts`, `src/storage/db.ts`, `src/budget/validate.ts` (date limit 1970), new `tests/import/`. `Backup.tsx` moved to step 14
     - Verify: sample files per format; size/type limits and malformed files fail safely; formula and script content never run; no new dependency without asking (spreadsheet parser library)
     - Deps: none now that step 12 is dropped; `0013` is decided; the library is chosen but installing it still needs the human's go-ahead. Test files: `docs/test_sheets/` (committed when `0013` is ready for work; the next commit when this step is done). Expect several test and refinement rounds
 13a. **ODS import** (v0.6/13a) — a valid ODS test file (the generated ones fail to open in OnlyOffice: "format error in content.xml") and an ODS reader using the `0013` rules.
@@ -82,9 +82,15 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
     - Verify: the ODS test files open in OnlyOffice and import with the same results as the XLSX files
     - Deps: 13; **needs human**: a valid ODS file (for example saved from OnlyOffice or LibreOffice from the XLSX test workbook)
 14. **Import flow UI** (v0.6/14) — Import section in the new Backup dialog (step 15), review/preview screen, error and success messages.
-    - Source: roadmap v0.6 "UI/UX for the upload flow"; `0013` §5 and §9 (undated purchases are marked and the Day table shows a tooltip note on them)
-    - Files: `src/screens/BudgetSetup.tsx`, new import screen, `src/App.css`
-    - Verify: keyboard and screen reader path; progress and error announcements; 320px
+    - Source: roadmap v0.6 "UI/UX for the upload flow"; `0013` §5 and §9 (undated purchases are marked and the Day table shows a tooltip note on them); D003
+    - API from step 13 (`src/import/index.ts`): `readImportFile(file)` → `previewImport(wb, await importSnapshot(), options)` after each choice → `applyImport(plan)`. `ImportError` messages finish the sentence "Invalid: Import file …"
+    - Preview must show: sheets to tick (`excludedSheets`); the year (`year`, default the current year; day sheets keep their own year); month vs annual (`monthSource`); annual-only months that already have data (`annualExisting`); rows with a target dropdown (`targets`: auto, skip, Miscellaneous, an existing row); warnings, ignored columns and "Skip those items" (`skipDuplicates`)
+    - Rows that need a place (`0013` §4, `PlanRow.needsPlace`, `plan.unplaced`): a top-level row the app doesn't know. The user picks where it goes: under an existing row (`{ parentId }`, a top-level row or a subcategory directly under one), onto an existing row (`{ categoryId }`), or skip. Import stays disabled while `plan.unplaced` is not empty (`applyImport` refuses too). The picker design is part of this step's UI approval
+    - Choosing a new row name in a target dropdown is not built in step 13 (only existing rows); decide in this step's design whether it is needed
+    - D003 fix (confirmed for this step): editing a purchase keeps its time (`createdAt`) and its import mark (`undated`); the mark goes only when the date is changed. Files: `src/storage/repository.ts`, `src/components/BudgetTable.tsx`
+    - fast-xml-parser: on or after 2026-11-17 upgrade 5.11.2 → 5.12.0 (fixes GHSA-474x-hrwr-fgx4; approved 2026-11-11). If this step starts earlier, do it in step 19
+    - Files: `src/screens/BudgetSetup.tsx`, `src/components/Backup.tsx`, new import screen, `src/App.css`, `src/components/BudgetTable.tsx` (tooltip, D003)
+    - Verify: keyboard and screen reader path; progress and error announcements; 320px; `npm run test:import` still passes
     - Deps: 13
 15. **Merge Budget setup and help; help text** (v0.6/15) — decided 2026-11-08 (`0009` §5): "?" opens the wizard (auto on first load) with "Advanced options" (opens Budget setup) in its footer; "Setup Budget" tab action removed; a "Backup" button in its place opens one export/restore/import dialog; the bottom Backup section is removed. Mockups pending the human's comments.
     - Source: roadmap v0.6; `0009` §5
@@ -100,7 +106,7 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
     - Deps: 1–16
 18. **Accessibility pass** (v0.6/18) — `docs/audits/a11y/a11y-v0.6.md`.
     - Deps: 17
-19. **Security review** (v0.6/19) — `docs/audits/security/security-v0.6.md`; import is the main new surface (file parsing, size limits, injection into stored text). On approval bump to v0.7.0.
+19. **Security review** (v0.6/19) — `docs/audits/security/security-v0.6.md`; import is the main new surface (file parsing, size limits, injection into stored text); confirm fast-xml-parser is 5.12.0 or later (step 14). On approval bump to v0.7.0.
     - Deps: 18
 
 ### Execution
@@ -111,7 +117,7 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
 - ✅ **E — Wizard** (step 11; Onboarding): after A; design settled, so it can run any time after A (before C or D if wanted).
 - **F — Import** (steps 13, 13a, 14, 15, 16; import, Backup, BudgetSetup, Onboarding): after E.
 - **Reviews** (steps 17–19): main session with the user.
-- Status: ✅ A · ✅ B · ✅ C · — D dropped · ✅ E · ☐ F · ☐ reviews
+- Status: ✅ A · ✅ B · ✅ C · — D dropped · ✅ E · ⏳ F (13 ✅) · ☐ reviews
 
 ### Session process
 Run option 1: one session per group, fresh start at each group boundary. A session starts by reading this file and the roadmap, then:

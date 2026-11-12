@@ -20,6 +20,9 @@ export interface BudgetItem {
   date: string
   /** Optional note on the purchase (0009 §4); shown in the Day table. */
   description?: string
+  /** Imported without a date in the file, so placed on the first day of its week or month (0013 §5). Not indexed. */
+  undated?: boolean
+  /** When it was added; the Day table shows this time and sorts by it (imports use the sheet's Time, 0013 Q10). */
   createdAt: number
   updatedAt: number
 }
