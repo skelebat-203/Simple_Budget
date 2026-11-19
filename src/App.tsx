@@ -24,6 +24,7 @@ function App() {
   const [rewardsEnabled, setRewardsEnabled] = useState(true)
   const [notificationsEnabled, setNotificationsEnabled] = useState(false)
   const [setupOpen, setSetupOpen] = useState(false)
+  const [backupOpen, setBackupOpen] = useState(false)
   const [onboardOpen, setOnboardOpen] = useState(false)
   const [loaded, setLoaded] = useState({ settings: false, items: false })
   const [onboarded, setOnboarded] = useState(true)
@@ -103,13 +104,15 @@ function App() {
       </div>
       <RewardLayer enabled={rewardsEnabled} />
       <Notices state={notices} onDismissPersist={dismissPersist} onDismissInfo={() => note({ charityMoved: undefined })} />
-      <Tabs label="Sections" actions={[{ id: 'setup-budget', label: 'Setup Budget', onSelect: () => setSetupOpen(true) }]} tabs={[
+      <Tabs label="Sections" actions={[{ id: 'backup', label: 'Backup', onSelect: () => setBackupOpen(true) }]} tabs={[
         { id: 'add', label: 'Add purchase', panel: <AddBudget roots={roots} onSaved={() => { reloadItems(); reloadCats() }} /> },
         { id: 'budget', label: 'Budget', panel: <Budget roots={roots} items={items} range={range} onRangeChange={setRange} calendar={calendar} onChanged={() => { reloadItems(); reloadCats() }} /> },
       ]} />
-      <Backup onRestored={() => {
-        reloadCats(); reloadItems(); reloadSettings()
-      }} />
+      {backupOpen && (
+        <Backup onClose={() => setBackupOpen(false)} onRestored={() => {
+          reloadCats(); reloadItems(); reloadSettings()
+        }} />
+      )}
       {showOnboarding && (
         <Onboarding cats={cats} firstRun={autoOnboard && !onboardOpen} onClose={() => setOnboardOpen(false)} onSkip={skipOnboarding}
           onDone={() => { setOnboardOpen(false); setDismissed(true); setOnboarded(true); reloadCats() }}

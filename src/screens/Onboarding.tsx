@@ -100,7 +100,10 @@ export function Onboarding({ cats, firstRun, onClose, onSkip, onDone, onAdvanced
 
   return (
     <Dialog id="onboarding" title="Let’s set up your budget" onClose={cancel} className="onboarding"
-      buttons={<>{left}{right}</>}>
+      buttons={<>
+        <div className="actions">{left}{right}</div>
+        <Button type="button" className="secondary" id="onboarding-advanced-options" onClick={() => finish(step === 3, onAdvanced)} disabled={saving}>Advanced options</Button>
+      </>}>
       <div ref={body}>
         <div className="wizard-steps">
           <p id="onboarding-step" aria-hidden="true">Step {step} of {STEPS}</p>

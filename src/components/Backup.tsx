@@ -1,11 +1,11 @@
 import { useRef, useState } from 'react'
 import { useAnnounce } from './ui/announcer'
-import { Button } from './ui'
+import { Button, Dialog } from './ui'
 import { BACKUP_MAX_BYTES, BackupError, checkBackup, exportBackup, restoreBackup, type Backup as BackupData } from '../storage/repository'
 import { isoDate } from '../budget/tree'
 
-/** Export and restore a JSON backup of all data (security-v0.2 6.2). */
-export function Backup({ onRestored }: { onRestored: () => void }) {
+/** Backup dialog (0009 §5): export and restore a JSON backup of all data (security-v0.2 6.2). Import is added in v0.6 step 14. */
+export function Backup({ onClose, onRestored }: { onClose: () => void; onRestored: () => void }) {
   const fileRef = useRef<HTMLInputElement>(null)
   const [pending, setPending] = useState<BackupData | null>(null)
   const [status, setStatus] = useState('')
@@ -57,20 +57,23 @@ export function Backup({ onRestored }: { onRestored: () => void }) {
   }
 
   return (
-    <section className="panel" aria-labelledby="backup-heading">
-      <h2 id="backup-heading" className="section-title">Backup</h2>
-      <p className="help">Your budget is stored only in this browser. Save a backup file regularly so you can restore it if the browser clears its data.</p>
-      <div className="actions">
-        <Button type="button" className="secondary" onClick={download}>Export backup</Button>
-      </div>
-      <div className="field">
-        <label className="label" htmlFor="backup-file">Restore from a backup file</label>
+    <Dialog id="backup" title="Backup" onClose={onClose} className="backup"
+      buttons={<Button type="button" className="neutral" id="backup-close" onClick={onClose}>Close</Button>}>
+      <section className="field" aria-labelledby="backup-export-heading">
+        <h3 id="backup-export-heading" className="label">Export</h3>
+        <p className="help">Your budget is stored only in this browser. Save a backup file regularly so you can restore it if the browser clears its data.</p>
+        <div className="actions">
+          <Button type="button" className="neutral" onClick={download}>Export backup</Button>
+        </div>
+      </section>
+      <section className="field" aria-labelledby="backup-restore-heading">
+        <h3 id="backup-restore-heading" className="label">Restore from a backup file</h3>
         <p id="backup-help" className="help">Choose a .json file exported from Simple Budget. Restoring replaces everything currently in the app.</p>
         <input id="backup-file" ref={fileRef} type="file" accept=".json,application/json" className="input"
           aria-describedby={error ? 'backup-help backup-error' : 'backup-help'} aria-invalid={!!error || undefined}
           onChange={e => choose(e.target.files?.[0])} />
         {error && <p id="backup-error" className="error">{error}</p>}
-      </div>
+      </section>
       {pending && (
         <div className="banner banner-warn">
           <h3 className="banner-title">Replace all data with this backup?</h3>
@@ -82,6 +85,6 @@ export function Backup({ onRestored }: { onRestored: () => void }) {
         </div>
       )}
       <p className="status">{status}</p>
-    </section>
+    </Dialog>
   )
 }

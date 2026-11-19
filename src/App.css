@@ -79,6 +79,8 @@
 .btn:disabled, .btn[aria-disabled="true"] { opacity: 0.5; cursor: not-allowed; }
 .btn.secondary, .btn.toggle { background: var(--color-background-page); color: var(--color-primary-background); }
 .btn.toggle[aria-pressed="true"] { background: var(--color-primary-background); color: var(--color-primary-foreground); }
+.btn.neutral { background: var(--color-neutral-background); border-color: var(--color-neutral-background); color: var(--color-secondary-foreground); }
+.btn.neutral:hover:not(:disabled) { background: var(--color-neutral-hover); border-color: var(--color-neutral-hover); }
 
 .input {
   min-height: 44px;
@@ -420,6 +422,10 @@ nav .btn.icon:hover:not(:disabled) { background: var(--color-border); }
 .chips { display: flex; flex-wrap: wrap; gap: var(--space-xs); }
 .chip { display: inline-flex; align-items: center; gap: var(--space-xs); border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: 0 0 0 var(--space-sm); }
 .dialog.onboarding { width: min(44rem, calc(100% - 2 * var(--space-md))); }
+/* Backup dialog (0009 §5; mockup 0012/g15-backup-dialog) */
+.dialog.backup { width: min(var(--size-dialog-small), calc(100% - 2 * var(--space-md))); }
+.dialog.backup .dialog-actions { justify-content: flex-end; }
+.dialog.backup h3 { font-size: var(--font-size-base); margin: 0; }
 .wizard-steps { display: flex; align-items: center; gap: var(--space-md); margin: var(--space-sm) 0 var(--space-md); }
 .wizard-steps p { margin: 0; font-weight: var(--font-weight-bold); white-space: nowrap; }
 .wizard-bar { flex: 1; height: 0.75rem; background: var(--color-border); border-radius: var(--radius-md); overflow: hidden; }
