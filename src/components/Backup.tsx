@@ -58,12 +58,12 @@ export function Backup({ onClose, onRestored }: { onClose: () => void; onRestore
 
   return (
     <Dialog id="backup" title="Backup" onClose={onClose} className="backup"
-      buttons={<Button type="button" className="neutral" id="backup-close" onClick={onClose}>Close</Button>}>
+      buttons={<Button type="button" className="secondary" id="backup-close" onClick={onClose}>Close</Button>}>
       <section className="field" aria-labelledby="backup-export-heading">
         <h3 id="backup-export-heading" className="label">Export</h3>
         <p className="help">Your budget is stored only in this browser. Save a backup file regularly so you can restore it if the browser clears its data.</p>
         <div className="actions">
-          <Button type="button" className="neutral" onClick={download}>Export backup</Button>
+          <Button type="button" onClick={download}>Export backup</Button>
         </div>
       </section>
       <section className="field" aria-labelledby="backup-restore-heading">

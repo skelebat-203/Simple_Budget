@@ -49,7 +49,7 @@ export function Tabs({ label, tabs, actions = [] }: { label: string; tabs: Tab[]
               ))}
             </div>
             {actions.map(a => (
-              <button key={a.id} type="button" id={a.id} className="btn secondary" onClick={a.onSelect}>{a.label}</button>
+              <button key={a.id} type="button" id={a.id} className="btn" onClick={a.onSelect}>{a.label}</button>
             ))}
           </div>
         )

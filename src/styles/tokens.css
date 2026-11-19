@@ -16,8 +16,6 @@
   --color-info: #0284c7; /* info messages (popups/banners/tooltips) */
   --color-text: #000000; /* standard text color */
   --color-text-description: #4b5563; /* purchase description: dark grey, 7.6:1 on white */
-  --color-neutral-background: #6b7280; /* neutral buttons (Backup, Export, Close); same grey as secondary */
-  --color-neutral-hover: #4b5563; /* neutral buttons on hover; white text 7.6:1 */
 
   /* Category colors (docs/design/0004-table-design.md). Applied as text at
      every weight, so each meets 4.5:1 on the page background (≥5:1 here).

@@ -79,8 +79,6 @@
 .btn:disabled, .btn[aria-disabled="true"] { opacity: 0.5; cursor: not-allowed; }
 .btn.secondary, .btn.toggle { background: var(--color-background-page); color: var(--color-primary-background); }
 .btn.toggle[aria-pressed="true"] { background: var(--color-primary-background); color: var(--color-primary-foreground); }
-.btn.neutral { background: var(--color-neutral-background); border-color: var(--color-neutral-background); color: var(--color-secondary-foreground); }
-.btn.neutral:hover:not(:disabled) { background: var(--color-neutral-hover); border-color: var(--color-neutral-hover); }
 
 .input {
   min-height: 44px;
