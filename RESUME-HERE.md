@@ -81,6 +81,7 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
     - Files: `src/import/`, `docs/test_sheets/` (ODS files)
     - Verify: the ODS test files open in OnlyOffice and import with the same results as the XLSX files
     - Deps: 13; **needs human**: a valid ODS file (for example saved from OnlyOffice or LibreOffice from the XLSX test workbook)
+    - Status 2026-11-11: the generated ODS still fails to open in OnlyOffice, now at content.xml line 749, column 1157 (rows are one per line, so this is one row's content, not a size boundary). Open lead if debugging the generated file; otherwise the human supplies a saved ODS. Consider Opus for this step
 14. **Import flow UI** (v0.6/14) — Import section in the new Backup dialog (step 15), review/preview screen, error and success messages.
     - Source: roadmap v0.6 "UI/UX for the upload flow"; `0013` §5 and §9 (undated purchases are marked and the Day table shows a tooltip note on them); D003
     - API from step 13 (`src/import/index.ts`): `readImportFile(file)` → `previewImport(wb, await importSnapshot(), options)` after each choice → `applyImport(plan)`. `ImportError` messages finish the sentence "Invalid: Import file …"
@@ -91,12 +92,12 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
     - fast-xml-parser: on or after 2026-11-17 upgrade 5.11.2 → 5.12.0 (fixes GHSA-474x-hrwr-fgx4; approved 2026-11-11). If this step starts earlier, do it in step 19
     - Files: `src/screens/BudgetSetup.tsx`, `src/components/Backup.tsx`, new import screen, `src/App.css`, `src/components/BudgetTable.tsx` (tooltip, D003)
     - Verify: keyboard and screen reader path; progress and error announcements; 320px; `npm run test:import` still passes
-    - Deps: 13
+    - Deps: 13, 15 (Backup dialog shell; order changed 2026-11-11). **Mockups first** (headless Chromium, as for 0012): preview screen, "needs a place" picker, error and success messages. Build only after the human comments on them
 15. **Merge Budget setup and help; help text** (v0.6/15) — decided 2026-11-08 (`0009` §5): "?" opens the wizard (auto on first load) with "Advanced options" (opens Budget setup) in its footer; "Setup Budget" tab action removed; a "Backup" button in its place opens one export/restore/import dialog; the bottom Backup section is removed. Mockups pending the human's comments.
     - Source: roadmap v0.6; `0009` §5
     - Files: `src/App.tsx`, `src/components/Backup.tsx`, `src/screens/Onboarding.tsx`, `src/components/ui/Tabs.tsx`
     - Verify: all old help and backup content kept; wizard, Advanced options and Backup dialog work by keyboard
-    - Deps: 14 for the Import section (the rest can land earlier); **needs human comments** on the mockups
+    - Deps: **order changed 2026-11-11: build this step first, without the Import section** (Backup dialog with export and restore, wizard "Advanced options", "Setup Budget" tab action removed, bottom Backup section removed). Step 14 then adds the Import section to the dialog. Mockups approved (`images/0012/g15-backup-button.jpg`, `g15-backup-dialog.jpg`); the dialog is a UI step, so it still pauses for approval of the built result
 16. **Upload step in onboarding** (v0.6/16) — add upload to the wizard once import works.
     - Source: roadmap v0.6
     - Files: `src/screens/Onboarding.tsx`, import components
@@ -117,7 +118,8 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
 - ✅ **E — Wizard** (step 11; Onboarding): after A; design settled, so it can run any time after A (before C or D if wanted).
 - **F — Import** (steps 13, 13a, 14, 15, 16; import, Backup, BudgetSetup, Onboarding): after E.
 - **Reviews** (steps 17–19): main session with the user.
-- Status: ✅ A · ✅ B · ✅ C · — D dropped · ✅ E · ⏳ F (13 ✅) · ☐ reviews
+- Status: ✅ A · ✅ B · ✅ C · — D dropped · ✅ E · ⏳ F (13 ✅; next 15 shell, then 14, 16; 13a waits on the human) · ☐ reviews
+- **Group F order (changed 2026-11-11):** 15 (without Import section) → 14 (mockups, approval, build) → 16 → 13a when an ODS file exists. Worktree `.claude/worktrees/v0.6-group-f` exists at 912c43e (same as `main`). Work paused until the weekend (human, 2026-11-11). Session model: Sonnet; Opus only for 13a and the security review if needed.
 
 ### Session process
 Run option 1: one session per group, fresh start at each group boundary. A session starts by reading this file and the roadmap, then:
