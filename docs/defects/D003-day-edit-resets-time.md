@@ -9,3 +9,4 @@
 - Fix: keep `createdAt` from the old record on replace. Keep `undated` unless the date was changed.
 - Files: `src/storage/repository.ts` (`budgetItemRepo.replace`, `addNewItem`), `src/components/BudgetTable.tsx` (the edit save).
 - Scheduled: v0.6, step 14 (import flow UI). Confirmed by the human 2026-11-11.
+- Fixed (v0.6.27, pending the step 14 approval): `budgetItemRepo.replace` and `addNewItem` (with `replaceId`) keep the old record's `createdAt`, and keep `undated` unless the date changed. The Day table shows the 0013 §5 note on undated purchases as a tooltip (`Tip`). Checks: `tests/import/db-checks.ts`.

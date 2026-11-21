@@ -111,7 +111,7 @@ function App() {
       {backupOpen && (
         <Backup onClose={() => setBackupOpen(false)} onRestored={() => {
           reloadCats(); reloadItems(); reloadSettings()
-        }} />
+        }} onImported={() => { reloadCats(); reloadItems() }} />
       )}
       {showOnboarding && (
         <Onboarding cats={cats} firstRun={autoOnboard && !onboardOpen} onClose={() => setOnboardOpen(false)} onSkip={skipOnboarding}

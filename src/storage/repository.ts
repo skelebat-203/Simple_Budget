@@ -90,14 +90,25 @@ export const budgetItemRepo = {
     return db.budgetItems.update(id, { ...patch, updatedAt: Date.now() })
   },
   async remove(id: number) { return db.budgetItems.delete(id) },
-  /** Replace a purchase with a new record (Day Edit dialog, 0009 §4): the old one is removed and the new one added, all or nothing. */
+  /**
+   * Replace a purchase with a new record (Day Edit dialog, 0009 §4): the old one is removed and the new one added, all or nothing.
+   * The new record keeps the old one's time and import mark (D003).
+   */
   async replace(oldId: number, item: Omit<BudgetItem, 'id' | 'createdAt' | 'updatedAt'>) {
     return db.transaction('rw', db.budgetItems, async () => {
+      const old = await db.budgetItems.get(oldId)
       await db.budgetItems.delete(oldId)
-      const now = Date.now()
-      return db.budgetItems.add({ ...item, createdAt: now, updatedAt: now })
+      return db.budgetItems.add({ ...item, ...keptFrom(old, item.date, Date.now()) })
     })
   },
+}
+
+/**
+ * What an edited purchase keeps from the record it replaces (D003): its time (`createdAt`, which the Day table
+ * shows and sorts by), and its import mark (`undated`) unless the date changed, since then the date is the user's.
+ */
+function keptFrom(old: BudgetItem | undefined, date: string, now: number): Pick<BudgetItem, 'createdAt' | 'updatedAt'> & { undated?: true } {
+  return { createdAt: old?.createdAt ?? now, updatedAt: now, ...(old?.undated && old.date === date ? { undated: true as const } : {}) }
 }
 
 /**
@@ -241,6 +252,7 @@ export async function addNewItem(o: {
   replaceId?: number
 }): Promise<{ movedFrom?: string; charityMoved: number }> {
   return db.transaction('rw', db.categories, db.budgetItems, async () => {
+    const old = o.replaceId != null ? await db.budgetItems.get(o.replaceId) : undefined
     if (o.replaceId != null) await db.budgetItems.delete(o.replaceId)
     let parent: { id: number; name: string }
     if ('newSub' in o.parent) {
@@ -253,7 +265,7 @@ export async function addNewItem(o: {
     await assertFree(parent.id, o.name, parent.name)
     // A new item under Charity always counts as selected, so Charity stops taking purchases (0009 §6).
     const r = await categoryRepo.add({ name: o.name, parentId: parent.id, color: o.color, selected: o.selected || parent.name === 'Charity' || undefined })
-    await budgetItemRepo.add({ categoryId: r.id, amount: o.amount, date: o.date, description: o.description })
+    await db.budgetItems.add({ categoryId: r.id, amount: o.amount, date: o.date, description: o.description, ...keptFrom(old, o.date, Date.now()) })
     const charityMoved = await settleCharity()
     return { movedFrom: r.movedFrom, charityMoved }
   })

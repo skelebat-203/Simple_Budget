@@ -1,12 +1,13 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { ancestors, displayName, domId, flatten, isSoloCharity, isTotal, repeatedNames, spokenName, type CatNode } from '../../budget/tree'
+import { Combobox, type ComboGroup, type ComboOption } from './Combobox'
 
 interface Group { heading: CatNode; options: CatNode[] }
 
 /**
- * Shared search/filter dropdown (roadmap v0.3; 0007 §4.1, §8.3). A combobox
- * over a grouped listbox: options sit under their parent's heading, and the
- * heading in view sticks to the top of the list. Headings are never options.
+ * Item and category picker (roadmap v0.3; 0007 §4.1, §8.3): the shared Combobox over the budget tree.
+ * Options sit under their parent's heading, and the heading in view sticks to the top of the list.
+ * Headings are never options.
  *
  * - mode 'item': every row that takes amounts. Before the user types, only
  *   rows passing `initial` show; typing searches everything.
@@ -16,7 +17,7 @@ interface Group { heading: CatNode; options: CatNode[] }
  * Typed text that names exactly one option picks it. `onText` reports the
  * text so a form can offer to create something new.
  */
-export function ItemSelector({ id, roots, mode = 'item', initial, defaultTarget, onChange, onText, invalid, describedBy, required = true, placeholder, label }: {
+export function ItemSelector({ id, roots, mode = 'item', initial, defaultTarget, onChange, onText, invalid, describedBy, required = true, label }: {
   id: string
   roots: CatNode[]
   mode?: 'item' | 'category'
@@ -28,14 +29,10 @@ export function ItemSelector({ id, roots, mode = 'item', initial, defaultTarget,
   invalid?: boolean
   describedBy?: string
   required?: boolean
-  placeholder?: string
   /** Listbox name. */
   label: string
 }) {
   const [query, setQuery] = useState(() => (defaultTarget ? displayName(defaultTarget) : ''))
-  const [open, setOpen] = useState(false)
-  const [active, setActive] = useState(-1)
-  const listId = `${id}-listbox`
 
   const repeated = useMemo(() => repeatedNames(roots), [roots])
   const groups: Group[] = useMemo(() => {
@@ -55,97 +52,39 @@ export function ItemSelector({ id, roots, mode = 'item', initial, defaultTarget,
     return all.filter(n => byParent.has(n)).map(h => ({ heading: h, options: byParent.get(h)! }))
   }, [roots, mode])
 
-  const q = query.trim().toLowerCase()
-  const shown = groups
-    .map(g => ({
-      ...g,
-      options: g.options.filter(n => q
-        ? [n, ...ancestors(n)].some(x => x.cat.name.toLowerCase().includes(q))
-        : !initial || initial(n)),
-    }))
-    .filter(g => g.options.length)
-  const flat = shown.flatMap(g => g.options)
-  const exact = (text: string) => groups.flatMap(g => g.options).filter(n => n.cat.name.toLowerCase() === text.trim().toLowerCase())
+  const nodes = useMemo(() => new Map(groups.flatMap(g => g.options).map(n => [String(n.cat.id), n])), [groups])
+  const comboGroups: ComboGroup[] = useMemo(() => groups.map(g => ({
+    key: String(g.heading.cat.id),
+    heading: g.heading.cat.name,
+    headingId: domId(`${id}_heading`, g.heading),
+    headingClassName: `clr-${g.heading.cat.color}`,
+    options: g.options.map((n): ComboOption => ({
+      value: String(n.cat.id), label: n.cat.name, id: domId(id, n),
+      search: [n, ...ancestors(n)].map(x => x.cat.name),
+      ariaLabel: repeated.has(n.cat.name) ? spokenName(n, repeated) : undefined,
+      className: `clr-${n.cat.color}`,
+    })),
+  })), [groups, repeated, id])
 
-  // Keep the active option in view below the sticky heading.
-  useEffect(() => {
-    if (active >= 0 && flat[active]) document.getElementById(domId(id, flat[active]))?.scrollIntoView({ block: 'nearest' })
-  }, [active, flat, id])
-
-  function pick(n: CatNode) {
-    setQuery(displayName(n))
-    setOpen(false)
-    setActive(-1)
-    onText?.(displayName(n), 1)
-    onChange(n)
-  }
+  const exact = (text: string) => [...nodes.values()].filter(n => n.cat.name.toLowerCase() === text.trim().toLowerCase())
 
   function type(text: string) {
     setQuery(text)
-    setOpen(true)
-    setActive(-1)
     const m = exact(text)
     onText?.(text, m.length)
     onChange(m.length === 1 ? m[0] : null)
   }
-
-  const move = (delta: number) => {
-    setOpen(true)
-    setActive(a => Math.max(0, Math.min(flat.length - 1, a + delta)))
+  function pick(o: ComboOption) {
+    const n = nodes.get(o.value)!
+    setQuery(displayName(n))
+    onText?.(displayName(n), 1)
+    onChange(n)
   }
 
-  const empty = q ? 'No match.' : mode === 'item' ? 'No items selected yet. Start typing to search every item.' : 'Nothing to pick.'
-
+  const emptyText = query.trim() ? 'No match.' : mode === 'item' ? 'No items selected yet. Start typing to search every item.' : 'Nothing to pick.'
   return (
-    <div className="combo">
-      <input
-        id={id}
-        className="input"
-        role="combobox"
-        aria-expanded={open}
-        aria-controls={listId}
-        aria-autocomplete="list"
-        aria-activedescendant={open && active >= 0 && flat[active] ? domId(id, flat[active]) : undefined}
-        aria-required={required || undefined}
-        aria-invalid={invalid || undefined}
-        aria-describedby={describedBy}
-        autoComplete="off"
-        placeholder={placeholder}
-        value={query}
-        onChange={e => type(e.target.value)}
-        onFocus={() => setOpen(true)}
-        onBlur={() => setOpen(false)}
-        onKeyDown={e => {
-          if (e.key === 'ArrowDown') { e.preventDefault(); move(1) }
-          else if (e.key === 'ArrowUp') { e.preventDefault(); move(-1) }
-          else if (e.key === 'Enter' && open && active >= 0 && flat[active]) { e.preventDefault(); pick(flat[active]) }
-          else if (e.key === 'Escape' && open) { e.preventDefault(); setOpen(false) } // closes the list only, not a dialog around it
-        }}
-      />
-      {open && (
-        <div id={listId} className="listbox" role="listbox" aria-label={label} tabIndex={-1}>
-          {flat.length === 0 && <p className="listbox-empty">{empty}</p>}
-          {shown.map(g => {
-            const hid = domId(`${id}_heading`, g.heading)
-            return (
-              <ul key={g.heading.cat.id} role="group" aria-labelledby={hid} className="option-group">
-                <li role="presentation" id={hid} className={`option-heading clr-${g.heading.cat.color}`}>{g.heading.cat.name}</li>
-                {g.options.map(n => {
-                  const i = flat.indexOf(n)
-                  return (
-                    <li key={n.cat.id} id={domId(id, n)} role="option" aria-selected={i === active}
-                      aria-label={repeated.has(n.cat.name) ? spokenName(n, repeated) : undefined}
-                      className={`option clr-${n.cat.color}`}
-                      onMouseDown={e => { e.preventDefault(); pick(n) }}>
-                      {n.cat.name}
-                    </li>
-                  )
-                })}
-              </ul>
-            )
-          })}
-        </div>
-      )}
-    </div>
+    <Combobox id={id} label={label} groups={comboGroups} query={query} onQueryChange={type} onPick={pick}
+      initial={initial ? o => initial(nodes.get(o.value)!) : undefined} emptyText={emptyText}
+      required={required} invalid={invalid} describedBy={describedBy} />
   )
 }

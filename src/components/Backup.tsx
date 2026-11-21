@@ -6,7 +6,7 @@ import { isoDate } from '../budget/tree'
 import { ImportSection } from './import/ImportSection'
 
 /** Backup dialog (0009 §5): export and restore a JSON backup of all data (security-v0.2 6.2). The import section follows (0013 §9, v0.6 step 14). */
-export function Backup({ onClose, onRestored }: { onClose: () => void; onRestored: () => void }) {
+export function Backup({ onClose, onRestored, onImported }: { onClose: () => void; onRestored: () => void; onImported: () => void }) {
   const fileRef = useRef<HTMLInputElement>(null)
   const [pending, setPending] = useState<BackupData | null>(null)
   const [status, setStatus] = useState('')
@@ -58,7 +58,7 @@ export function Backup({ onClose, onRestored }: { onClose: () => void; onRestore
   }
 
   return (
-    <Dialog id="backup" title="Backup" onClose={onClose} className="backup"
+    <Dialog id="backup-dialog" title="Backup" onClose={onClose} className="backup"
       buttons={<Button type="button" className="secondary" id="backup-close" onClick={onClose}>Close</Button>}>
       <section className="field" aria-labelledby="backup-export-heading">
         <h3 id="backup-export-heading" className="label">Export</h3>
@@ -75,7 +75,7 @@ export function Backup({ onClose, onRestored }: { onClose: () => void; onRestore
           onChange={e => choose(e.target.files?.[0])} />
         {error && <p id="backup-error" className="error">{error}</p>}
       </section>
-      <ImportSection />
+      <ImportSection onImported={onImported} />
       {pending && (
         <div className="banner banner-warn">
           <h3 className="banner-title">Replace all data with this backup?</h3>

@@ -2,7 +2,7 @@
 // fake-indexeddb, installed by run.mjs before Dexie loads.
 import { strToU8 } from 'fflate'
 import { db } from '../../src/storage/db'
-import { budgetItemRepo, categoryRepo, checkBackup, exportBackup, skipped } from '../../src/storage/repository'
+import { addNewItem, budgetItemRepo, categoryRepo, checkBackup, exportBackup, skipped } from '../../src/storage/repository'
 import { seedCategories } from '../../src/storage/seed'
 import { applyImport, ImportError, importSnapshot, previewImport, readImportFile, type ImportOptions } from '../../src/import'
 import { badFiles, readTestFile, SHEET_YEAR, TEST_FILES, TODAY, UNKNOWN_TOP_CSV } from './fixtures'
@@ -102,4 +102,29 @@ export async function run(check: Check) {
   await db.categories.delete(stalePlan.purchases.find(p => p.categoryId > 0)!.categoryId)
   const stale = await refused(() => applyImport(stalePlan))
   check(stale.msg !== 'NO ERROR' && stale.same, `stale preview: ${stale.msg}; nothing written`)
+
+  // D003: editing an imported purchase keeps its time and import mark; changing its date drops the mark.
+  await reset(true)
+  await applyImport(await preview('sep.csv', sep))
+  const orig = (await budgetItemRepo.list()).find(i => i.undated)!
+  const edited = (await db.budgetItems.get(await budgetItemRepo.replace(orig.id!, { categoryId: orig.categoryId, amount: 1.23, date: orig.date })))!
+  check(edited.amount === 1.23 && edited.createdAt === orig.createdAt && edited.undated === true, 'edit keeps the purchase time and its import mark')
+  const moved = (await db.budgetItems.get(await budgetItemRepo.replace(edited.id!, { categoryId: orig.categoryId, amount: 1.23, date: '2026-01-02' })))!
+  check(moved.createdAt === orig.createdAt && moved.undated === undefined, 'changing the date keeps the time and drops the import mark')
+  const parent = (await categoryRepo.list()).find(c => c.name === 'Expenses')!
+  await addNewItem({ name: 'D003 Item', parent: { id: parent.id!, name: parent.name }, color: 'lighter-orange', selected: true, amount: 4.56, date: '2026-01-02', replaceId: moved.id })
+  const viaNew = (await budgetItemRepo.list()).find(i => i.amount === 4.56)!
+  check(viaNew.createdAt === orig.createdAt && viaNew.undated === undefined, 'a new-item edit also keeps the time')
+  const same = (await budgetItemRepo.list()).find(i => i.undated)!
+  await addNewItem({ name: 'D003 Item Two', parent: { id: parent.id!, name: parent.name }, color: 'lighter-orange', selected: true, amount: 7.89, date: same.date, replaceId: same.id })
+  const viaNewSame = (await budgetItemRepo.list()).find(i => i.amount === 7.89)!
+  check(viaNewSame.createdAt === same.createdAt && viaNewSame.undated === true, 'a new-item edit with the same date keeps the import mark')
+
+  // After a failed write the same file chosen again is read and previewed from scratch, as for a first import.
+  const retryBefore = await state()
+  const retryPlan = await preview('sep.csv', sep)
+  check(retryPlan.purchases.every(p => p.categoryId < 0 || retryBefore.cats > 0), 'same file again: the new preview sees the current data, not the failed one')
+  const retried = await applyImport(retryPlan)
+  const retryAfter = await state()
+  check(retried.purchases === retryPlan.summary.purchases && retryAfter.items - retryBefore.items === retryPlan.summary.purchases, `same file again after a failed write: ${retried.purchases} purchases written`)
 }

@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { applyImport, ImportError, money, monthName, previewImport, type ImportOptions, type PlanRow, type Snapshot, type Workbook } from '../../import'
 import { dateBounds } from '../../budget/validate'
-import { Banner, Button, Dialog, GroupedCombobox, Toggle } from '../ui'
+import { Banner, Button, Dialog, Toggle } from '../ui'
+import { PlaceField } from './PlaceField'
 import { announce } from '../ui/announcer'
 import { amountRows, choiceValue, placeGroups, toChoice } from './choices'
 import { ImportRows } from './ImportRows'
@@ -33,6 +34,7 @@ export function ImportReview({ fileName, workbook, snapshot, onCancel, onDone, o
   const [yearText, setYearText] = useState<string | null>(null)
   const [yearError, setYearError] = useState('')
   const [showAll, setShowAll] = useState(false)
+  const [moreChecks, setMoreChecks] = useState(false)
   const [openSheets, setOpenSheets] = useState<Set<number> | null>(null) // null: only the first sheet is open
   const [placeErrors, setPlaceErrors] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -152,10 +154,17 @@ export function ImportReview({ fileName, workbook, snapshot, onCancel, onDone, o
       </Banner>
       {checks.length > 0 && (
         <Banner kind="warn" title={`${plural(checks.length, 'thing')} to check`}>
-          <ul>
-            {checks.slice(0, MAX_WARNINGS).map(w => <li key={w}>{w}</li>)}
-            {checks.length > MAX_WARNINGS && <li>and {checks.length - MAX_WARNINGS} more, shown beside their rows below.</li>}
-          </ul>
+          <ul>{checks.slice(0, MAX_WARNINGS).map(w => <li key={w}>{w}</li>)}</ul>
+          {checks.length > MAX_WARNINGS && (
+            <>
+              <ul id="warnings-more" hidden={!moreChecks}>{checks.slice(MAX_WARNINGS).map(w => <li key={w}>{w}</li>)}</ul>
+              {/* The label changes with the state, so there is no aria-expanded. */}
+              <div className="actions">
+                <Button type="button" className="secondary small" aria-controls="warnings-more" aria-label={`${moreChecks ? 'Hide' : 'Show'} warnings ${MAX_WARNINGS + 1} - ${checks.length}`}
+                  onClick={() => setMoreChecks(m => !m)}>{moreChecks ? 'Hide' : 'Show'} {checks.length - MAX_WARNINGS} more</Button>
+              </div>
+            </>
+          )}
         </Banner>
       )}
 
@@ -229,7 +238,7 @@ export function ImportReview({ fileName, workbook, snapshot, onCancel, onDone, o
                   <label htmlFor={id} className="label">Where should {r.name} go?<span aria-hidden="true"> *</span></label>
                   <p id={`${id}-help`} className="help">Type to search the rows, or press the Down arrow to see all the choices.</p>
                   <div ref={el => { if (el) { const input = el.querySelector('input'); if (input) placeRefs.current.set(r.key, input) } }}>
-                    <GroupedCombobox id={id} label={`Where should ${r.name} go?`} groups={placeOptions} value={choiceValue(targets[r.key]) === 'auto' ? null : choiceValue(targets[r.key])}
+                    <PlaceField id={id} label={`Where should ${r.name} go?`} groups={placeOptions} value={choiceValue(targets[r.key]) === 'auto' ? null : choiceValue(targets[r.key])}
                       onChange={v => setTarget(r.key, v)} invalid={missing} describedBy={missing ? `${id}-help ${id}-error` : `${id}-help`} />
                   </div>
                   {missing && <p id={`${id}-error`} className="error">Error: Where {r.name} goes cannot be empty. Choose a place, or choose Do not import it.</p>}

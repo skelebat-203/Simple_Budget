@@ -13,7 +13,7 @@ interface Reading { fileName: string; workbook: Workbook; snapshot: Snapshot }
  * Messages sit between the file control and the "What can I import?" note; they are also announced through the app's one polite region.
  * The file control is a button, so its state is in its name ("invalid"), not aria-invalid.
  */
-export function ImportSection() {
+export function ImportSection({ onImported }: { onImported: () => void }) {
   const fileRef = useRef<HTMLInputElement>(null)
   const [message, setMessage] = useState<Message | null>(null)
   const [reading, setReading] = useState<Reading | null>(null)
@@ -62,7 +62,7 @@ export function ImportSection() {
       {done && <Banner kind="success" title="Import finished"><p>{doneText} from {done.fileName}.{doneExtra}</p></Banner>}
       {reading && (
         <ImportReview {...reading} onCancel={back}
-          onDone={d => { setReading(null); setDone({ ...d, fileName: reading.fileName }); requestAnimationFrame(() => fileRef.current?.focus()) }}
+          onDone={d => { setReading(null); setDone({ ...d, fileName: reading.fileName }); onImported(); requestAnimationFrame(() => fileRef.current?.focus()) }}
           onFail={text => { setReading(null); setMessage({ kind: 'error', text }); requestAnimationFrame(() => fileRef.current?.focus()) }} />
       )}
     </section>

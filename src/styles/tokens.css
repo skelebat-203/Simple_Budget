@@ -58,6 +58,7 @@
   /* Controls */
   --size-touch: 44px; /* smallest touch target (WCAG 2.5.8 and the app standard) */
   --size-banner-icon: 24px;
+  --size-tip-mark: 1.25rem; /* the "i" beside a name that has a tooltip */
   --size-toggle-option: 8.5rem; /* one Toggle option, desktop */
   --size-toggle-option-narrow: 6rem; /* one Toggle option below 640px */
   --size-toggle-name: 7.5rem; /* Toggle group name column, desktop */

@@ -461,7 +461,7 @@ export function buildPlan(wb: Workbook, snap: Snapshot, opts: ImportOptions = {}
           row.warnings.push(`Its ${what} amounts add up to ${money(sum / 100)}, but its ${layout.kind === 'month' ? 'Monthly' : layout.kind === 'week' ? 'Weekly' : 'Total'} column says ${money(stated / 100)}.`)
         }
       }
-      if (nameKey(tree.root(node.id).name) === 'savings' && dated.some(d => d.amount < 0)) row.warnings.push('Has negative amounts. They are imported as credits (Q9).')
+      if (nameKey(tree.root(node.id).name) === 'savings' && dated.some(d => d.amount < 0)) row.warnings.push('Has negative amounts. They are imported as credits.')
 
       // A row note that starts with one of the row's amounts ("$172.50 New Glasses") belongs to that purchase only (R4).
       const lead = /^\$?\s*(-?[\d,]+\.\d{2})\b/.exec(r.note ?? '')

@@ -5,12 +5,15 @@ import { cleanName, NAME_MAX, slug } from '../budget/validate'
 import { addNewItem, budgetItemRepo, categoryRepo, NameTakenError, RowInUseError } from '../storage/repository'
 import { PurchaseDialog } from './PurchaseDialog'
 import type { PurchaseSave } from './PurchaseForm'
-import { AmountDialog, Button, ConfirmDialog, Dialog, RenameDialog, type SaveResult } from './ui'
+import { AmountDialog, Button, ConfirmDialog, Dialog, RenameDialog, Tip, type SaveResult } from './ui'
 import { useCollapsed } from './ui/useCollapsed'
 import { fireReward } from '../rewards/rewards'
 import { useAnnounce } from './ui/announcer'
 import { Chevron } from './ui/Expander'
 import { ActionsMenu, type MenuAction } from './ui/ActionsMenu'
+
+/** Note on an imported purchase whose date was not in the file (0013 §5). */
+const UNDATED_NOTE = 'Date not in the imported file. It was placed on the first day of its week or month.'
 
 /** Annual rename: the pencil button opens the name's inline form (§9.3, v0.4 step 8). */
 type Kind = 'rename'
@@ -95,6 +98,13 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
     : []
   const purchaseLabel = (i: BudgetItem) =>
     `Purchase, ${new Date(i.createdAt).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`
+  /** A Day purchase's name opens its Edit dialog; an imported undated one also carries a tooltip (`describedBy`). */
+  const nameButton = (n: CatNode, i: BudgetItem, describedBy?: string) => (
+    <button type="button" className="name-link" id={`${editId(n, i)}-name`.replace('edit_purchase', 'name_purchase')} aria-haspopup="dialog"
+      aria-describedby={describedBy} onClick={() => act(n, 'editPurchase', i)}>
+      {purchaseLabel(i)}{describedBy && <span className="tip-mark" aria-hidden="true">i</span>}
+    </button>
+  )
   const editId = (n: CatNode, i: BudgetItem) => [highlight ? 'hl_edit_purchase' : 'edit_purchase', n.parent && slug(n.parent.cat.name), slug(n.cat.name), i.id].filter(Boolean).join('-')
 
   async function removePurchase(n: CatNode, i: BudgetItem, next: string): Promise<SaveResult> {
@@ -380,10 +390,11 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
       rows.push(
         <tr key={`p${i.id}`} className={`row purchase depth-${n.depth + 1 - base}`} {...(plain ? {} : { "aria-level": n.depth + 2 })}>
           <th scope="row" className="name">
-            {plain ? purchaseLabel(i)
-              : <button type="button" className="name-link" id={`${editId(n, i)}-name`.replace('edit_purchase', 'name_purchase')} aria-haspopup="dialog"
-                onClick={() => act(n, 'editPurchase', i)}>{purchaseLabel(i)}</button>}
+            {plain ? purchaseLabel(i) : i.undated
+              ? <Tip text={UNDATED_NOTE}>{tip => nameButton(n, i, tip)}</Tip>
+              : nameButton(n, i)}
             {i.description && <span className="row-description">{i.description}</span>}
+            {plain && i.undated && <span className="row-description">{UNDATED_NOTE}</span>}
           </th>
           <td className={`num${i.amount < 0 ? ' neg' : ''}`}>{formatAmount(i.amount) || '0.00'}</td>
           {actionCol && (

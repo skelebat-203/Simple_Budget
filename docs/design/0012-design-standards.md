@@ -77,6 +77,19 @@ button is **primary brown**, while the purchase dialog's Delete is **danger red*
 - A bulk toggle reads "All {n} months should use [option] data": each radio is named from the label, its option text and the closing text, in that order. It is shown only when there are two or more months.
 - The existing `aria-pressed` range buttons are not Toggles and stay as they are.
 
+### Tooltip — shared component (v0.6 step 14, D003)
+
+`src/components/ui/Tip.tsx` wraps one focusable control and shows a short note beside it (WCAG 1.4.13).
+
+- The note shows on hover or keyboard focus, stays while the pointer is over it, and Escape hides it without closing a dialog or leaving the control.
+- The control is described by the note (`aria-describedby`, the note has `role="tooltip"`), so a screen reader reads it with the control's name.
+- A small decorative "i" after the name shows that a note exists. Where nothing can take focus (the read-only table in the highlight dialog), the note is plain text under the name instead.
+- First use: the Day table note on imported purchases whose date was not in the file (`0013` §5). The Budget setup Add-button tooltip has its own older code and could move onto this component later.
+
+### Searchable combobox — shared component
+
+`src/components/ui/Combobox.tsx` is the one searchable combobox. The caller owns the typed text and what a pick means; the component owns the grouped listbox, the active option, the keys (Down arrow shows every choice, Up and Down move, Enter picks, Escape closes the list only) and the ARIA wiring. `ItemSelector` (Add purchase item and category pickers) and the import "Where should it go?" picker are thin adapters over it. A group heading can itself be a selectable choice (shown in bold).
+
 ### Inputs — observed
 
 - Text, select and date: min height 44, 1px grey border, radius 4, padding 8. Invalid =

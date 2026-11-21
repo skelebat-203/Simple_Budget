@@ -334,6 +334,10 @@
 }
 .tip-wrap:hover .tooltip, .tip-wrap:focus-within .tooltip { visibility: visible; }
 .tip-wrap.tip-off .tooltip { visibility: hidden; }
+.tip-start .tooltip { left: 0; right: auto; }
+/* Small "i" after a name that has a tooltip, so the note can be found (decorative; the note is read through aria-describedby). */
+.tip-mark { display: inline-flex; align-items: center; justify-content: center; width: var(--size-tip-mark); height: var(--size-tip-mark); margin-left: var(--space-xs);
+  border: 1px solid currentColor; border-radius: var(--radius-pill); font-size: var(--font-size-sm); font-style: italic; line-height: 1; }
 /* Keep the Create row in view when the table scrolls sideways; it wraps within the screen width. */
 .setup-table .row.create .create-row { position: sticky; left: 0; max-width: min(40rem, calc(100vw - 6rem)); }
 
@@ -411,14 +415,6 @@ nav .btn.icon:hover:not(:disabled) { background: var(--color-border); }
 .help-btn { width: 2.75rem; height: 2.75rem; border-radius: 50%; border: 2px solid var(--color-primary-background); background: var(--color-background-page);
   color: var(--color-primary-background); font: inherit; font-weight: var(--font-weight-bold); font-size: var(--font-size-lg); cursor: pointer; }
 .help-btn:hover { background: var(--color-border); }
-.multi { display: flex; flex-direction: column; gap: var(--space-sm); width: 100%; }
-.multi .option[aria-selected="true"] { background: transparent; }
-.multi .option.active, .multi .option:hover { background: var(--color-border); }
-.multi .option.checked { font-weight: var(--font-weight-bold); }
-.multi .option { padding-left: var(--space-md); }
-.multi .listbox { max-height: 16rem; overflow: auto; }
-.chips { display: flex; flex-wrap: wrap; gap: var(--space-xs); }
-.chip { display: inline-flex; align-items: center; gap: var(--space-xs); border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: 0 0 0 var(--space-sm); }
 .dialog.onboarding { width: min(44rem, calc(100% - 2 * var(--space-md))); }
 /* Backup dialog (0009 §5; mockup 0012/g15-backup-dialog) */
 .dialog.backup { width: min(var(--size-dialog-small), calc(100% - 2 * var(--space-md))); }
@@ -518,7 +514,7 @@ nav .btn.icon:hover:not(:disabled) { background: var(--color-border); }
 }
 
 /* --- Grouped combobox (import "where should it go" picker) --- */
-.combo > .input { padding-right: calc(var(--space-lg) + var(--space-md)); }
+.combo.has-chevron > .input { padding-right: calc(var(--space-lg) + var(--space-md)); }
 .combo-chevron { position: absolute; right: var(--space-sm); top: 0; width: var(--size-banner-icon); height: var(--size-touch); fill: none; stroke: var(--color-foreground-page); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
 .option-choice { padding-left: var(--space-md); font-weight: var(--font-weight-bold); font-size: var(--font-size-sm); }
 
