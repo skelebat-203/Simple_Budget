@@ -486,3 +486,106 @@ nav .btn.icon:hover:not(:disabled) { background: var(--color-border); }
 /* Day purchase dialog (0009 §3, §4): the Add purchase fields in one column. */
 .dialog.purchase-dialog { width: min(40rem, calc(100% - 2 * var(--space-md))); }
 .purchase-dialog .form-grid { display: flex; flex-direction: column; align-items: stretch; gap: var(--space-md); }
+
+/* --- Banner icons (0012 §7): decorative, the shape carries the kind --- */
+.banner-title { display: flex; align-items: center; gap: var(--space-sm); }
+.banner-icon { width: var(--size-banner-icon); height: var(--size-banner-icon); flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.banner-info .banner-icon { color: var(--color-info); }
+.banner-warn .banner-icon { color: var(--color-warn); }
+.banner-success .banner-icon { color: var(--color-success); }
+.banner:not(.banner-info):not(.banner-warn):not(.banner-success) .banner-icon { color: var(--color-alert); }
+
+/* --- Toggle (0012 §3): a radio group drawn as a pill; the chosen option fills its whole part --- */
+.toggle-field { display: grid; grid-template-columns: var(--size-toggle-name) auto; align-items: center; gap: var(--space-xs) var(--space-md); justify-content: start; }
+.toggle-field.with-suffix { display: flex; flex-wrap: wrap; }
+.toggle-field.toggle-card { border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: var(--space-sm) var(--space-md); }
+.toggle-name { font-weight: var(--font-weight-bold); overflow-wrap: anywhere; }
+.toggle-row { display: flex; align-items: center; gap: var(--space-sm); }
+.toggle-hint { grid-column: 2; font-size: var(--font-size-sm); color: var(--color-text); }
+.toggle { display: inline-grid; grid-auto-flow: column; grid-auto-columns: var(--size-toggle-option); overflow: hidden; border: 2px solid var(--color-primary-background); border-radius: var(--radius-pill); background: var(--color-background-page); }
+.toggle-option { position: relative; display: flex; align-items: center; justify-content: center; min-height: var(--size-touch); padding: 0 var(--space-md); color: var(--color-primary-background); font-weight: var(--font-weight-normal); cursor: pointer; }
+.toggle-option + .toggle-option { border-left: 1px solid var(--color-primary-background); }
+.toggle-option input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.toggle-option:has(:checked) { background: var(--color-primary-background); color: var(--color-primary-foreground); font-weight: var(--font-weight-bold); }
+.toggle-option:has(:focus-visible) { outline: 3px solid var(--color-info); outline-offset: -3px; }
+.toggle-option:hover:not(:has(:checked)) { background: var(--color-border); }
+@media (max-width: 639.98px) {
+  .toggle { grid-auto-columns: var(--size-toggle-option-narrow); }
+  .toggle-field { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-xs); }
+  .toggle-field.with-suffix { flex-direction: row; align-items: center; }
+  .toggle-field.with-suffix .toggle-row { flex-wrap: wrap; }
+  .toggle-hint { grid-column: auto; }
+}
+
+/* --- Grouped combobox (import "where should it go" picker) --- */
+.combo > .input { padding-right: calc(var(--space-lg) + var(--space-md)); }
+.combo-chevron { position: absolute; right: var(--space-sm); top: 0; width: var(--size-banner-icon); height: var(--size-touch); fill: none; stroke: var(--color-foreground-page); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
+.option-choice { padding-left: var(--space-md); font-weight: var(--font-weight-bold); font-size: var(--font-size-sm); }
+
+/* --- Backup dialog: Import section (0013 §9; mockup out/review/step14 14a, 14e) --- */
+.import-help { margin: 0; padding-left: var(--space-lg); font-size: var(--font-size-sm); }
+.import-more summary, .sheet-block > summary { text-decoration: underline; }
+.import-more summary { cursor: pointer; min-height: var(--size-touch); display: flex; align-items: center; font-weight: var(--font-weight-bold); font-size: var(--font-size-sm); }
+.import-more summary::before, .sheet-block > summary::before { content: "\25B8"; display: inline-block; width: var(--space-md); flex: none; text-decoration: none; }
+.import-more[open] > summary::before, .sheet-block[open] > summary::before { content: "\25BE"; }
+.import-more summary:focus-visible { outline-offset: 2px; }
+
+/* --- Review dialog (large, 0012 G6; full screen below 640px like Budget setup) --- */
+.dialog.review { width: min(var(--size-dialog-large), calc(100% - 2 * var(--space-md))); scroll-padding-bottom: 8rem; }
+.dialog.review h3 { font-size: var(--font-size-base); margin: 0; }
+.dialog.review .field { max-width: none; }
+.dialog.review .field.narrow-field { max-width: var(--size-field-wide); }
+.review-file { font-size: var(--font-size-sm); }
+.sheet-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); gap: 0 var(--space-md); }
+.sheet-list .check { align-items: center; }
+.sheet-list .check input { flex: none; }
+.sheet-kind { display: block; font-size: var(--font-size-sm); color: var(--color-text-description); }
+.sheet-list .skipped .sheet-kind { color: var(--color-text); }
+.toggle-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(28rem, 1fr)); gap: var(--space-sm) var(--space-md); }
+.sheet-block { border: 1px solid var(--color-border); border-radius: var(--radius-sm); }
+.sheet-block + .sheet-block { margin-top: var(--space-sm); }
+.sheet-block > summary { min-height: var(--size-touch); padding: var(--space-xs) var(--space-md); display: flex; align-items: center; gap: var(--space-xs); flex-wrap: wrap; cursor: pointer; font-weight: var(--font-weight-bold); }
+.sheet-block > summary:focus-visible { outline-offset: -3px; }
+.sheet-block > summary .sheet-count { margin-left: auto; font-weight: var(--font-weight-normal); font-size: var(--font-size-sm); text-decoration: none; }
+.review-table { table-layout: auto; border: 0; border-top: 1px solid var(--color-secondary-background); }
+.review-table td, .review-table th { white-space: normal; vertical-align: top; }
+.review-table .target { min-width: 16rem; text-align: left; }
+.review-table .target .input { width: 100%; }
+.review-table .target-path { display: block; margin-bottom: var(--space-xs); }
+.review-table .row-name { font-weight: var(--font-weight-bold); }
+.review-table .row-where { display: block; font-size: var(--font-size-sm); color: var(--color-text-description); font-weight: var(--font-weight-normal); }
+.review-table tr.is-skipped td, .review-table tr.is-skipped .target-path { color: var(--color-text-description); }
+.review-table .row-notes { list-style: none; margin: var(--space-xs) 0 0; padding: 0; font-size: var(--font-size-sm); }
+.review-table .row-notes li { display: flex; gap: var(--space-xs); }
+.review-table .row-notes li::before { content: "\26A0"; color: var(--color-warn); }
+.review-table .row-notes li.is-skip::before { content: "\2212"; color: var(--color-text-description); }
+.review-table .row-notes li.is-info::before { content: "\2022"; color: var(--color-info); }
+.badge { display: inline-block; font-size: var(--font-size-sm); border: 1px solid var(--color-secondary-background); border-radius: var(--radius-sm); padding: 0 var(--space-xs); margin-left: var(--space-xs); font-weight: var(--font-weight-normal); color: var(--color-text); }
+.badge.new { border-color: var(--color-info); }
+.table-foot { padding: var(--space-sm) var(--space-md); }
+.link-button { background: none; border: 0; padding: 0; font: inherit; color: var(--color-primary-background); text-decoration: underline; cursor: pointer; }
+.place-card { border: 1px solid var(--color-warn); background: color-mix(in srgb, var(--color-warn), white 90%); border-radius: var(--radius-sm); padding: var(--space-md); margin: 0; display: flex; flex-direction: column; gap: var(--space-sm); }
+.place-card legend { font-weight: var(--font-weight-bold); padding: 0 var(--space-xs); }
+.place-card .field { max-width: var(--size-field-wide); }
+.place-card + .place-card { margin-top: var(--space-sm); }
+.review-footer { position: sticky; bottom: 0; z-index: 3; background: var(--color-background-page); border-top: 1px solid var(--color-border); padding-block: var(--space-md); margin-bottom: calc(-1 * var(--space-lg)); flex-wrap: nowrap; }
+@media (max-height: 480px) { .review-footer { position: static; margin-bottom: 0; } }
+@media (max-width: 639.98px) {
+  .dialog.review { width: 100%; max-width: 100%; height: 100%; max-height: 100%; margin: 0; border-radius: 0; }
+  .review-footer { margin-bottom: calc(-1 * var(--space-lg)); }
+  .dialog.review .dialog-actions .btn { flex: 1 1 0; }
+  .toggle-list { grid-template-columns: 1fr; }
+  .review-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); }
+  .review-table, .review-table tbody, .review-table tr, .review-table td, .review-table tbody th { display: block; width: 100%; }
+  .review-table tr { padding: var(--space-sm) var(--space-md); border-bottom: 1px solid var(--color-secondary-background); }
+  .review-table td, .review-table tbody th { border: 0; padding: var(--space-xs) 0; text-align: left; }
+  .review-table td[data-label]::before { content: attr(data-label) ": "; font-weight: var(--font-weight-bold); font-size: var(--font-size-sm); }
+  .review-table td.target::before { display: block; }
+  .review-table .target { min-width: 0; }
+}
+.bulk { margin-bottom: var(--space-sm); }
+@media (min-width: 640px) {
+  .review-table .depth-1 .row-name { padding-left: var(--space-md); }
+  .review-table .depth-2 .row-name { padding-left: calc(var(--space-md) * 2); }
+}
+.sheet-block .table-box { max-height: none; } /* the dialog scrolls, not each table */

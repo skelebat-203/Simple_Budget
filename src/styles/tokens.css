@@ -48,7 +48,17 @@
   /* Radii */
   --radius-sm: 4px;
   --radius-md: 8px;
+  --radius-pill: 999px; /* fully rounded ends (Toggle) */
 
   /* Dialog widths (0012 G6: small 32rem for one or two fields) */
   --size-dialog-small: 32rem;
+  --size-dialog-large: 64rem; /* review dialogs */
+  --size-field-wide: 40rem; /* widest readable field in a large dialog */
+
+  /* Controls */
+  --size-touch: 44px; /* smallest touch target (WCAG 2.5.8 and the app standard) */
+  --size-banner-icon: 24px;
+  --size-toggle-option: 8.5rem; /* one Toggle option, desktop */
+  --size-toggle-option-narrow: 6rem; /* one Toggle option below 640px */
+  --size-toggle-name: 7.5rem; /* Toggle group name column, desktop */
 }
