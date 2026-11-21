@@ -93,7 +93,7 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
     - Files: `src/screens/BudgetSetup.tsx`, `src/components/Backup.tsx`, new import screen, `src/App.css`, `src/components/BudgetTable.tsx` (tooltip, D003)
     - Verify: keyboard and screen reader path; progress and error announcements; 320px; `npm run test:import` still passes
     - Deps: 13, 15 (Backup dialog shell; order changed 2026-11-11). **Mockups first** (headless Chromium, as for 0012): preview screen, "needs a place" picker, error and success messages. Build only after the human comments on them
-15. **Merge Budget setup and help; help text** (v0.6/15) — decided 2026-11-08 (`0009` §5): "?" opens the wizard (auto on first load) with "Advanced options" (opens Budget setup) in its footer; "Setup Budget" tab action removed; a "Backup" button in its place opens one export/restore/import dialog; the bottom Backup section is removed. Mockups pending the human's comments.
+15. **Merge Budget setup and help; help text** (v0.6/15) ✅ (v0.6.21, v0.6.22; shell without the Import section, which step 14 adds; human approved 2026-11-21) — decided 2026-11-08 (`0009` §5): "?" opens the wizard (auto on first load) with "Advanced options" (opens Budget setup) in its footer; "Setup Budget" tab action removed; a "Backup" button in its place opens one export/restore/import dialog; the bottom Backup section is removed. Mockups pending the human's comments.
     - Source: roadmap v0.6; `0009` §5
     - Files: `src/App.tsx`, `src/components/Backup.tsx`, `src/screens/Onboarding.tsx`, `src/components/ui/Tabs.tsx`
     - Verify: all old help and backup content kept; wizard, Advanced options and Backup dialog work by keyboard
@@ -118,7 +118,7 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
 - ✅ **E — Wizard** (step 11; Onboarding): after A; design settled, so it can run any time after A (before C or D if wanted).
 - **F — Import** (steps 13, 13a, 14, 15, 16; import, Backup, BudgetSetup, Onboarding): after E.
 - **Reviews** (steps 17–19): main session with the user.
-- Status: ✅ A · ✅ B · ✅ C · — D dropped · ✅ E · ⏳ F (13 ✅; next 15 shell, then 14, 16; 13a waits on the human) · ☐ reviews
+- Status: ✅ A · ✅ B · ✅ C · — D dropped · ✅ E · ⏳ F (13 ✅, 15 ✅; next 14 mockups then build, then 16; 13a waits on the human) · ☐ reviews
 - **Group F order (changed 2026-11-11):** 15 (without Import section) → 14 (mockups, approval, build) → 16 → 13a when an ODS file exists. Worktree `.claude/worktrees/v0.6-group-f` exists at 912c43e (same as `main`). Work paused until the weekend (human, 2026-11-11). Session model: Sonnet; Opus only for 13a and the security review if needed.
 
 ### Session process
