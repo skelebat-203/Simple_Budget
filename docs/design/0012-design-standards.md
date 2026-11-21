@@ -67,6 +67,16 @@ All are at least 44×44. Hover is defined for most (v0.6 step 9a). A confirm dia
 button is **primary brown**, while the purchase dialog's Delete is **danger red**
 (compare `c-delete-confirm` and `c-purchase-edit` below) (G3).
 
+### Toggle — shared component (v0.6 step 14, decided 2026-11-21)
+
+`src/components/ui/Toggle.tsx`: a choice between two or three text options drawn as a pill. It is a native radio group (`role="radiogroup"` with a visible group name; one Tab stop, arrow keys move and select, no `aria-pressed`).
+
+- Text only, no icons. Pill shape (`--radius-pill`), rounded at both outer ends. Each option takes an equal part; the chosen option's fill covers its whole part and its text is bold, so colour is never the only cue. A thin vertical line divides neighbouring options.
+- Group name left of the pill from 640px wide, above it below. Options are at least 44px high (`--size-touch`). Focus is the app's 3px ring on the focused option.
+- No option checked is the mixed state (for example a bulk toggle when the months differ).
+- A bulk toggle reads "All {n} months should use [option] data": each radio is named from the label, its option text and the closing text, in that order. It is shown only when there are two or more months.
+- The existing `aria-pressed` range buttons are not Toggles and stay as they are.
+
 ### Inputs — observed
 
 - Text, select and date: min height 44, 1px grey border, radius 4, padding 8. Invalid =
@@ -227,7 +237,7 @@ Observed (`.banner` variants):
   deleted yet…"), which reads as success (G12).
 - Banner padding 8 / 16, radius 4; no icon on any banner, so colour is the only cue beyond the title (G13). Decided: add icons, below.
 
-**Banner icons (decided 2026-11-06, G13).** Icons are decorative (`aria-hidden`); the title text stays, and the shape carries the kind so colour is never the only cue. Colours come from this app's tokens.
+**Banner icons (decided 2026-11-06, G13; built in v0.6 step 14 as `src/components/ui/Banner.tsx`).** Icons are decorative (`aria-hidden`); the title text stays, and the shape carries the kind so colour is never the only cue. Colours come from this app's tokens.
 
 | Kind | Global rule (any app): allowed icons | This app uses |
 |---|---|---|
