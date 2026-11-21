@@ -1,8 +1,8 @@
-// Minimal zip reader for XLSX (and later ODS). Reads the central directory itself so
+// Minimal zip reader for XLSX and ODS. Reads the central directory itself so
 // each entry is inflated in small pieces and stopped at the size limit: a zip's stated
 // sizes can lie, so they are never trusted (zip bombs, 0013 §2).
 import { Inflate } from 'fflate'
-import { IMPORT_MAX_UNZIPPED, IMPORT_MAX_ZIP_ENTRIES, ImportError } from './grid'
+import { DAMAGED_FILE as DAMAGED, IMPORT_MAX_UNZIPPED, IMPORT_MAX_ZIP_ENTRIES, ImportError } from './grid'
 
 /** Compressed bytes pushed to the inflater at a time; bounds how far one push can overshoot the limit. */
 const INFLATE_STEP = 4096
@@ -10,7 +10,6 @@ const SIG_EOCD = 0x06054b50
 const SIG_CENTRAL = 0x02014b50
 const SIG_LOCAL = 0x04034b50
 const EOCD_SEARCH = 22 + 0xffff
-const DAMAGED = 'File is damaged or isn’t a real spreadsheet, so it can’t be read.'
 
 /** `size`: compressed size from the central directory. */
 interface Entry { method: number; size: number; offset: number }

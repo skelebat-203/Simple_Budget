@@ -5,10 +5,10 @@ import type { Category } from '../../src/storage/db'
 import { SEED_TREE, type SeedNode } from '../../src/storage/seed'
 
 export const SHEETS_DIR = new URL('../../docs/test_sheets/', import.meta.url)
-/** The test files that import cleanly (ODS comes with plan step 13a). */
+/** The test files that import cleanly. */
 export const TEST_FILES = [
   'test_csv_4_wk_mn.csv', 'test_csv_5_wk_mn.csv', 'test_csv_annual.csv', 'test_csv_week.csv', 'test_csv_day.csv',
-  'test_xlsx_import_data.xlsx', 'test_xlsx_week_day.xlsx',
+  'test_xlsx_import_data.xlsx', 'test_xlsx_week_day.xlsx', 'test_ods_import_data.ods',
 ]
 /** The year the anonymized test sheets come from; every run passes it, since the default is the current year. */
 export const SHEET_YEAR = 2023
@@ -49,6 +49,16 @@ export function xlsx(sheets: (string | Uint8Array)[]): Uint8Array {
   return zipSync(files, { level: 9 })
 }
 
+const ODS_MIME = 'application/vnd.oasis.opendocument.spreadsheet'
+const ODS_NS = 'xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:table="urn:oasis:names:tc:opendocument:xmlns:table:1.0" xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0"'
+export const odsDoc = (tables: string) => `<?xml version="1.0"?><office:document-content ${ODS_NS}><office:body><office:spreadsheet>${tables}</office:spreadsheet></office:body></office:document-content>`
+export const odsTable = (name: string, rows: string) => `<table:table table:name="${name}">${rows}</table:table>`
+export const odsRow = (cells: string) => `<table:table-row>${cells}</table:table-row>`
+export const odsStr = (t: string) => `<table:table-cell office:value-type="string"><text:p>${t}</text:p></table:table-cell>`
+/** A minimal ODS with the given content.xml. */
+const mergedStr = (t: string) => '<table:table-cell office:value-type="string" table:number-columns-spanned="2"><text:p>' + t + '</text:p></table:table-cell><table:covered-table-cell/>'
+export const ods = (content: string) => zipSync({ mimetype: strToU8(ODS_MIME), 'content.xml': strToU8(content) }, { level: 9 })
+
 /** Files that must fail with a plain "Invalid: …" message and write nothing. */
 export function badFiles(): Record<string, Uint8Array> {
   const real = readTestFile('test_xlsx_import_data.xlsx')
@@ -65,6 +75,17 @@ export function badFiles(): Record<string, Uint8Array> {
     'nobudget.csv': strToU8('Name,Amount\nCoffee,5\n'),
     'rows.csv': strToU8('x\n'.repeat(6000)),
     'budget.ods': strToU8('x'),
+    'nocontent.ods': zipSync({ mimetype: strToU8(ODS_MIME) }),
+    'badxml.ods': ods('<office:document-content><office:body><office:spreadsheet><table:table'),
+    'wrongtype.ods': zipSync({ mimetype: strToU8('application/vnd.oasis.opendocument.text'), 'content.xml': strToU8(odsDoc('')) }),
+    'nomimetype.ods': zipSync({ 'content.xml': strToU8(odsDoc('')) }),
+    'bomb.ods': zipSync({ mimetype: strToU8(ODS_MIME), 'content.xml': new Uint8Array(200 * 1024 * 1024).fill(32) }, { level: 9 }),
+    'fourteen.ods': ods(odsDoc(Array.from({ length: 14 }, (_, i) => odsTable(`S${i}`, '')).join(''))),
+    'entities.ods': ods('<?xml version="1.0"?><!DOCTYPE lolz [<!ENTITY lol "lol">]>' + odsDoc(odsTable('S', odsRow(odsStr('&lol;'))))),
+    // A non-empty cell repeated past the column limit, and a non-empty row repeated past the row limit.
+    'widecells.ods': ods(odsDoc(odsTable('S', odsRow('<table:table-cell table:number-columns-repeated="16384" office:value-type="float" office:value="1"/>')))),
+    'tallrows.ods': ods(odsDoc(odsTable('S', '<table:table-row table:number-rows-repeated="1048576">' + odsStr('x') + '</table:table-row>'))),
+    'badrepeat.ods': ods(odsDoc(odsTable('S', '<table:table-row table:number-rows-repeated="-5">' + odsStr('x') + '</table:table-row>'))),
     'budget.txt': strToU8('x'),
     'fake.xlsx': strToU8('September,,,'),
   }
@@ -79,6 +100,16 @@ export function formulaFiles(): Record<string, Uint8Array> {
     'formulas.xlsx': xlsx([sheet(head
       + '<row r="3">' + str('B3', '=HYPERLINK("http://evil","Click")') + '<c r="F3"><f>1000000*1000</f><v>5</v></c><c r="H3"><f>WEBSERVICE("http://evil")</f></c><c r="J3"><v>5</v></c></row>'
       + '<row r="4">' + str('B4', '&lt;img src=x onerror=alert(1)&gt;') + str('F4', '=1+2') + str('H4', '@SUM(1)') + '</row>')]),
+    // Same sheet as formulas.xlsx; the week headers are merged across their Est./Act. pair.
+    'formulas.ods': ods(odsDoc(odsTable('September',
+      odsRow(odsStr('September') + '<table:table-cell table:number-columns-repeated="3"/>' + mergedStr('09/03 - 09/09') + mergedStr('09/10 - 09/16') + mergedStr('Monthly') + '<table:table-cell table:number-columns-repeated="1024"/>')
+      + odsRow(odsStr('Expenses'))
+      + odsRow('<table:table-cell/>' + odsStr('=HYPERLINK("http://evil","Click")') + '<table:table-cell table:number-columns-repeated="3"/>'
+        + '<table:table-cell table:formula="of:=1000000*1000" office:value-type="float" office:value="5"><text:p>5</text:p></table:table-cell>'
+        + '<table:table-cell/><table:table-cell table:formula="of:=WEBSERVICE(&quot;http://evil&quot;)"/><table:table-cell/>'
+        + '<table:table-cell office:value-type="float" office:value="5"/>')
+      + odsRow('<table:table-cell/>' + odsStr('&lt;img src=x onerror=alert(1)&gt;') + '<table:table-cell table:number-columns-repeated="3"/>' + odsStr('=1+2') + '<table:table-cell/>' + odsStr('@SUM(1)'))
+      + '<table:table-row table:number-rows-repeated="1048570"><table:table-cell table:number-columns-repeated="16384"/></table:table-row>'))),
     'formula.csv': strToU8('September,,,,09/03 - 09/09,,09/10 - 09/16,,Monthly,\n,,,,Est.,Act.,Est.,Act.,Est,Act.\nExpenses\n,"=cmd|\' /C calc\'!A0",,,,=1+2,,+5,,\n,Groceries,,,,"$1,234.50",,(10.00),,'),
   }
 }

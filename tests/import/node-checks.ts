@@ -7,13 +7,23 @@ import { ImportError, type Workbook } from '../../src/import/grid'
 import { buildPlan, type ImportOptions, type ImportPlan } from '../../src/import/plan'
 import { detect, sourceRows } from '../../src/import/sheets'
 import { dateBounds } from '../../src/budget/validate'
-import { badFiles, formulaFiles, readTestFile, seededCategories, SHEET_YEAR, TEST_FILES, TODAY, UNKNOWN_TOP_CSV } from './fixtures'
+import { badFiles, formulaFiles, ods, odsDoc, odsRow, odsStr, odsTable, readTestFile, seededCategories, SHEET_YEAR, TEST_FILES, TODAY, UNKNOWN_TOP_CSV } from './fixtures'
 
 /**
  * Sheet totals that differ from the import because the anonymized sheet itself doesn't add up
  * (its week cells and its Monthly cell disagree). Cents, imported minus the sheet's own row totals.
  */
 const KNOWN_SHEET_DIFFS: Record<string, number> = { 'test_xlsx_import_data.xlsx|Feb': 750 }
+
+/**
+ * Cells missing from docs/test_sheets/test_ods_import_data.ods, per sheet: the file stores them as empty
+ * covered cells (merge leftovers), so their values are gone from the file itself, not misread.
+ * Set to {} once the file is replaced by a clean ODS copy of the XLSX workbook; then parity is exact.
+ */
+const ODS_LOST_CELLS: Record<string, number> = {
+  Jan: 95, Feb: 98, Mar: 99, Apr: 95, May: 95, Jun: 96, Jul: 101, Aug: 97, Sep: 102, Oct: 102, Nov: 102, Annual: 29, Subscriptions: 4,
+}
+const purchaseList = (p: ImportPlan) => p.purchases.map(x => `${x.date} ${x.amount} ${x.description ?? ''}`).join('|')
 
 type Check = (ok: boolean, msg: string) => void
 
@@ -42,6 +52,9 @@ function sheetTotals(file: string, wb: Workbook, p: ImportPlan, check: Check) {
   })
 }
 
+/** Cells of one row, holes as null, for comparing. */
+const wbRow = (wb: Workbook, r: number, sheet = 0) => Array.from(wb.sheets[sheet]?.rows[r] ?? [], c => c ?? null)
+
 export async function run(check: Check) {
   const seeded = seededCategories()
 
@@ -52,7 +65,9 @@ export async function run(check: Check) {
     const runs: [string, Category[]][] = [['empty', []], ['seeded', seeded]]
     for (const [label, cats] of runs) {
       const p = plan(wb, cats)
-      if (label === 'seeded') { sheetTotals(f, wb, p, check); totals.set(f, cents(p.summary.total)) }
+      // A file that lost cells can't add up to its own total cells.
+      if (label === 'seeded' && !(f.endsWith('.ods') && Object.keys(ODS_LOST_CELLS).length)) sheetTotals(f, wb, p, check)
+      if (label === 'seeded') totals.set(f, cents(p.summary.total))
       const paths = [...p.newCategories.map(c => c.name), ...cats.map(c => c.name)]
       check(!paths.some(n => /RV Spending|Mom Support/i.test(n)), `${f} (${label}): no RV Spending or Mom Support rows`)
       const misc = p.purchases.filter(x => p.rows.find(r => r.key === x.rowKey)?.target?.path === 'Expenses › Incidentals › Miscellaneous')
@@ -73,6 +88,60 @@ export async function run(check: Check) {
     const fromCsv = plan(await read(csv, readTestFile(csv)), seeded)
     check(`${fromCsv.summary.purchases} ${fromCsv.summary.total.toFixed(2)}` === sheetTotal(wb, name), `${csv} matches its XLSX sheet (${sheetTotal(wb, name)})`)
   }
+
+  // The ODS copy of the XLSX workbook gives the same result, sheet by sheet and as a whole.
+  const wbO = await read('test_ods_import_data.ods', readTestFile('test_ods_import_data.ods'))
+  check(wbO.format === 'ods' && wbO.sheets.length === wbX.sheets.length, `ODS has ${wbO.sheets.length} sheets, XLSX ${wbX.sheets.length}`)
+  const byMonth = (p: ImportPlan) => {
+    const m = new Map<string, [number, number]>()
+    for (const x of p.purchases) { const k = x.date.slice(0, 7); const v = m.get(k) ?? [0, 0]; m.set(k, [v[0] + 1, v[1] + cents(x.amount)]) }
+    return [...m].sort().map(([k, [n, t]]) => `${k}:${n}/${(t / 100).toFixed(2)}`).join(' ')
+  }
+  const lostTotal = Object.values(ODS_LOST_CELLS).reduce((t, n) => t + n, 0)
+  wbX.sheets.forEach((sx, i) => {
+    const so = wbO.sheets[i]
+    if (!so) return
+    // Cell by cell: every cell the ODS file holds equals the XLSX cell; any other difference is a cell the file lost.
+    let lost = 0, other = 0
+    for (let r = 0; r < Math.max(so.rows.length, sx.rows.length); r++) {
+      const a = so.rows[r] ?? [], b = sx.rows[r] ?? []
+      for (let c = 0; c < Math.max(a.length, b.length); c++) {
+        if (JSON.stringify(a[c] ?? null) === JSON.stringify(b[c] ?? null)) continue
+        if (!a[c]) lost++; else other++
+      }
+    }
+    const one = (wb: Workbook) => plan(wb, seeded, { excludedSheets: wb.sheets.map((_, j) => j).filter(j => j !== i) })
+    const [px, po] = [one(wbX), one(wbO)]
+    const known = ODS_LOST_CELLS[so.name.trim()] ?? 0
+    const same = so.name === sx.name && detect(so).kind === detect(sx).kind && other === 0 && lost === known
+      && (known > 0 || purchaseList(po) === purchaseList(px))
+    check(same, `ODS parity › "${so.name}" (${detect(so).kind}): ${po.summary.purchases} purchases ${po.summary.total.toFixed(2)}; XLSX ${px.summary.purchases} ${px.summary.total.toFixed(2)}${known ? `; ${lost} cells missing from the ODS file (known)` : ''}`)
+  })
+  for (const [label, cats] of [['empty', []], ['seeded', seeded]] as [string, Category[]][]) {
+    const [px, po] = [plan(wbX, cats), plan(wbO, cats)]
+    const names = (p: ImportPlan) => p.newCategories.map(c => c.name)
+    // While the ODS file has lost cells, rows whose amounts were lost add no category, so only a subset is expected.
+    const tree = lostTotal ? names(po).every(n => names(px).includes(n)) : JSON.stringify(names(po)) === JSON.stringify(names(px))
+    check(tree && po.unplaced.length === px.unplaced.length && (lostTotal > 0 || byMonth(po) === byMonth(px)), `ODS parity (${label}): ${lostTotal ? 'new categories are a subset of the XLSX ones' : 'the same new categories, per-month counts and totals'} (ODS ${po.summary.purchases} purchases ${po.summary.total.toFixed(2)}, XLSX ${px.summary.purchases} ${px.summary.total.toFixed(2)})`)
+    if (label === 'seeded') console.log(`  per month, ODS: ${byMonth(po)}
+  per month, XLSX: ${byMonth(px)}`)
+  }
+
+  // ODS details: notes, hidden columns, merged headers, trailing blank repeats.
+  const odsNotes = await read('notes.ods', ods(odsDoc(odsTable(' Subscriptions ', odsRow(
+    '<table:table-cell office:value-type="float" office:value="2"><office:annotation><text:p>paid late</text:p></office:annotation><text:p>2</text:p></table:table-cell>'
+    + '<table:table-cell><office:annotation><text:p>empty but noted</text:p></office:annotation></table:table-cell>'
+    + '<table:table-cell office:value-type="date" office:date-value="2023-01-05"/><table:table-cell office:value-type="time" office:time-value="PT17H10M00S"/>'
+    + '<table:table-cell office:value-type="boolean" office:boolean-value="true"/>' + odsStr('a<text:s text:c="2"/>b')) + odsRow(odsStr('x'))))))
+  const r0 = wbRow(odsNotes, 0)
+  check(odsNotes.sheets[0].name === ' Subscriptions ' && r0[0]?.v === 2 && r0[0]?.note === 'paid late' && r0[1]?.v === '' && r0[1]?.note === 'empty but noted'
+    && r0[2]?.v === '01/05/2023' && r0[3]?.v === '17:10' && r0[4]?.v === 'TRUE' && r0[5]?.v === 'a  b', 'ODS notes, dates, times, booleans and spaces read like XLSX')
+  const t0 = performance.now()
+  const wide = await read('blank-repeats.ods', ods(odsDoc(odsTable('S', odsRow(odsStr('x') + '<table:table-cell table:number-columns-repeated="16383"/>')
+    + '<table:table-row table:number-rows-repeated="1048575"><table:table-cell table:number-columns-repeated="16384"/></table:table-row>'))))
+  check(wide.sheets[0].rows.length === 1, `trailing blank ODS repeats are skipped cheaply (${Math.round(performance.now() - t0)} ms)`)
+  const xJan = wbX.sheets.findIndex(s => /^Jan/.test(s.name)), oJan = wbO.sheets.findIndex(s => /^Jan/.test(s.name))
+  check(xJan >= 0 && JSON.stringify(wbRow(wbX, 0, xJan)) === JSON.stringify(wbRow(wbO, 0, oJan)), 'merged week headers read the same in ODS and XLSX')
 
   // Default year: the current year (Q1, R11); a day sheet keeps the year in its date.
   const sep = await read('test_csv_4_wk_mn.csv', readTestFile('test_csv_4_wk_mn.csv'))
@@ -102,6 +171,8 @@ export async function run(check: Check) {
   const fx = plan(await read('formulas.xlsx', ff['formulas.xlsx']), seeded)
   check(fx.purchases.length === 1 && fx.purchases[0].amount === 5, 'a formula imports its stored value, never its result; formula text is skipped')
   check(fx.rows.some(r => r.warnings.some(w => w.includes('=1+2'))), 'formula text in an amount cell is reported')
+  const fo = plan(await read('formulas.ods', ff['formulas.ods']), seeded)
+  check(fo.purchases.length === 1 && fo.purchases[0].amount === 5 && fo.rows.some(r => r.warnings.some(w => w.includes('=1+2'))), 'ODS formula imports its stored value only; formula text is reported')
   const fc = plan(await read('formula.csv', ff['formula.csv']), seeded)
   check(fc.purchases.every(x => typeof x.amount === 'number') && fc.rows.some(r => r.warnings.some(w => w.includes('+5'))), 'CSV formula text is skipped with a warning')
 

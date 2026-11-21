@@ -7,9 +7,9 @@ export const IMPORT_MAX_SHEETS = 13
 export const IMPORT_MAX_ROWS = 5000
 export const IMPORT_MAX_COLS = 256
 export const IMPORT_MAX_CELLS = 300_000
-/** Unzipped size of every XLSX part read, together (zip bombs). */
+/** Unzipped size of every XLSX or ODS part read, together (zip bombs). */
 export const IMPORT_MAX_UNZIPPED = 40 * 1024 * 1024
-/** Entries in an XLSX zip directory. */
+/** Entries in an XLSX or ODS zip directory. */
 export const IMPORT_MAX_ZIP_ENTRIES = 2000
 /** Longest text kept from one cell; longer text is cut (names and descriptions are shorter still). */
 export const IMPORT_MAX_TEXT = 500
@@ -20,10 +20,16 @@ export interface Cell { v: string | number; note?: string }
 /** One sheet as a sparse grid: `rows[r][c]`, both 0-based. */
 export interface Sheet { name: string; rows: (Cell | undefined)[][] }
 
-export interface Workbook { format: 'csv' | 'xlsx'; sheets: Sheet[] }
+export interface Workbook { format: 'csv' | 'xlsx' | 'ods'; sheets: Sheet[] }
 
 /** Why a file can't be imported; is the full message text; the UI shows it after "Invalid: " (0013 §9). */
 export class ImportError extends Error {}
+
+/** Messages shared by the zip-based readers (XLSX, ODS). */
+export const DAMAGED_FILE = 'File is damaged or isn’t a real spreadsheet, so it can’t be read.'
+export const tooManySheets = (n: number) => new ImportError(`File has ${n} sheets. Import at most ${IMPORT_MAX_SHEETS} (one per month and the annual sheet).`)
+export const tooManyRows = (sheet: string) => new ImportError(`File has more than ${IMPORT_MAX_ROWS} rows in sheet “${sheet}”.`)
+export const tooManyCols = (sheet: string) => new ImportError(`File has more than ${IMPORT_MAX_COLS} columns in sheet “${sheet}”.`)
 
 /** Counts cells across a workbook and stops at the limit. */
 export class CellBudget {

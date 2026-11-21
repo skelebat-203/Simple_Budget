@@ -92,7 +92,7 @@ export async function run(check: Check) {
     await reset(true)
     const r = await refused(async () => applyImport(await preview(name, bytes)))
     check(r.msg.startsWith('Invalid: ') && r.same, `${name}: ${r.msg}; data unchanged`)
-    if (name === 'budget.txt') check(r.msg === 'Invalid: Unsupported file type. Choose a .csv or .xlsx file.', `${name}: exact message`)
+    if (name === 'budget.txt') check(r.msg === 'Invalid: Unsupported file type. Choose a .csv, .xlsx or .ods file.', `${name}: exact message`)
     if (name === 'huge.csv') check(r.msg === 'Invalid: File is larger than 5 MB. Save a copy with fewer sheets and try again.', `${name}: exact message`)
   }
 

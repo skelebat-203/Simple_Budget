@@ -38,7 +38,7 @@ export function ImportSection({ onImported, note }: {
       setMessage(null)
       setReading({ fileName: file.name, workbook, snapshot })
     } catch (e) {
-      setMessage({ kind: 'invalid', text: `Invalid: ${e instanceof ImportError ? e.message : 'File can’t be read. Choose a .csv or .xlsx file.'}` })
+      setMessage({ kind: 'invalid', text: `Invalid: ${e instanceof ImportError ? e.message : 'File can’t be read. Choose a .csv, .xlsx or .ods file.'}` })
     } finally {
       if (fileRef.current) fileRef.current.value = ''
     }
@@ -50,8 +50,8 @@ export function ImportSection({ onImported, note }: {
   return (
     <section className="field" aria-labelledby="import-heading">
       <h3 id="import-heading" className="label">Import a budget</h3>
-      <p id="import-help" className="help">Choose a .csv or .xlsx file from a spreadsheet budget. You review the result before anything is saved. Support for .ods files is coming later.{note && ` ${note}`}</p>
-      <label htmlFor="import-file" className="sr-only">Import file (.csv or .xlsx){invalid && <span> invalid</span>}</label>
+      <p id="import-help" className="help">Choose a .csv, .xlsx or .ods file from a spreadsheet budget. You review the result before anything is saved.{note && ` ${note}`}</p>
+      <label htmlFor="import-file" className="sr-only">Import file (.csv, .xlsx or .ods){invalid && <span> invalid</span>}</label>
       <input id="import-file" ref={fileRef} type="file" accept={IMPORT_ACCEPT} className="input"
         aria-describedby={message ? 'import-help import-message' : 'import-help'} onChange={e => choose(e.target.files?.[0])} />
       {message && <p id="import-message" className={message.kind === 'reading' ? 'help' : 'error'}>{message.text}</p>}
