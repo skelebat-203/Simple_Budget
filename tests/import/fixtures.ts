@@ -49,7 +49,7 @@ export function xlsx(sheets: (string | Uint8Array)[]): Uint8Array {
   return zipSync(files, { level: 9 })
 }
 
-/** Files that must fail with a plain "Invalid: Import file …" message and write nothing. */
+/** Files that must fail with a plain "Invalid: …" message and write nothing. */
 export function badFiles(): Record<string, Uint8Array> {
   const real = readTestFile('test_xlsx_import_data.xlsx')
   return {

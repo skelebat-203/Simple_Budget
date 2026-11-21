@@ -10,7 +10,7 @@ const SIG_EOCD = 0x06054b50
 const SIG_CENTRAL = 0x02014b50
 const SIG_LOCAL = 0x04034b50
 const EOCD_SEARCH = 22 + 0xffff
-const DAMAGED = 'is damaged or isn’t a real spreadsheet, so it can’t be read.'
+const DAMAGED = 'File is damaged or isn’t a real spreadsheet, so it can’t be read.'
 
 /** `size`: compressed size from the central directory. */
 interface Entry { method: number; size: number; offset: number }
@@ -30,7 +30,7 @@ export class Zip {
     if (eocd < 0) throw new ImportError(DAMAGED)
     const count = dv.getUint16(eocd + 10, true)
     let p = dv.getUint32(eocd + 16, true)
-    if (count > IMPORT_MAX_ZIP_ENTRIES) throw new ImportError('has too many parts to be a budget spreadsheet.')
+    if (count > IMPORT_MAX_ZIP_ENTRIES) throw new ImportError('File has too many parts to be a budget spreadsheet.')
     const utf8 = new TextDecoder()
     for (let n = 0; n < count; n++) {
       if (p + 46 > data.length || dv.getUint32(p, true) !== SIG_CENTRAL) throw new ImportError(DAMAGED)
@@ -41,7 +41,7 @@ export class Zip {
       const skip = nameLen + dv.getUint16(p + 30, true) + dv.getUint16(p + 32, true)
       const offset = dv.getUint32(p + 42, true)
       const name = utf8.decode(data.subarray(p + 46, p + 46 + nameLen))
-      if (flags & 1) throw new ImportError('is password-protected. Save it without a password and try again.')
+      if (flags & 1) throw new ImportError('File is password-protected. Save it without a password and try again.')
       if (size === 0xffffffff || offset === 0xffffffff) throw new ImportError(DAMAGED)
       if (method === 0 || method === 8) this.entries.set(name, { method, size, offset })
       p += 46 + skip
@@ -61,7 +61,7 @@ export class Zip {
     const chunks: Uint8Array[] = []
     const add = (c: Uint8Array) => {
       this.used += c.length
-      if (this.used > IMPORT_MAX_UNZIPPED) throw new ImportError('unpacks to more than 40 MB, which is too large to be a budget spreadsheet.')
+      if (this.used > IMPORT_MAX_UNZIPPED) throw new ImportError('File unpacks to more than 40 MB, which is too large to be a budget spreadsheet.')
       chunks.push(c)
     }
     if (e.method === 0) add(raw)

@@ -11,7 +11,7 @@ export function readCsv(text: string, name: string, budget = new CellBudget()): 
   let i = 0
   const endField = () => {
     if (row.length >= IMPORT_MAX_COLS) {
-      if (field.trim() !== '') throw new ImportError(`has more than ${IMPORT_MAX_COLS} columns.`)
+      if (field.trim() !== '') throw new ImportError(`File has more than ${IMPORT_MAX_COLS} columns.`)
     } else if (field !== '') {
       budget.take()
       row[row.length] = { v: field.slice(0, IMPORT_MAX_TEXT) }
@@ -20,7 +20,7 @@ export function readCsv(text: string, name: string, budget = new CellBudget()): 
   }
   const endRow = () => {
     endField()
-    if (rows.length >= IMPORT_MAX_ROWS) throw new ImportError(`has more than ${IMPORT_MAX_ROWS} rows.`)
+    if (rows.length >= IMPORT_MAX_ROWS) throw new ImportError(`File has more than ${IMPORT_MAX_ROWS} rows.`)
     rows.push(row.some(c => c) ? row : [])
     row = []
   }
@@ -42,7 +42,7 @@ export function readCsv(text: string, name: string, budget = new CellBudget()): 
     } else field += ch
     i++
   }
-  if (quoted) throw new ImportError('has a quote that is never closed, so it can’t be read.')
+  if (quoted) throw new ImportError('File has a quote that is never closed, so it can’t be read.')
   if (field !== '' || row.length) endRow()
   while (rows.length && !rows[rows.length - 1].length) rows.pop()
   return { name, rows }

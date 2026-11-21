@@ -22,13 +22,13 @@ export interface Sheet { name: string; rows: (Cell | undefined)[][] }
 
 export interface Workbook { format: 'csv' | 'xlsx'; sheets: Sheet[] }
 
-/** Why a file can't be imported; completes the sentence "Invalid: Import file …". */
+/** Why a file can't be imported; is the full message text; the UI shows it after "Invalid: " (0013 §9). */
 export class ImportError extends Error {}
 
 /** Counts cells across a workbook and stops at the limit. */
 export class CellBudget {
   private n = 0
-  take() { if (++this.n > IMPORT_MAX_CELLS) throw new ImportError('has too many cells. Import one year or fewer sheets at a time.') }
+  take() { if (++this.n > IMPORT_MAX_CELLS) throw new ImportError('File has too many cells. Import one year or fewer sheets at a time.') }
 }
 
 /** Column letter for a 0-based index (0 → A, 26 → AA). */

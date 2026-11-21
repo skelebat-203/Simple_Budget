@@ -12,7 +12,8 @@ import { dueDayKey, isoOf, nameKey, type MonthDay } from './cells'
 /** What the plan needs from the database. */
 export interface Snapshot {
   categories: Category[]
-  purchases: { categoryId: number; date: string }[]
+  /** `amount` is only for the preview's "already has data" totals; the plan itself doesn't use it. */
+  purchases: { categoryId: number; date: string; amount?: number }[]
   today: Date
 }
 
@@ -248,14 +249,14 @@ function yearBounds(today: Date) {
 
 const SEP = ' — '
 const describe = (...parts: (string | undefined)[]) => cleanDescription(parts.filter(Boolean).join(SEP)) || undefined
-const money = (n: number) => `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+export const money = (n: number) => `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 const cents = (n: number) => Math.round(n * 100)
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 const monthEnd = (y: number, m: number) => isoOf(y, m, new Date(y, m, 0).getDate())!
 
 export function buildPlan(wb: Workbook, snap: Snapshot, opts: ImportOptions = {}): ImportPlan {
   const layouts = wb.sheets.map(detect)
-  if (!layouts.some(l => l.kind !== 'skipped')) throw new ImportError('has no budget sheets. A budget sheet has week dates, days, a full date or the months Jan to Dec in row 1.')
+  if (!layouts.some(l => l.kind !== 'skipped')) throw new ImportError('File has no budget sheets. A budget sheet has week dates, days, a full date or the months Jan to Dec in row 1.')
   const excluded = new Set(opts.excludedSheets ?? [])
   const bounds = dateBounds(snap.today)
   const warnings: string[] = []

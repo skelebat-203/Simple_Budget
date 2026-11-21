@@ -25,7 +25,7 @@ async function state() {
 async function refused(write: () => Promise<unknown>) {
   const before = JSON.stringify(await state())
   let msg = 'NO ERROR'
-  try { await write() } catch (e) { msg = e instanceof ImportError ? `Invalid: Import file ${e.message}` : `OTHER ${String(e)}` }
+  try { await write() } catch (e) { msg = e instanceof ImportError ? `Invalid: ${e.message}` : `OTHER ${String(e)}` }
   return { msg, same: before === JSON.stringify(await state()) }
 }
 
@@ -91,7 +91,9 @@ export async function run(check: Check) {
   for (const [name, bytes] of Object.entries(badFiles())) {
     await reset(true)
     const r = await refused(async () => applyImport(await preview(name, bytes)))
-    check(r.msg.startsWith('Invalid: Import file') && r.same, `${name}: ${r.msg}; data unchanged`)
+    check(r.msg.startsWith('Invalid: ') && r.same, `${name}: ${r.msg}; data unchanged`)
+    if (name === 'budget.txt') check(r.msg === 'Invalid: Unsupported file type. Choose a .csv or .xlsx file.', `${name}: exact message`)
+    if (name === 'huge.csv') check(r.msg === 'Invalid: File is larger than 5 MB. Save a copy with fewer sheets and try again.', `${name}: exact message`)
   }
 
   // A preview made stale by another tab (row deleted) writes nothing.

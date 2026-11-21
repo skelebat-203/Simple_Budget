@@ -109,8 +109,8 @@ export async function run(check: Check) {
   for (const [name, bytes] of Object.entries(badFiles())) {
     const t0 = performance.now()
     let msg = 'NO ERROR'
-    try { plan(await read(name, bytes), seeded) } catch (e) { msg = e instanceof ImportError ? `Invalid: Import file ${e.message}` : `OTHER ${String(e)}` }
-    check(msg.startsWith('Invalid: Import file'), `${name}: ${msg} (${Math.round(performance.now() - t0)} ms)`)
+    try { plan(await read(name, bytes), seeded) } catch (e) { msg = e instanceof ImportError ? `Invalid: ${e.message}` : `OTHER ${String(e)}` }
+    check(msg.startsWith('Invalid: '), `${name}: ${msg} (${Math.round(performance.now() - t0)} ms)`)
   }
   return { totals: Object.fromEntries(totals) }
 }

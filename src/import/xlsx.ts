@@ -14,7 +14,7 @@ const parser = new XMLParser({
   isArray: name => ARRAYS.has(name),
 })
 
-const DAMAGED = 'is damaged or isn’t a real spreadsheet, so it can’t be read.'
+const DAMAGED = 'File is damaged or isn’t a real spreadsheet, so it can’t be read.'
 
 function xml(zip: Zip, path: string): Node | undefined {
   const s = zip.text(path)
@@ -126,7 +126,7 @@ export function readXlsx(data: Uint8Array): Workbook {
   if (!wb) throw new ImportError(DAMAGED)
   const base1904 = ['1', 'true'].includes(String((wb.workbookPr as Node | undefined)?.date1904 ?? ''))
   const sheetsMeta = arr((wb.sheets as Node | undefined)?.sheet)
-  if (sheetsMeta.length > IMPORT_MAX_SHEETS) throw new ImportError(`has ${sheetsMeta.length} sheets. Import at most ${IMPORT_MAX_SHEETS} (one per month and the annual sheet).`)
+  if (sheetsMeta.length > IMPORT_MAX_SHEETS) throw new ImportError(`File has ${sheetsMeta.length} sheets. Import at most ${IMPORT_MAX_SHEETS} (one per month and the annual sheet).`)
   const wbRels = rels(zip, wbPath)
   const strings = arr(((xml(zip, 'xl/sharedStrings.xml')?.sst as Node | undefined)?.si)).map(si => text(si).slice(0, IMPORT_MAX_TEXT))
   const styles = dateStyles(zip)
@@ -144,13 +144,13 @@ export function readXlsx(data: Uint8Array): Workbook {
     for (const row of arr((ws?.sheetData as Node | undefined)?.row)) {
       r = row.r != null ? Number(row.r) - 1 : r + 1
       if (!Number.isInteger(r) || r < 0) throw new ImportError(DAMAGED)
-      if (r >= IMPORT_MAX_ROWS) throw new ImportError(`has more than ${IMPORT_MAX_ROWS} rows in sheet “${name}”.`)
+      if (r >= IMPORT_MAX_ROWS) throw new ImportError(`File has more than ${IMPORT_MAX_ROWS} rows in sheet “${name}”.`)
       const cells: (Cell | undefined)[] = []
       let c = -1
       for (const cell of arr(row.c)) {
         const at = cell.r != null ? ref(String(cell.r)) : undefined
         c = at ? at.c : c + 1
-        if (c >= IMPORT_MAX_COLS) throw new ImportError(`has more than ${IMPORT_MAX_COLS} columns in sheet “${name}”.`)
+        if (c >= IMPORT_MAX_COLS) throw new ImportError(`File has more than ${IMPORT_MAX_COLS} columns in sheet “${name}”.`)
         const t = String(cell.t ?? 'n')
         const raw = cell.t === 'inlineStr' ? text(cell.is) : text(cell.v)
         let v: string | number | undefined

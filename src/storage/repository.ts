@@ -368,10 +368,10 @@ export function checkBackup(data: unknown): Backup {
  * the transaction, since another tab may have changed the tree while the preview was open.
  */
 export async function applyImport(plan: ImportPlan): Promise<{ purchases: number; categories: number; charityMoved: number }> {
-  if (plan.unplaced.length) throw new ImportError('has rows that need a place. Choose where they go in the preview, or skip them.')
+  if (plan.unplaced.length) throw new ImportError('File has rows that need a place. Choose where they go in the preview, or skip them.')
   return db.transaction('rw', db.categories, db.budgetItems, async () => {
     const existing = new Map((await db.categories.toArray()).map(c => [c.id!, c]))
-    const changed = () => new ImportError('changed in another tab while the preview was open. Choose the file again.')
+    const changed = () => new ImportError('File changed in another tab while the preview was open. Choose the file again.')
     const real = new Map<number, number>()
     const idOf = (id: number) => {
       const r = id < 0 ? real.get(id) : existing.has(id) ? id : undefined
@@ -395,14 +395,14 @@ export async function applyImport(plan: ImportPlan): Promise<{ purchases: number
     for (const id of plan.select) await db.categories.update(idOf(id), { selected: true })
     for (const e of plan.estimates) {
       const id = idOf(e.categoryId)
-      if (!isMoney(e.estimate) || e.estimate <= 0) throw new ImportError('has an estimate that isn’t a valid amount.')
+      if (!isMoney(e.estimate) || e.estimate <= 0) throw new ImportError('File has an estimate that isn’t a valid amount.')
       const now = await db.categories.get(id)
       if (now?.estimate == null) await db.categories.update(id, { estimate: e.estimate, frequency: e.frequency })
     }
     const stamp = Date.now()
     const rows: BudgetItem[] = plan.purchases.map((p, i) => {
       const description = p.description ? cleanDescription(p.description) : ''
-      if (!isMoney(p.amount) || !DATE_RE.test(p.date)) throw new ImportError('has an amount or date that isn’t valid.')
+      if (!isMoney(p.amount) || !DATE_RE.test(p.date)) throw new ImportError('File has an amount or date that isn’t valid.')
       // The sheet's time sets when the purchase shows in the Day table (Q10); others keep the sheet's order.
       const createdAt = p.minutes != null && Number.isInteger(p.minutes) && p.minutes >= 0 && p.minutes < MINUTES_PER_DAY
         ? new Date(`${p.date}T00:00:00`).getTime() + p.minutes * 60_000
