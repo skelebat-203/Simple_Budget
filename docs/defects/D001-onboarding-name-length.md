@@ -6,3 +6,4 @@
 - Fix: stop typing at 60 characters (`maxLength` from `NAME_MAX` on the multi-select input) and say the limit in the field help, as Budget setup's Create field does.
 - Files: `src/components/ui/MultiSelect.tsx`, `src/screens/Onboarding.tsx`.
 - Scheduled: v0.6.
+- Status: closed (2026-11-21). The 60-character limit landed in v0.6.1. The onboarding no longer has the multi-select, and `MultiSelect.tsx` was removed in v0.6.29 (nothing used it), so the defect no longer applies.

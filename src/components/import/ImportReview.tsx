@@ -161,7 +161,7 @@ export function ImportReview({ fileName, workbook, snapshot, onCancel, onDone, o
               {/* The label changes with the state, so there is no aria-expanded. */}
               <div className="actions">
                 <Button type="button" className="secondary small" aria-controls="warnings-more" aria-label={`${moreChecks ? 'Hide' : 'Show'} warnings ${MAX_WARNINGS + 1} - ${checks.length}`}
-                  onClick={() => setMoreChecks(m => !m)}>{moreChecks ? 'Hide' : 'Show'} {checks.length - MAX_WARNINGS} more</Button>
+                  onClick={() => setMoreChecks(m => !m)}>{moreChecks ? 'Hide' : 'Show'} warnings {MAX_WARNINGS + 1} - {checks.length}</Button>
               </div>
             </>
           )}
