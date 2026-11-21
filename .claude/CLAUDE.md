@@ -31,3 +31,6 @@ v0.4.12 on (decided 2026-11-02). Earlier versions used the step-number rule.
 
 ## Accessibility Overrides
 - Exception to sticky content rules - in this app allow "Save" to be sticky in mobile unless the mobile screen has been zoomed.
+
+## Git
+Use the git-broker MCP tools for git: git_status, git_diff, git_log, git_stage, git_commit, git_worktree_add, git_worktree_remove, git_merge, git_rebase. Do not run git directly; .git is read-only in the sandbox. Commits and merges to main need the user's approval.

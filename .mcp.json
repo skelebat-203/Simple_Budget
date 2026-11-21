@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "git-broker": {
+      "command": "node",
+      "args": ["/home/shash/Projects/Programming/pipeline_tool/dist/src/git-broker/server.js", "--repo", "/home/shash/Projects/Programming/Simple_Budget"]
+    }
+  }
+}
