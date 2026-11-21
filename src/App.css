@@ -60,6 +60,7 @@
 .banner-title { font-size: var(--font-size-base); font-weight: var(--font-weight-bold); }
 .banner a { color: var(--color-alert); }
 .banner ul { margin: var(--space-xs) 0 0; padding-left: var(--space-lg); }
+.banner > ul + ul { margin-top: calc(-1 * var(--space-sm)); } /* a list continued after a Show more button: no gap */
 
 /* --- Controls --- */
 :focus-visible { outline: 3px solid var(--color-info); outline-offset: 2px; }
