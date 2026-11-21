@@ -11,7 +11,7 @@ Test files are in `docs/test_sheets/` (anonymized copies of the human's real bud
 | File set | Content |
 |---|---|
 | `test_csv_4_wk_mn.csv`, `test_csv_5_wk_mn.csv`, `test_csv_annual.csv` | One sheet each: September (4 weeks), October (5 weeks, has a DIF column), Annual (with the Misc. Breakdown table under it) |
-| `test_xlsx_import_data.xlsx`, `test_ods_import_data.ods` | The same 13-sheet workbook in two formats (active tab: Sep). The ODS file was saved from LibreOffice by the human (2026-11-21); some of its merged cells lost their values in that save, see `tests/import/README.md`. Sheets: Jan to Nov, Annual, and " Subscriptions " (a non-budget sheet the importer must skip; note the spaces in its name) |
+| `test_xlsx_import_data.xlsx`, `test_ods_import_data.ods` | The same 13-sheet workbook in two formats (active tab: Sep). The ODS file was saved from LibreOffice by the human (2026-11-21); some of its merged cells lost their values in that save, see `tests/import/README.md`. A second save (`test_ods_import_data_large.ods`, 2026-11-21) lost the same cells, so the first file is the one tested; the human accepted this. Sheets: Jan to Nov, Annual, and " Subscriptions " (a non-budget sheet the importer must skip; note the spaces in its name) |
 | `test_csv_week.csv`, `test_csv_day.csv`, `test_xlsx_week_day.xlsx` | **Invented data** (not from the human's budget), written 2026-11-11 because the real files have no Week or Day sheets. A Week sheet: names in A to D, an Est. and Act. pair for each of the 7 days (headed `MM/DD`), then a Weekly pair that sums the days, then a notes column. A Day sheet (the human corrected its layout 2026-11-11): the full date in A1, amounts in D, times in E |
 
 Things in the files the importer must handle:
