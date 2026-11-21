@@ -1,13 +1,24 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Button, Dialog } from '../components/ui'
+import { Button, Dialog, Toggle } from '../components/ui'
 import { useAnnounce } from '../components/ui/announcer'
-import { saveSetup } from '../storage/repository'
+import { ImportSection } from '../components/import/ImportSection'
+import { saveSetup, settingsRepo } from '../storage/repository'
 import type { Category, Frequency } from '../storage/db'
 import { buildTree, FREQUENCIES, flatten, isTotal, scheduleClears, type Cat } from '../budget/tree'
 import * as edit from '../budget/setupEdits'
 
 type Step = 1 | 2 | 3
 const STEPS = 3
+
+type Choice = 'presets' | 'own' | 'import'
+const STEP2_NAME = 'Use presets, choose your own categories, or import a file?'
+const STEP2_HINT = 'You can change presets later in Budget setup.'
+const STEP2_OPTIONS: { value: Choice; label: string }[] = [
+  { value: 'presets', label: 'Use presets' },
+  { value: 'own', label: 'Add categories' },
+  { value: 'import', label: 'Import a file' },
+]
+const IMPORT_NOTE = 'Your other answers in this setup are not used when you import.'
 
 interface Option { key: string; name: string; group: string; groupKey: string }
 
@@ -52,7 +63,7 @@ export function Onboarding({ cats, firstRun, onClose, onSkip, onDone, onAdvanced
   const [step, setStep] = useState<Step>(1)
   const [freq, setFreq] = useState<Frequency>(incomeItems[0]?.cat.frequency ?? 'month')
   const [selected, setSelected] = useState(() => new Set(options.filter(o => original.find(c => String(c.id) === o.key)?.selected).map(o => o.key)))
-  const [choice, setChoice] = useState<'presets' | 'own'>('presets')
+  const [choice, setChoice] = useState<Choice>('presets')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [status, setStatus] = useState('')
@@ -65,6 +76,17 @@ export function Onboarding({ cats, firstRun, onClose, onSkip, onDone, onAdvanced
     else if (step === 2) body.current?.querySelector<HTMLElement>('input:checked')?.focus()
     else body.current?.querySelector<HTMLElement>('input[type=checkbox]')?.focus()
   }, [step])
+
+  function chooseStep2(v: Choice) {
+    setChoice(v)
+    setStatus(v === 'import' ? 'Import options shown' : '')
+  }
+
+  /** After a successful import: mark the wizard done without applying the other answers. */
+  async function imported() {
+    try { await settingsRepo.update({ onboarded: true }) } catch { /* asked again next time */ }
+    onDone()
+  }
 
   function go(s: Step) { setStep(s); setStatus(`Step ${s} of ${STEPS}`) }
   const toggle = (key: string) => setSelected(s => { const n = new Set(s); if (n.has(key)) n.delete(key); else n.add(key); return n })
@@ -93,7 +115,7 @@ export function Onboarding({ cats, firstRun, onClose, onSkip, onDone, onAdvanced
   const right = step === 1
     ? <Button type="button" id="onboarding-next" onClick={() => go(2)}>Next</Button>
     : step === 2
-      ? <Button type="button" id="onboarding-next" onClick={() => (choice === 'presets' ? finish(false, onDone) : go(3))} disabled={saving}>{saving ? 'Saving…' : 'Next'}</Button>
+      ? choice === 'import' ? null : <Button type="button" id="onboarding-next" onClick={() => (choice === 'presets' ? finish(false, onDone) : go(3))} disabled={saving}>{saving ? 'Saving…' : 'Next'}</Button>
       : step === 3
       ? <Button type="button" id="onboarding-done" onClick={() => finish(true, onDone)} disabled={saving}>{saving ? 'Saving…' : 'Done'}</Button>
       : null
@@ -130,21 +152,10 @@ export function Onboarding({ cats, firstRun, onClose, onSkip, onDone, onAdvanced
         )}
 
         {step === 2 && (
-          <fieldset className="fieldset" role="radiogroup" aria-labelledby="presets-legend" aria-describedby="presets-help">
-            <legend id="presets-legend" className="legend">Use presets, or choose your own categories?</legend>
-            <p id="presets-help" className="help">You can change presets later in Budget setup.</p>
-            <ul className="plain-list choice-buttons">
-              {([['presets', 'Use presets'], ['own', 'Add categories']] as const).map(([v, label]) => (
-                <li key={v}>
-                  <label className="choice-button">
-                    <input type="radio" className="sr-only" name="presets" id={`presets-${v}`} value={v}
-                      checked={choice === v} onChange={() => setChoice(v)} />
-                    {label}
-                  </label>
-                </li>
-              ))}
-            </ul>
-          </fieldset>
+          <>
+            <Toggle name={STEP2_NAME} hint={STEP2_HINT} value={choice} options={STEP2_OPTIONS} onChange={chooseStep2} />
+            {choice === 'import' && <ImportSection onImported={imported} note={IMPORT_NOTE} />}
+          </>
         )}
 
         {step === 3 && (

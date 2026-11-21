@@ -13,7 +13,11 @@ interface Reading { fileName: string; workbook: Workbook; snapshot: Snapshot }
  * Messages sit between the file control and the "What can I import?" note; they are also announced through the app's one polite region.
  * The file control is a button, so its state is in its name ("invalid"), not aria-invalid.
  */
-export function ImportSection({ onImported }: { onImported: () => void }) {
+export function ImportSection({ onImported, note }: {
+  onImported: () => void
+  /** Extra sentence added to the help text (the onboarding wizard uses it). */
+  note?: string
+}) {
   const fileRef = useRef<HTMLInputElement>(null)
   const [message, setMessage] = useState<Message | null>(null)
   const [reading, setReading] = useState<Reading | null>(null)
@@ -46,7 +50,7 @@ export function ImportSection({ onImported }: { onImported: () => void }) {
   return (
     <section className="field" aria-labelledby="import-heading">
       <h3 id="import-heading" className="label">Import a budget</h3>
-      <p id="import-help" className="help">Choose a .csv or .xlsx file from a spreadsheet budget. You review the result before anything is saved. Support for .ods files is coming later.</p>
+      <p id="import-help" className="help">Choose a .csv or .xlsx file from a spreadsheet budget. You review the result before anything is saved. Support for .ods files is coming later.{note && ` ${note}`}</p>
       <label htmlFor="import-file" className="sr-only">Import file (.csv or .xlsx){invalid && <span> invalid</span>}</label>
       <input id="import-file" ref={fileRef} type="file" accept={IMPORT_ACCEPT} className="input"
         aria-describedby={message ? 'import-help import-message' : 'import-help'} onChange={e => choose(e.target.files?.[0])} />
