@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Mockup step 16</title>
+<link rel="stylesheet" href="file:///home/shash/Projects/Programming/Simple_Budget/src/styles/tokens.css">
+<link rel="stylesheet" href="file:///home/shash/Projects/Programming/Simple_Budget/src/index.css">
+<link rel="stylesheet" href="file:///home/shash/Projects/Programming/Simple_Budget/src/App.css">
+<style>dialog[open]{margin:24px auto}</style></head>
+<body>
+<dialog open class="dialog onboarding" id="onboarding" aria-labelledby="onboarding-title">
+ <div class="dialog-body">
+  <h2 id="onboarding-title" class="section-title">Let’s set up your budget</h2>
+  <div class="wizard-steps">
+   <p>Step 2 of 3</p>
+   <div class="wizard-bar"><span style="width:66.6%"></span></div>
+  </div>
+  <fieldset class="fieldset">
+   <legend class="legend">Use presets, choose your own categories, or import a file?</legend>
+   <p class="help">You can change presets later in Budget setup.</p>
+   <ul class="plain-list choice-buttons">
+    <li><label class="choice-button"><input type="radio" class="sr-only" name="p">Use presets</label></li>
+    <li><label class="choice-button"><input type="radio" class="sr-only" name="p">Add categories</label></li>
+    <li><label class="choice-button"><input type="radio" class="sr-only" name="p" checked>Import a file</label></li>
+   </ul>
+  </fieldset>
+  <section class="field">
+   <h3 class="label">Import a budget</h3>
+   <p class="help">Choose a .csv or .xlsx file from a spreadsheet budget. You review the result before anything is saved. Your other answers in this setup are not used when you import.</p>
+   <input type="file" class="input">
+   <details class="import-more"><summary>What can I import?</summary></details>
+  </section>
+  <div class="actions dialog-actions">
+   <div class="actions"><button type="button" class="btn secondary">Back</button></div>
+   <button type="button" class="btn secondary">Advanced options</button>
+  </div>
+ </div>
+</dialog>
+</body></html>

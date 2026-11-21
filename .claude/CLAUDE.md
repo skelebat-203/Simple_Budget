@@ -16,6 +16,12 @@ This project is network-exposed, so it uses the NETWORKED severity matrix:
 - UI/UX review checklist (UI steps need human approval against it):
   `docs/design/0005-ui-ux-review-checklist.md`
 
+## Mockups and prototypes
+Save every mockup and prototype inside the project, never only in `/tmp/` or the
+scratchpad: images in `docs/design/images/{version}-{topic}/` (HTML source beside
+them), standalone prototypes in `docs/design/`. A mockup of several options shows
+every option, each labelled with the name used in chat.
+
 ## Computed rows
 
 The computed-row list lives in `0004-table-design.md`. The roadmap references

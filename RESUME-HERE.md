@@ -98,7 +98,7 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
     - Files: `src/App.tsx`, `src/components/Backup.tsx`, `src/screens/Onboarding.tsx`, `src/components/ui/Tabs.tsx`
     - Verify: all old help and backup content kept; wizard, Advanced options and Backup dialog work by keyboard
     - Deps: **order changed 2026-11-11: build this step first, without the Import section** (Backup dialog with export and restore, wizard "Advanced options", "Setup Budget" tab action removed, bottom Backup section removed). Step 14 then adds the Import section to the dialog. Mockups approved (`images/0012/g15-backup-button.jpg`, `g15-backup-dialog.jpg`); the dialog is a UI step, so it still pauses for approval of the built result
-16. **Upload step in onboarding** (v0.6/16) — add upload to the wizard once import works.
+16. **Upload step in onboarding** (v0.6/16) ✅ (v0.6.30, v0.6.31; human approved 2026-11-21) — wizard step 2 is a 3-option Toggle (Use presets, Add categories, Import a file); "Import a file" shows the import section, hides Next, and a successful import closes the wizard (pay frequency and checklist not applied). Spec: `0009` §1.
     - Source: roadmap v0.6
     - Files: `src/screens/Onboarding.tsx`, import components
     - Verify: skipping works; imported data replaces the preset choice cleanly
@@ -118,7 +118,7 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
 - ✅ **E — Wizard** (step 11; Onboarding): after A; design settled, so it can run any time after A (before C or D if wanted).
 - **F — Import** (steps 13, 13a, 14, 15, 16; import, Backup, BudgetSetup, Onboarding): after E.
 - **Reviews** (steps 17–19): main session with the user.
-- Status: ✅ A · ✅ B · ✅ C · — D dropped · ✅ E · ⏳ F (13 ✅, 14 ✅, 15 ✅; next 16, then 13a (ODS file now present, use Opus)) · ☐ reviews
+- Status: ✅ A · ✅ B · ✅ C · — D dropped · ✅ E · ⏳ F (13 ✅, 14 ✅, 15 ✅, 16 ✅; next 13a (ODS file now present, use Opus)) · ☐ reviews
 - **Group F order (changed 2026-11-11):** 15 (without Import section) → 14 (mockups, approval, build) → 16 → 13a when an ODS file exists. Steps 15 and 14 were merged to `main` on 2026-11-21 (v0.6.21 to v0.6.29). Session model: Sonnet; Opus only for 13a and the security review if needed. Command style for agents: no `cd`, no chained commands, use the git-broker tools for git, and no mockups or screenshot sets unless the human asks for a specific change.
 
 ### Session process
