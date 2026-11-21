@@ -39,3 +39,5 @@ coverage/
 
 # Human trash files
 human_scratch_files/
+# Local browsers for headless screenshots and Lighthouse
+tools/browsers/

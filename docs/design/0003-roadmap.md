@@ -135,17 +135,18 @@ tracked as a later-version item.
 - Week and Day sheet import: regression test the import of Week and Day sheets, then find and fill the gaps (for example a week sheet and a day sheet that cover the same day are not checked against each other) (decided 2026-11-11)
 - Chart view (Table/Chart switch)
 - Chart types for Budget screen
+- Sync to a Google Sheet (moved from v0.8, decided 2026-11-18): the spreadsheet is a remote copy of the budget, so the same budget can be used and updated on several devices. The user links an existing spreadsheet or the app creates one in their Google account. Google Sheets first; design in a new design doc before building (the design doc holds the spec; this item holds the scope)
+  - StorageAdapter interface + Google Sheets adapter (assumed stable and easier than other options; reassess if Google Sheets proves otherwise)
+  - Sheet layout and data shape: open. The earlier JSON-doc shape (version + updatedAt per record) must be reconciled with a sheet that people can read, decided in the design doc
+  - Sync-on-open: pull then push, last-write-wins, tombstones
+  - Optional passphrase client-side encryption (open: whether encrypted content in a shared sheet is acceptable)
+  - Seed categories/table layout from the sheet's current layout (OnlyOffice's role for testing: open)
 - UI/UX review (human approval)
 - Accessibility pass for charts (alt text, keyboard nav, screen reader)
-- Security review
+- Security review (covers sync)
 
-## v0.8 — Sync
-- StorageAdapter interface + OnlyOffice adapter
-- JSON-doc storage shape (version + updatedAt per record)
-- Sync-on-open: pull then push, last-write-wins, tombstones
-- Optional passphrase client-side encryption
-- Seed categories/table layout from OnlyOffice sheet
-- Security review
+## v0.8 — (no items)
+- Sync moved to v0.7 (decided 2026-11-18). Version kept so numbering stays stable.
 
 ## v0.9 — Distribution + polish
 - Per-OS install instructions (web, Android, GrapheneOS)
