@@ -72,8 +72,8 @@ export function Onboarding({ cats, firstRun, onClose, onSkip, onDone, onAdvanced
   // Focus the first control of each step (the dialog itself holds focus on open).
   const body = useRef<HTMLDivElement>(null)
   useEffect(() => {
-    if (step === 1) body.current?.querySelector<HTMLElement>('input:checked')?.focus()
-    else if (step === 2) body.current?.querySelector<HTMLElement>('input:checked')?.focus()
+    // Steps 1 and 2: the chosen radio, or step 2's select box when that replaces the pill (the hidden control has no box).
+    if (step < 3) [...body.current?.querySelectorAll<HTMLElement>('input:checked, select') ?? []].find(el => el.getClientRects().length > 0)?.focus()
     else body.current?.querySelector<HTMLElement>('input[type=checkbox]')?.focus()
   }, [step])
 
@@ -153,7 +153,7 @@ export function Onboarding({ cats, firstRun, onClose, onSkip, onDone, onAdvanced
 
         {step === 2 && (
           <>
-            <Toggle name={STEP2_NAME} hint={STEP2_HINT} value={choice} options={STEP2_OPTIONS} onChange={chooseStep2} />
+            <Toggle stacked name={STEP2_NAME} hint={STEP2_HINT} value={choice} options={STEP2_OPTIONS} onChange={chooseStep2} />
             {choice === 'import' && <ImportSection onImported={imported} note={IMPORT_NOTE} />}
           </>
         )}

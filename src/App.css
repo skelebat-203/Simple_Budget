@@ -513,6 +513,15 @@ nav .btn.icon:hover:not(:disabled) { background: var(--color-border); }
   .toggle-field.with-suffix .toggle-row { flex-wrap: wrap; }
   .toggle-hint { grid-column: auto; }
 }
+/* Stacked Toggle: name, hint, then the pill, at every width. Options share the width of the longest label and never wrap. */
+.toggle-field.toggle-stacked { display: flex; flex-direction: column; align-items: stretch; gap: var(--space-xs); }
+.toggle-stacked .toggle-select { display: none; }
+.toggle-stacked .toggle { grid-auto-columns: 1fr; width: fit-content; max-width: 100%; }
+.toggle-stacked .toggle-option { white-space: nowrap; }
+@media (max-width: 639.98px) {
+  .toggle-stacked .toggle-select { display: block; }
+  .toggle-stacked .toggle-row { display: none; }
+}
 
 /* --- Grouped combobox (import "where should it go" picker) --- */
 .combo.has-chevron > .input { padding-right: calc(var(--space-lg) + var(--space-md)); }
