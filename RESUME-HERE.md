@@ -81,10 +81,10 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
     - Files: `src/import/`, `docs/test_sheets/` (ODS files)
     - Verify: the ODS test files open in OnlyOffice and import with the same results as the XLSX files
     - Deps: 13; **needs human**: a valid ODS file (for example saved from OnlyOffice or LibreOffice from the XLSX test workbook)
-    - Status 2026-11-11: the generated ODS still fails to open in OnlyOffice, now at content.xml line 749, column 1157 (rows are one per line, so this is one row's content, not a size boundary). Open lead if debugging the generated file; otherwise the human supplies a saved ODS. Consider Opus for this step
-14. **Import flow UI** (v0.6/14) — Import section in the new Backup dialog (step 15), review/preview screen, error and success messages.
+    - Status 2026-11-21: **unblocked.** The human added a valid ODS saved from LibreOffice (`docs/test_sheets/test_ods_import_data.ods`; zip and `content.xml` check out). The generated file that failed in OnlyOffice is replaced. Use Opus for this step. Parse it with the same `0013` rules; the importer shows ".ods coming later" help text today (`ImportSection`), which this step updates
+14. **Import flow UI** (v0.6/14) ✅ (v0.6.23 to v0.6.29; human approved 2026-11-21; built with the shared Toggle, Combobox, Banner and Tip components, D003, and fast-xml-parser 5.12.0) — Import section in the new Backup dialog (step 15), review/preview screen, error and success messages.
     - Source: roadmap v0.6 "UI/UX for the upload flow"; `0013` §5 and §9 (undated purchases are marked and the Day table shows a tooltip note on them); D003
-    - API from step 13 (`src/import/index.ts`): `readImportFile(file)` → `previewImport(wb, await importSnapshot(), options)` after each choice → `applyImport(plan)`. `ImportError` messages finish the sentence "Invalid: Import file …"
+    - API from step 13 (`src/import/index.ts`): `readImportFile(file)` → `previewImport(wb, await importSnapshot(), options)` after each choice → `applyImport(plan)`. `ImportError` messages start with "Invalid: " (changed in step 14; `0013` §9)
     - Preview must show: sheets to tick (`excludedSheets`); the year (`year`, default the current year; day sheets keep their own year); month vs annual (`monthSource`); annual-only months that already have data (`annualExisting`); rows with a target dropdown (`targets`: auto, skip, Miscellaneous, an existing row); warnings, ignored columns and "Skip those items" (`skipDuplicates`)
     - Rows that need a place (`0013` §4, `PlanRow.needsPlace`, `plan.unplaced`): a top-level row the app doesn't know. The user picks where it goes: under an existing row (`{ parentId }`, a top-level row or a subcategory directly under one), onto an existing row (`{ categoryId }`), or skip. Import stays disabled while `plan.unplaced` is not empty (`applyImport` refuses too). The picker design is part of this step's UI approval
     - Choosing a new row name in a target dropdown is not built in step 13 (only existing rows); decide in this step's design whether it is needed
@@ -93,7 +93,7 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
     - Files: `src/screens/BudgetSetup.tsx`, `src/components/Backup.tsx`, new import screen, `src/App.css`, `src/components/BudgetTable.tsx` (tooltip, D003)
     - Verify: keyboard and screen reader path; progress and error announcements; 320px; `npm run test:import` still passes
     - Deps: 13, 15 (Backup dialog shell; order changed 2026-11-11). **Mockups first** (headless Chromium, as for 0012): preview screen, "needs a place" picker, error and success messages. Build only after the human comments on them
-15. **Merge Budget setup and help; help text** (v0.6/15) ✅ (v0.6.21, v0.6.22; shell without the Import section, which step 14 adds; human approved 2026-11-21) — decided 2026-11-08 (`0009` §5): "?" opens the wizard (auto on first load) with "Advanced options" (opens Budget setup) in its footer; "Setup Budget" tab action removed; a "Backup" button in its place opens one export/restore/import dialog; the bottom Backup section is removed. Mockups pending the human's comments.
+15. **Merge Budget setup and help; help text** (v0.6/15) ✅ (v0.6.21, v0.6.22; shell without the Import section, which step 14 adds; human approved 2026-11-21) — decided 2026-11-08 (`0009` §5): "?" opens the wizard (auto on first load) with "Advanced options" (opens Budget setup) in its footer; "Setup Budget" tab action removed; a "Backup" button in its place opens one export/restore/import dialog; the bottom Backup section is removed.
     - Source: roadmap v0.6; `0009` §5
     - Files: `src/App.tsx`, `src/components/Backup.tsx`, `src/screens/Onboarding.tsx`, `src/components/ui/Tabs.tsx`
     - Verify: all old help and backup content kept; wizard, Advanced options and Backup dialog work by keyboard
@@ -118,8 +118,8 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
 - ✅ **E — Wizard** (step 11; Onboarding): after A; design settled, so it can run any time after A (before C or D if wanted).
 - **F — Import** (steps 13, 13a, 14, 15, 16; import, Backup, BudgetSetup, Onboarding): after E.
 - **Reviews** (steps 17–19): main session with the user.
-- Status: ✅ A · ✅ B · ✅ C · — D dropped · ✅ E · ⏳ F (13 ✅, 15 ✅; next 14 mockups then build, then 16; 13a waits on the human) · ☐ reviews
-- **Group F order (changed 2026-11-11):** 15 (without Import section) → 14 (mockups, approval, build) → 16 → 13a when an ODS file exists. Worktree `.claude/worktrees/v0.6-group-f` exists at 912c43e (same as `main`). Work paused until the weekend (human, 2026-11-11). Session model: Sonnet; Opus only for 13a and the security review if needed.
+- Status: ✅ A · ✅ B · ✅ C · — D dropped · ✅ E · ⏳ F (13 ✅, 14 ✅, 15 ✅; next 16, then 13a (ODS file now present, use Opus)) · ☐ reviews
+- **Group F order (changed 2026-11-11):** 15 (without Import section) → 14 (mockups, approval, build) → 16 → 13a when an ODS file exists. Steps 15 and 14 were merged to `main` on 2026-11-21 (v0.6.21 to v0.6.29). Session model: Sonnet; Opus only for 13a and the security review if needed. Command style for agents: no `cd`, no chained commands, use the git-broker tools for git, and no mockups or screenshot sets unless the human asks for a specific change.
 
 ### Session process
 Run option 1: one session per group, fresh start at each group boundary. A session starts by reading this file and the roadmap, then:
