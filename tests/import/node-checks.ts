@@ -6,6 +6,7 @@ import { readImportFile } from '../../src/import'
 import { ImportError, type Workbook } from '../../src/import/grid'
 import { buildPlan, type ImportOptions, type ImportPlan } from '../../src/import/plan'
 import { detect, sourceRows } from '../../src/import/sheets'
+import { LOST_VALUES_TITLE, lostValuesText } from '../../src/components/import/text'
 import { dateBounds } from '../../src/budget/validate'
 import { badFiles, formulaFiles, ods, odsDoc, odsRow, odsStr, odsTable, readTestFile, seededCategories, SHEET_YEAR, TEST_FILES, TODAY, UNKNOWN_TOP_CSV } from './fixtures'
 
@@ -23,6 +24,9 @@ const KNOWN_SHEET_DIFFS: Record<string, number> = { 'test_xlsx_import_data.xlsx|
 const ODS_LOST_CELLS: Record<string, number> = {
   Jan: 95, Feb: 98, Mar: 99, Apr: 95, May: 95, Jun: 96, Jul: 101, Aug: 97, Sep: 102, Oct: 102, Nov: 102, Annual: 29, Subscriptions: 4,
 }
+/** Empty covered cells the lost-values check finds in the amount area of the ODS test file (Oct finds 101 of its 102 lost cells). */
+const ODS_LOST_IN_DATA = 1110
+const ODS_LOST_SHEETS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Annual']
 const purchaseList = (p: ImportPlan) => p.purchases.map(x => `${x.date} ${x.amount} ${x.description ?? ''}`).join('|')
 
 type Check = (ok: boolean, msg: string) => void
@@ -173,6 +177,26 @@ export async function run(check: Check) {
   check(fx.rows.some(r => r.warnings.some(w => w.includes('=1+2'))), 'formula text in an amount cell is reported')
   const fo = plan(await read('formulas.ods', ff['formulas.ods']), seeded)
   check(fo.purchases.length === 1 && fo.purchases[0].amount === 5 && fo.rows.some(r => r.warnings.some(w => w.includes('=1+2'))), 'ODS formula imports its stored value only; formula text is reported')
+
+  // Lost values under merges (ODS): file-level warning in the review.
+  const lostO = plan(wbO, seeded).lostValues
+  check(lostO.cells === ODS_LOST_IN_DATA && lostO.sheets.join(',') === ODS_LOST_SHEETS.join(','), `ODS test file: ${lostO.cells} empty covered cells in the amount area, sheets ${lostO.sheets.join(', ')}`)
+  for (const f of TEST_FILES.filter(f => !f.endsWith('.ods'))) check(plan(await read(f, readTestFile(f)), seeded).lostValues.cells === 0, `${f}: no lost-values warning`)
+  const week = '<table:table-cell office:value-type="string" table:number-columns-spanned="2"><text:p>09/03 - 09/09</text:p></table:table-cell><table:covered-table-cell/>'
+  const amount = (n: number) => `<table:table-cell office:value-type="float" office:value="${n}"/>`
+  const head = odsRow(odsStr('September') + '<table:table-cell table:number-columns-repeated="3"/>' + week + week.replace('09/03 - 09/09', '09/10 - 09/16') + week.replace('09/03 - 09/09', 'Monthly'))
+    + odsRow('<table:table-cell table:number-columns-repeated="4"/>' + odsStr('Est.') + odsStr('Act.') + odsStr('Est.') + odsStr('Act.') + odsStr('Est.') + odsStr('Act.'))
+  // Clean: merges only in the header rows and the name columns.
+  const clean = await read('clean.ods', ods(odsDoc(odsTable('Sep', head + odsRow(odsStr('Expenses') + '<table:table-cell/>') + odsRow('<table:table-cell/>'
+    + '<table:table-cell office:value-type="string" table:number-columns-spanned="3"><text:p>Groceries</text:p></table:table-cell><table:covered-table-cell table:number-columns-repeated="2"/>'
+    + '<table:table-cell/>' + amount(10) + '<table:table-cell/>' + amount(5) + '<table:table-cell/>' + amount(15))))))
+  check(plan(clean, seeded).lostValues.cells === 0 && plan(clean, seeded).summary.total === 15, 'ODS with merges only in headers and names: no lost-values warning')
+  const lossy = await read('lossy.ods', ods(odsDoc(odsTable('Sep', head + odsRow(odsStr('Expenses')) + odsRow('<table:table-cell/>' + odsStr('Groceries')
+    + '<table:table-cell table:number-columns-repeated="2"/><table:covered-table-cell table:number-columns-repeated="2"/>' + '<table:table-cell/>' + amount(5) + '<table:table-cell/>' + amount(15))))))
+  const lossyLost = plan(lossy, seeded).lostValues
+  check(lossyLost.cells === 2 && lossyLost.sheets.join() === 'Sep', 'ODS with empty covered cells in the amount area: warns about 2 cells in Sep')
+  check(lostValuesText(lostO.cells, lostO.sheets) === `This .ods file has ${ODS_LOST_IN_DATA} cells that look empty because of merged cells. Sheets: Jan, Feb, Mar and 9 more. LibreOffice can drop values under merges when it saves. Totals may be too low. Check the totals below, or save the file as .xlsx and import that.`
+    && lostValuesText(1, ['Sep']).startsWith('This .ods file has 1 cell that looks empty because of merged cells. Sheet: Sep. ') && LOST_VALUES_TITLE === 'Some values may be missing', 'lost-values warning text')
   const fc = plan(await read('formula.csv', ff['formula.csv']), seeded)
   check(fc.purchases.every(x => typeof x.amount === 'number') && fc.rows.some(r => r.warnings.some(w => w.includes('+5'))), 'CSV formula text is skipped with a warning')
 

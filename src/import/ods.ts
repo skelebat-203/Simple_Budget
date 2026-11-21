@@ -2,7 +2,7 @@
 // Formulas (`table:formula`), macros, charts, embedded objects and links are never read or run (0013 §2).
 import { XMLParser } from 'fast-xml-parser'
 import { Zip } from './zip'
-import { CellBudget, DAMAGED_FILE, IMPORT_MAX_COLS, IMPORT_MAX_ROWS, IMPORT_MAX_SHEETS, IMPORT_MAX_TEXT, ImportError, tooManyCols, tooManyRows, tooManySheets, type Cell, type Sheet, type Workbook } from './grid'
+import { CellBudget, DAMAGED_FILE, IMPORT_MAX_CELLS, IMPORT_MAX_COLS, IMPORT_MAX_ROWS, IMPORT_MAX_SHEETS, IMPORT_MAX_TEXT, ImportError, tooManyCols, tooManyRows, tooManySheets, type Cell, type Sheet, type Workbook } from './grid'
 
 const ODS_MIMETYPE = 'application/vnd.oasis.opendocument.spreadsheet'
 export const NOT_ODS = 'File isn’t a real .ods spreadsheet, so it can’t be read.'
@@ -86,12 +86,14 @@ function value(cell: Node): string | number | undefined {
 function readSheet(table: Node, budget: CellBudget): Sheet {
   const name = (attr(table, 'table:name') ?? '').slice(0, IMPORT_MAX_TEXT)
   const rows: (Cell | undefined)[][] = []
+  const covered: [number, number][] = []
   let r = 0
   const readRow = (row: Node) => {
     const count = repeat(row, 'table:number-rows-repeated')
     const cells: (Cell | undefined)[] = []
     let c = 0
     let filled = false
+    const emptyCovered: number[] = []
     for (const cell of kids(row)) {
       const tag = tagOf(cell)
       if (tag !== 'table:table-cell' && tag !== 'table:covered-table-cell') continue
@@ -100,7 +102,12 @@ function readSheet(table: Node, budget: CellBudget): Sheet {
       const v = value(cell)
       const noteNode = child(cell, 'office:annotation')
       const note = noteNode ? noteText(noteNode) : ''
-      if ((v === undefined || v === '') && !note) { c += span; continue }
+      if ((v === undefined || v === '') && !note) {
+        // Empty covered cells are kept by position: under a merge in the data area they can mean a lost value.
+        if (tag === 'table:covered-table-cell') for (let k = 0; k < span && c + k < IMPORT_MAX_COLS; k++) emptyCovered.push(c + k)
+        c += span
+        continue
+      }
       // Stored values only; `table:formula` is never read.
       const out: Cell = { v: v ?? '', ...(note ? { note } : {}) }
       for (let k = 0; k < span; k++, c++) {
@@ -110,6 +117,7 @@ function readSheet(table: Node, budget: CellBudget): Sheet {
       }
       filled = true
     }
+    for (let k = 0; k < count && r + k < IMPORT_MAX_ROWS && covered.length < IMPORT_MAX_CELLS; k++) for (const ec of emptyCovered) covered.push([r + k, ec])
     if (!filled) { r += count; return }
     for (let k = 0; k < count; k++, r++) {
       if (r >= IMPORT_MAX_ROWS) throw tooManyRows(name)
@@ -125,7 +133,7 @@ function readSheet(table: Node, budget: CellBudget): Sheet {
     }
   }
   walk(kids(table))
-  return { name, rows }
+  return covered.length ? { name, rows, covered } : { name, rows }
 }
 
 export function readOds(data: Uint8Array): Workbook {

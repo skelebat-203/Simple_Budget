@@ -4,7 +4,7 @@
 import type { Category } from '../storage/db'
 import { cleanDescription, dateBounds } from '../budget/validate'
 import { ImportError, type Workbook } from './grid'
-import { detect, ignoredColumns, sourceRows, type Layout, type SheetKind, type SourceRow } from './sheets'
+import { coveredInData, detect, ignoredColumns, sourceRows, type Layout, type SheetKind, type SourceRow } from './sheets'
 import { dueDayKey, isoOf, nameKey, type MonthDay } from './cells'
 
 // ---------- inputs ----------
@@ -114,6 +114,8 @@ export interface ImportPlan {
   unplaced: string[]
   /** File-level notes, such as unnamed rows with amounts. */
   warnings: string[]
+  /** ODS: empty covered cells in the amount area of budget sheets, which may be values lost on save; `cells` is 0 when none. */
+  lostValues: { cells: number; sheets: string[] }
   summary: { purchases: number; total: number; newCategories: number; undated: number }
 }
 
@@ -558,11 +560,13 @@ export function buildPlan(wb: Workbook, snap: Snapshot, opts: ImportOptions = {}
   }
 
   const total = finalPurchases.reduce((t, p) => t + cents(p.amount), 0) / 100
+  const lost = wb.sheets.map((s, i) => ({ name: s.name.trim(), n: coveredInData(s, layouts[i]) })).filter(x => x.n > 0)
   return {
     format: wb.format, sheets, year, defaultYear: defYear,
     needsYear: sheets.some(s => s.included && s.kind !== 'day'),
     rows, newCategories, purchases: finalPurchases, estimates: estimateList, select, moves,
     conflicts, annualExisting, ignoredColumns: ignored, unplaced, warnings,
+    lostValues: { cells: lost.reduce((t, x) => t + x.n, 0), sheets: lost.map(x => x.name) },
     summary: { purchases: finalPurchases.length, total, newCategories: newCategories.length, undated: finalPurchases.filter(p => p.undated).length },
   }
 }

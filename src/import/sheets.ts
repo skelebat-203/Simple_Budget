@@ -142,3 +142,14 @@ export function ignoredColumns(sheet: Sheet, layout: Layout): { column: string; 
   }
   return [...out].sort((a, b) => a[0] - b[0]).map(([c, header]) => ({ column: colName(c), header }))
 }
+
+/** Header rows above the data: week and day dates plus the Est./Act. row; one row for annual and day sheets. */
+const HEADER_ROWS: Record<SheetKind, number> = { month: 2, week: 2, annual: 1, day: 1, skipped: 0 }
+
+/** Empty covered cells in a sheet's amount columns below its headers: values a merge may have hidden or lost on save. */
+export function coveredInData(sheet: Sheet, layout: Layout): number {
+  if (layout.kind === 'skipped' || !sheet.covered) return 0
+  const cols = new Set(layout.kind === 'day' ? [layout.day!.amount] : layout.columns.flatMap(d => (d.est != null ? [d.est, d.act] : [d.act])))
+  if (layout.total) { cols.add(layout.total.act); if (layout.total.est != null) cols.add(layout.total.est) }
+  return sheet.covered.filter(([r, c]) => r >= HEADER_ROWS[layout.kind] && cols.has(c)).length
+}

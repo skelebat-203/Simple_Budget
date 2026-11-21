@@ -7,7 +7,7 @@ import { PlaceField } from './PlaceField'
 import { announce } from '../ui/announcer'
 import { amountRows, choiceValue, placeGroups, toChoice } from './choices'
 import { ImportRows } from './ImportRows'
-import { plural } from './text'
+import { LOST_VALUES_TITLE, lostValuesText, plural } from './text'
 
 /** What the review returns when the import was written. */
 export interface ImportDone { purchases: number; categories: number; undated: number }
@@ -39,6 +39,7 @@ export function ImportReview({ fileName, workbook, snapshot, onCancel, onDone, o
   const [placeErrors, setPlaceErrors] = useState(false)
   const [busy, setBusy] = useState(false)
   const pending = useRef('')
+  const lostSaid = useRef(false)
   const [tick, setTick] = useState(0)
   const placeRefs = useRef(new Map<string, HTMLElement>())
 
@@ -50,6 +51,8 @@ export function ImportReview({ fileName, workbook, snapshot, onCancel, onDone, o
   const placeRows = plan.rows.filter(r => r.needsPlace)
   const { purchases, total, newCategories, undated } = plan.summary
   const unplaced = plan.unplaced.length
+  // File-level (ODS): the same for every choice in the review.
+  const lostText = plan.lostValues.cells ? lostValuesText(plan.lostValues.cells, plan.lostValues.sheets) : ''
   const blocked = unplaced > 0 || !!yearError || purchases === 0
 
   // ----- summary and its polite announcement -----
@@ -58,9 +61,12 @@ export function ImportReview({ fileName, workbook, snapshot, onCancel, onDone, o
     ? `${summaryTitle}.`
     : purchases === 0 ? `${summaryTitle}.` : `${summaryTitle}. ${plural(purchases, 'purchase')}, ${money(total)}, ${plural(newCategories, 'new row')}.`
   useEffect(() => {
-    announce(`${pending.current} ${summaryLine}`.trim())
+    // The lost-values warning goes out once, with the first summary, so neither replaces the other in the one live region.
+    const lost = lostText && !lostSaid.current ? `${LOST_VALUES_TITLE}. ${lostText}` : ''
+    lostSaid.current = true
+    announce(`${lost} ${pending.current} ${summaryLine}`.trim())
     pending.current = ''
-  }, [summaryLine, tick])
+  }, [summaryLine, tick, lostText])
 
   const change = (patch: Partial<ImportOptions>, said = '') => {
     pending.current = said
@@ -145,6 +151,7 @@ export function ImportReview({ fileName, workbook, snapshot, onCancel, onDone, o
         <Button type="button" aria-disabled={blocked || undefined} aria-describedby="review-summary" onClick={doImport}>Import</Button>
       </>}>
       <p id="review-file" className="review-file">{fileName} ({workbook.format.toUpperCase()}, {plural(workbook.sheets.length, 'sheet')}). Nothing is saved until you choose Import.</p>
+      {lostText && <Banner kind="warn" title={LOST_VALUES_TITLE}><p>{lostText}</p></Banner>}
       <Banner id="review-summary" kind={unplaced || purchases === 0 ? 'warn' : 'info'} title={summaryTitle}>
         {unplaced
           ? <p>Choose where {unplaced === 1 ? `“${plan.rows.find(r => r.key === plan.unplaced[0])?.name}”` : 'each of them'} goes, or skip {unplaced === 1 ? 'it' : 'them'}. You can’t import until every row has an answer.</p>

@@ -18,7 +18,12 @@ export const IMPORT_MAX_TEXT = 500
 export interface Cell { v: string | number; note?: string }
 
 /** One sheet as a sparse grid: `rows[r][c]`, both 0-based. */
-export interface Sheet { name: string; rows: (Cell | undefined)[][] }
+export interface Sheet {
+  name: string
+  rows: (Cell | undefined)[][]
+  /** ODS only: empty covered cells (under a merge), as [row, column]. In the data area they can be values lost on save. */
+  covered?: [number, number][]
+}
 
 export interface Workbook { format: 'csv' | 'xlsx' | 'ods'; sheets: Sheet[] }
 
