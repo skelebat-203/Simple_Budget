@@ -4,7 +4,7 @@ Tracking file for current work status. Roadmap authority: `docs/design/0003-road
 Design: `0015-sync-design.md` (sync), `0004-table-design.md` (table), `0006-prototype.html` (v0.2 UI), `0007-v0.3-design-updates.md` (v0.3 changes), `0008-v0.5-design-updates.md` (v0.5 changes), `0009-v0.6-design-updates.md` (v0.6), `0012-design-standards.md` (standards), `0014` (Annual Misc breakdown). Higher-numbered doc wins on conflict.
 
 ## Current version
-v0.7.0 (v0.6 complete 2026-11-21, v0.6.0 to v0.6.37; reports: `docs/audits/a11y/a11y-v0.6.md`, `docs/audits/security/security-v0.6.md`). Step 1 ✅ (v0.7.1 to v0.7.3). Step 2 ✅ (v0.7.4). Step 3 ✅ (v0.7.5 to v0.7.10). Step 3b (sync placement) next, on `worktree-v0.7-group-a`; merge to `main` after sync is built and approved.
+v0.7.0 (v0.6 complete 2026-11-21, v0.6.0 to v0.6.37; reports: `docs/audits/a11y/a11y-v0.6.md`, `docs/audits/security/security-v0.6.md`). Step 1 ✅ (v0.7.1 to v0.7.3). Step 2 ✅ (v0.7.4). Step 3 ✅ (v0.7.5 to v0.7.10). Step 3b ✅ (v0.7.12 to v0.7.17). Group A2 (steps 4, 5, 7) in progress on `worktree-v0.7-group-a`.
 
 ## v0.7 plan of action
 Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per completed-work commit; trailer `Plan-Step: v0.7/N`). The final step bumps to the next minor version (v0.8.0). UI steps need human approval (`0005-ui-ux-review-checklist.md`). Baseline: v0.7.0. Data: Dexie v8 (`src/storage/structure.ts`). Testing: headless Chromium (`tools/browsers/`, `lighthouse-sandbox.md`); import harness `npm run test:import` (`tests/import/README.md`).
@@ -41,6 +41,7 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
    - Files: `src/screens/Onboarding.tsx`, `src/screens/BudgetSetup.tsx`, `src/components/Sync.tsx`, `src/screens/Budget.tsx`, `src/components/ui/Tabs.tsx`, `src/App.tsx`, `src/App.css`
    - Verify: `npm run test:dialogs` (wizard step order); 1280/640/320px; keyboard order matches visual order
    - Deps: 3
+   - ✅ (v0.7.12 to v0.7.17; UI approved 2026-11-22)
    - Progress (v0.7.13): built; build, lint, `test:dialogs`, `test:sync`, `test:import` pass; layouts checked at 1280/640/375/320px. Waiting on: the human's sign-in test in Chromium and UI approval.
 4. **Design standards pass** (v0.7/4) — bring the app in line with `0012-design-standards.md`.
    - Source: roadmap v0.7; `0012` §10 gaps
@@ -130,7 +131,7 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
 - **E — Charts**: moved to v0.8.
 - **D004** (step 15b): after F, before the reviews.
 - **Reviews** (steps 16–18): main session with the user.
-- Status: ✅ A · ⏳ F (steps 2, 3 ✅; step 3b next) · ☐ A2 · ☐ B · ☐ C · ☐ D · ~~E~~ · ☐ reviews
+- Status: ✅ A · ✅ F · ⏳ A2 · ☐ B · ☐ C · ☐ D · ~~E~~ · ☐ reviews
 
 ### Session process
 Run option 1: one session per group, fresh start at each group boundary. A session starts by reading this file and the roadmap, then:
