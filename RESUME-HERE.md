@@ -1,109 +1,110 @@
 # RESUME-HERE
 
 Tracking file for current work status. Roadmap authority: `docs/design/0003-roadmap.md`.
-Design: `0004-table-design.md` (table), `0006-prototype.html` (v0.2 UI), `0007-v0.3-design-updates.md` (v0.3 changes), `0008-v0.5-design-updates.md` (v0.5 changes), `0009-v0.6-design-updates.md` (v0.6), `0012-design-standards.md` (standards), `0014` (Annual Misc breakdown). Higher-numbered doc wins on conflict.
+Design: `0015-sync-design.md` (sync, draft), `0004-table-design.md` (table), `0006-prototype.html` (v0.2 UI), `0007-v0.3-design-updates.md` (v0.3 changes), `0008-v0.5-design-updates.md` (v0.5 changes), `0009-v0.6-design-updates.md` (v0.6), `0012-design-standards.md` (standards), `0014` (Annual Misc breakdown). Higher-numbered doc wins on conflict.
 
 ## Current version
-v0.7.0 (v0.6 complete 2026-11-21, v0.6.0 to v0.6.37; reports: `docs/audits/a11y/a11y-v0.6.md`, `docs/audits/security/security-v0.6.md`). No v0.7 step started.
+v0.7.0 (v0.6 complete 2026-11-21, v0.6.0 to v0.6.37; reports: `docs/audits/a11y/a11y-v0.6.md`, `docs/audits/security/security-v0.6.md`). Step 1 ✅ (v0.7.1 to v0.7.3). Step 2: `0015-sync-design.md` draft waiting for human answers.
 
 ## v0.7 plan of action
 Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per completed-work commit; trailer `Plan-Step: v0.7/N`). The final step bumps to the next minor version (v0.8.0). UI steps need human approval (`0005-ui-ux-review-checklist.md`). Baseline: v0.7.0. Data: Dexie v8 (`src/storage/structure.ts`). Testing: headless Chromium (`tools/browsers/`, `lighthouse-sandbox.md`); import harness `npm run test:import` (`tests/import/README.md`).
 
-**Before building (human):** several items below are decided in the roadmap but have open design questions (marked "needs human decision"). Sync (steps 14 and 15) is blocked by the v0.2 5.4 network review and a design doc.
+**Before building (human):** several items below are decided in the roadmap but have open design questions (marked "needs human decision"). Sync (steps 2 and 3) comes right after step 1 (decided 2026-11-21): it needs no other v0.7 step, and step 2 needs the v0.2 5.4 network review and a design doc first.
 
-**Run option (estimate):** single session with fresh restarts for steps 1 to 13: they share `BudgetTable.tsx`, `App.css`, `Dialog` and `validate.ts`, and most need approval mid-way. Revisit before step 14: sync touches separate files (`src/storage/`, a new adapter) and may suit one subagent.
+**Run option (estimate):** single session with fresh restarts for steps 1 and 4 to 15: they share `BudgetTable.tsx`, `App.css`, `Dialog` and `validate.ts`, and most need approval mid-way. Sync (steps 2 and 3) touches separate files (`src/storage/`, a new adapter) and may suit one subagent.
 
-1. **Consolidate dialogs** (v0.7/1) — one dialog component replaces form, confirm and generic dialogs; migrate the v0.6 dialogs (Edit menu, highlight, wizard, Backup).
-   - Source: roadmap v0.7 (decided 2026-11-04)
-   - Files: `src/components/ui/` (dialogs), `src/components/BudgetTable.tsx`, `src/screens/Onboarding.tsx`, `src/components/Backup.tsx`, `src/App.css`
-   - Verify: focus move, trap and return; Escape; stacked dialogs; the a11y scripts in the Lighthouse sweep (30 dialog focus checks) still pass; build + lint
+1. **Consolidate dialogs** (v0.7/1) — one dialog component replaces form, confirm and generic dialogs; migrate the v0.6 dialogs (Edit menu, highlight, wizard, Backup) and Budget setup. ✅ (v0.7.1 to v0.7.3, UI approved 2026-11-21)
+   - Source: roadmap v0.7 (decided 2026-11-04; Budget setup added 2026-11-21)
+   - Files: `src/components/ui/` (dialogs), `src/components/BudgetTable.tsx`, `src/screens/BudgetSetup.tsx`, `src/App.css`
+   - Verify: `npm run test:dialogs` (`tests/dialogs/README.md`); build + lint
    - Deps: none (do first: later steps add dialogs)
-2. **Design standards pass** (v0.7/2) — bring the app in line with `0012-design-standards.md`.
+2. **Sync design and network review** (v0.7/2) — new design doc for sync to a Google Sheet; the sheet layout, data shape and encryption questions settled; the v0.2 5.4 network review done first.
+   - Source: roadmap v0.7; `security-v0.6.md` held items (v0.2 5.4 ⚠ REQUIRES REVIEW BEFORE PROCEEDING, v0.2 2.3, v0.3 6.2, v0.2 1.3, 2.4, 3.7, 4.3, 4.4, 6.6, 6.7, 7.7, 8.8, v0.5 3.2)
+   - Files: `docs/design/0015-sync-design.md` (draft, questions Q1 to Q10); roadmap update
+   - Verify: human approves the design doc; 5.4 re-rated
+   - Deps: none; blocks 3; **needs human decision**: sheet layout, data shape, encryption
+3. **Sync to a Google Sheet** (v0.7/3) — StorageAdapter interface, Google Sheets adapter, sync-on-open (pull then push, last-write-wins, tombstones), optional passphrase encryption (open), seed from the sheet's layout.
+   - Source: roadmap v0.7; the step 2 design doc
+   - Files: `src/storage/`, new adapter, settings UI (built on the step 1 `Dialog`)
+   - Verify: per the design doc; formula text in synced cells neutralized (v0.2 2.3)
+   - Deps: 1, 2 (built immediately after 2)
+4. **Design standards pass** (v0.7/4) — bring the app in line with `0012-design-standards.md`.
    - Source: roadmap v0.7; `0012` §10 gaps
    - Files: `src/App.css`, `src/styles/tokens.css`, components named in `0012`
    - Verify: checklist in `0012`; no hard-coded values; build + lint
    - Deps: 1; **needs human decision**: the open gaps in `0012` §10 are settled first
-3. **Max app width 1440px** (v0.7/3) — content stays centered.
+5. **Max app width 1440px** (v0.7/5) — content stays centered.
    - Source: roadmap v0.7 (decided 2026-11-04)
    - Files: `src/App.css`, `src/styles/tokens.css`
    - Verify: 1440, 1920px; 320/640px unchanged
    - Deps: none
-4. **Sticky Item column and 250px minimum** (v0.7/4) — Item column sticky (left) in Week, Month, Annual and the highlight dialog above 500px; persistent 250px minimum width in every table.
+6. **Sticky Item column and 250px minimum** (v0.7/6) — Item column sticky (left) in Week, Month, Annual and the highlight dialog above 500px; persistent 250px minimum width in every table.
    - Source: roadmap v0.7 (decided 2026-11-04)
    - Files: `src/components/BudgetTable.tsx`, `src/App.css`
    - Verify: sticky off at 500px and narrower; focused cells not hidden behind the column; keyboard scroll; 320px
-   - Deps: 3
-5. **Form field alignment class** (v0.7/5) — same label-to-control space as fields with help text, so side-by-side fields line up.
+   - Deps: 5
+7. **Form field alignment class** (v0.7/7) — same label-to-control space as fields with help text, so side-by-side fields line up.
    - Source: roadmap v0.7 (decided 2026-11-04)
    - Files: `src/App.css`, form screens
    - Verify: Add purchase, Budget setup, dialogs at 1280/640/320px
-   - Deps: 2
-6. **Supporting text under the tables** (v0.7/6) — rewrite the out-of-date text.
+   - Deps: 4
+8. **Supporting text under the tables** (v0.7/8) — rewrite the out-of-date text.
    - Source: roadmap v0.7
    - Files: `src/screens/`, table components
    - Verify: reading grade 10 or lower; accessible names unchanged
    - Deps: **needs human decision**: final content first
-7. **Negative purchases as returns** (v0.7/7) — listed in the Day table as a return.
+9. **Negative purchases as returns** (v0.7/9) — listed in the Day table as a return.
    - Source: roadmap v0.7 (decided 2026-11-04); `0007` §9
    - Files: `src/components/BudgetTable.tsx`
    - Verify: refund and credit rows; totals unchanged; screen reader names
    - Deps: **needs human decision**: the label and styling
-8. **Typed-name parsing** (v0.7/8) — spell check and common abbreviations (e.g. "Misc." becomes "Miscellaneous").
-   - Source: roadmap v0.7 (decided 2026-11-04)
-   - Files: `src/budget/validate.ts`, name fields
-   - Verify: abbreviation cases; import names unaffected unless chosen
-   - Deps: **needs human decision**: the abbreviation list, where it runs, whether it corrects silently or asks
-9. **Move subcategories and items between parents** (v0.7/9) — a subcategory moved into another becomes an item; an item moved out becomes a subcategory; a subcategory with items cannot move into another (error).
-   - Source: roadmap v0.7 (decided 2026-11-04)
-   - Files: `src/budget/setupEdits.ts`, `src/storage/repository.ts`, dialog component, `src/components/BudgetTable.tsx`
-   - Verify: keyboard-only; purchases and estimates follow the row; backup restore; tree checks
-   - Deps: 1; **needs human decision**: the interaction (a Move dialog or other) and what happens to purchases and estimates
-10. **Read-only Day table under Add purchase** (v0.7/10) — a copy of the Day table below the form.
+10. **Typed-name parsing** (v0.7/10) — spell check and common abbreviations (e.g. "Misc." becomes "Miscellaneous").
+    - Source: roadmap v0.7 (decided 2026-11-04)
+    - Files: `src/budget/validate.ts`, name fields
+    - Verify: abbreviation cases; import names unaffected unless chosen
+    - Deps: **needs human decision**: the abbreviation list, where it runs, whether it corrects silently or asks
+11. **Move subcategories and items between parents** (v0.7/11) — a subcategory moved into another becomes an item; an item moved out becomes a subcategory; a subcategory with items cannot move into another (error).
+    - Source: roadmap v0.7 (decided 2026-11-04)
+    - Files: `src/budget/setupEdits.ts`, `src/storage/repository.ts`, dialog component, `src/components/BudgetTable.tsx`
+    - Verify: keyboard-only; purchases and estimates follow the row; backup restore; sync (step 3) carries the move; tree checks
+    - Deps: 1, 3; **needs human decision**: the interaction (a Move dialog or other) and what happens to purchases and estimates
+12. **Read-only Day table under Add purchase** (v0.7/12) — a copy of the Day table below the form.
     - Source: roadmap v0.7 (decided 2026-11-08)
     - Files: `src/screens/AddBudget.tsx`, table component
     - Verify: updates after a save; read-only; one live region
-    - Deps: 7
-11. **Annual Misc row and breakdown** (v0.7/11) — a Misc row under Incidentals, a Misc. Breakdown table under the Annual table, December review highlight.
+    - Deps: 9
+13. **Annual Misc row and breakdown** (v0.7/13) — a Misc row under Incidentals, a Misc. Breakdown table under the Annual table, December review highlight.
     - Source: roadmap v0.7; `0014`
     - Files: `src/components/BudgetTable.tsx`, new table component, `src/App.css`
     - Verify: per `0014`; table headings and names
-    - Deps: 4
-12. **Week and Day import regression** (v0.7/12) — regression test the import of Week and Day sheets, then fill the gaps (e.g. a week sheet and a day sheet covering the same day are not cross-checked).
+    - Deps: 6
+14. **Week and Day import regression** (v0.7/14) — regression test the import of Week and Day sheets, then fill the gaps (e.g. a week sheet and a day sheet covering the same day are not cross-checked).
     - Source: roadmap v0.7 (decided 2026-11-11)
     - Files: `tests/import/`, `src/import/`
     - Verify: `npm run test:import`
     - Deps: none
-13. **Charts** (v0.7/13) — Table/Chart switch and chart types for the Budget screen.
+15. **Charts** (v0.7/15) — Table/Chart switch and chart types for the Budget screen.
     - Source: roadmap v0.7; security v0.2 4.5, 2.5 (Trusted Types, escaped item names in chart labels)
     - Files: new chart components, `src/screens/`, `src/App.css`
     - Verify: alt text and a data-table alternative; keyboard and screen reader; contrast; no HTML-writing calls
-    - Deps: 3; **needs human decision**: chart types and the library (a new dependency needs the human's go-ahead, exact pin at least two weeks old)
-14. **Sync design and network review** (v0.7/14) — new design doc for sync to a Google Sheet; the sheet layout, data shape and encryption questions settled; the v0.2 5.4 network review done first.
-    - Source: roadmap v0.7; `security-v0.6.md` held items (v0.2 5.4 ⚠ REQUIRES REVIEW BEFORE PROCEEDING, v0.2 2.3, v0.3 6.2, v0.2 1.3, 2.4, 3.7, 4.3, 4.4, 6.6, 6.7, 7.7, 8.8, v0.5 3.2)
-    - Files: new `docs/design/` doc; roadmap update
-    - Verify: human approves the design doc; 5.4 re-rated
-    - Deps: none; blocks 15
-15. **Sync to a Google Sheet** (v0.7/15) — StorageAdapter interface, Google Sheets adapter, sync-on-open (pull then push, last-write-wins, tombstones), optional passphrase encryption (open), seed from the sheet's layout.
-    - Source: roadmap v0.7; the step 14 design doc
-    - Files: `src/storage/`, new adapter, settings UI
-    - Verify: per the design doc; formula text in synced cells neutralized (v0.2 2.3)
-    - Deps: 14
+    - Deps: 5; **needs human decision**: chart types and the library (a new dependency needs the human's go-ahead, exact pin at least two weeks old)
 16. **UI/UX review** (v0.7/16) — human approval, `0005` checklist, all widths.
     - Deps: 1–15
 17. **Accessibility pass** (v0.7/17) — including chart alt text, keyboard navigation and screen reader.
     - Deps: 16
-18. **Security review** (v0.7/18) — covers sync; carried items listed in step 14. On approval bump to v0.8.0.
+18. **Security review** (v0.7/18) — covers sync; carried items listed in step 2. On approval bump to v0.8.0.
     - Deps: 17
 
 ### Execution
-- **A — Dialogs and standards** (steps 1, 2, 3, 5; `Dialog`, `App.css`, tokens): sequential, step 2 waits on the human's `0012` gaps.
-- **B — Tables** (steps 4, 6, 7, 10, 11; `BudgetTable.tsx`, `App.css`): after A.
-- **C — Names and moves** (steps 8, 9; `validate.ts`, `setupEdits.ts`, repository): after A; both need human decisions.
-- **D — Import** (step 12; `tests/import/`): any time.
-- **E — Charts** (step 13): after A step 3.
-- **F — Sync** (steps 14, 15): design doc and network review first.
+- **A — Dialogs** (step 1; `Dialog`, `App.css`): first.
+- **F — Sync** (steps 2, 3; `src/storage/`, new adapter): right after A; step 2 needs human decisions, step 3 starts as soon as 2 is approved.
+- **A2 — Standards and layout** (steps 4, 5, 7; `App.css`, tokens): after F; step 4 waits on the human's `0012` gaps.
+- **B — Tables** (steps 6, 8, 9, 12, 13; `BudgetTable.tsx`, `App.css`): after A2.
+- **C — Names and moves** (steps 10, 11; `validate.ts`, `setupEdits.ts`, repository): after F; both need human decisions.
+- **D — Import** (step 14; `tests/import/`): any time.
+- **E — Charts** (step 15): after step 5.
 - **Reviews** (steps 16–18): main session with the user.
-- Status: ☐ A · ☐ B · ☐ C · ☐ D · ☐ E · ☐ F · ☐ reviews
+- Status: ✅ A · ⏳ F (step 2: `0015` waiting for human answers) · ☐ A2 · ☐ B · ☐ C · ☐ D · ☐ E · ☐ reviews
 
 ### Session process
 Run option 1: one session per group, fresh start at each group boundary. A session starts by reading this file and the roadmap, then:
