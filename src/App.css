@@ -3,8 +3,8 @@
 
 /* --- Layout (mobile-first, single-column forms) --- */
 .main {
-  /* Breakpoints (0007 §10): small 320, medium 640, large 1280. App width at most 900px. */
-  max-width: 900px;
+  /* Breakpoints (0007 §10): small 320, medium 640, large 1280. App width at most 1440px (0012 G2). */
+  max-width: var(--size-app-max);
   margin: 0 auto;
   padding: var(--space-md);
   display: flex;
@@ -286,7 +286,7 @@
 }
 
 /* Larger views: the app sits on a tinted page background (0007 §10). */
-@media (min-width: 900px) {
+@media (min-width: 1440px) { /* = --size-app-max */
   body { background: color-mix(in srgb, var(--color-primary-background), white 90%); }
   .main { background: var(--color-background-page); min-height: 100dvh; }
 }

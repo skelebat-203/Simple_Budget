@@ -51,6 +51,9 @@
   --radius-md: 8px;
   --radius-pill: 999px; /* fully rounded ends (Toggle) */
 
+  /* Layout */
+  --size-app-max: 1440px; /* whole page, centered (0012 G2); wide tables scroll inside it. Media queries can't read it: keep `min-width: 1440px` in App.css in step. */
+
   /* Dialog widths (0012 G6: small 32rem for one or two fields) */
   --size-dialog-small: 32rem;
   --size-dialog-large: 64rem; /* review dialogs */
