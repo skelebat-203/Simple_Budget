@@ -76,7 +76,7 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
    - Files: `src/screens/`, table components
    - Verify: no dangling `aria-describedby` ids; accessible names unchanged
    - Deps: none
-   - Progress (v0.7.28): removed both help lines under the Budget tables and the table's `aria-describedby`; no dangling ids. Open: the Budget setup table's line under it (`setup-key`) is kept until the human decides. Waiting on: UI approval.
+   - Progress (v0.7.28): removed both help lines under the Budget tables and the table's `aria-describedby`; no dangling ids. v0.7.32: the Budget setup table's line under it (`setup-key`) removed too (human, 2026-11-22). Waiting on: UI approval.
 9. **Negative purchases as returns** (v0.7/9) — listed in the Day table as a return, formatted "(-$n.nn)" (human, 2026-11-22).
    - Source: roadmap v0.7 (decided 2026-11-04); `0007` §9
    - Files: `src/components/BudgetTable.tsx`

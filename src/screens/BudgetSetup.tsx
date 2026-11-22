@@ -387,7 +387,7 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, rewardsEnable
         <p className="status">{status}</p>
 
         <div className="table-box setup-table-box">
-          <table className="table setup-table" aria-labelledby="setup-title" role="treegrid" aria-describedby="setup-help setup-key">
+          <table className="table setup-table" aria-labelledby="setup-title" role="treegrid" aria-describedby="setup-help">
             <thead>
               <tr>
                 <th scope="col">Item</th>
@@ -401,8 +401,6 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, rewardsEnable
             <tbody>{rows}</tbody>
           </table>
         </div>
-        {/* Help sits outside the scroll box so it doesn't scroll sideways (v0.4 review). */}
-        <p id="setup-key" className="help">A subcategory with items shows the sum of its items’ monthly estimates.</p>
 
         {/* Settings sit side by side from 1280px, in DOM (reading and tab) order (0007 §10). */}
         <div className="form-grid setup-settings">
