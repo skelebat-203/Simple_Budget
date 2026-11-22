@@ -422,10 +422,10 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
   const colSpan = showEstimates ? 2 : 1
   return (
     <div className="table-wrap">
-      {/* Only the table scrolls sideways; the help text below stays in the page width (v0.4 review). */}
+      {/* Only the table scrolls sideways (v0.4 review); no help text under it (v0.7 step 8). */}
       <div className="table-box">
         <table className={`table budget-table${range === 'day' ? ' day-table' : ''}`} aria-labelledby={highlight ? `${idBase}-caption` : `${idBase}-heading ${idBase}-caption`}
-          aria-describedby={highlight ? undefined : `${idBase}-key`} ref={gridRef} role={plain ? undefined : 'treegrid'}>
+          ref={gridRef} role={plain ? undefined : 'treegrid'}>
           <caption id={`${idBase}-caption`}>{title}</caption>
           <thead>
             {range !== 'day' && range !== 'annual' && showEstimates && (
@@ -454,10 +454,6 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
           </tbody>
         </table>
       </div>
-      {!highlight && <p id={`${idBase}-key`} className="help">Only rows with an amount appear. Every row totals the rows under it.{range === 'day' && ' Each purchase is listed under its item.'}</p>}
-      {actions && !highlight && (range === 'week' || range === 'month') && (
-        <p id={`${idBase}-add-help`} className="help">Add/Subtract records a new amount on that item, on a date you choose within the period shown (today by default). A row can be deleted when it has no items and at most one purchase{range === 'month' ? '; Delete is in the Week table' : ''}.</p>
-      )}
       {notice && <Banner kind="info" title={notice} />}
       {actions && <p className="status">{status}</p>}
       {highlightDialog()}
