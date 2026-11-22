@@ -85,7 +85,14 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
     - Source: roadmap v0.7 (decided 2026-11-04)
     - Files: `src/budget/setupEdits.ts`, `src/storage/repository.ts`, dialog component, `src/components/BudgetTable.tsx`
     - Verify: keyboard-only; purchases and estimates follow the row; backup restore; sync (step 3) carries the move; tree checks
-    - Deps: 1, 3; **needs human decision**: the option from the mockups in `docs/design/images/v0.7-move-rows/` (A Move dialog, B Rename + Inside, C Budget setup Move to), moves across categories, the purchases and estimate rule, recurrence that isn't allowed in the new category
+    - Design (human, 2026-11-22; based on option C in `docs/design/images/v0.7-move-rows/`): when a row is highlighted (the highlight dialog shows it with only its child rows), the dialog shows a Move column. Up and Down buttons move a row among the highlighted rows. "Move to" is a menu listing categories and subcategories; any category may be chosen. When the user closes the highlight, the tables show the row in its new place. A row moved to a new parent becomes its last child.
+    - Purchases and the estimate move with the row.
+    - Deps: 1, 3, 11b
+11b. **Quarterly and Annual in every recurrence list** (v0.7/11b) — every Recurrence drop-down offers Quarterly and Annual, not only Debt, Utilities and Subscriptions (human, 2026-11-22). This also means a moved row's recurrence is always allowed in its new category (step 11).
+    - Source: human, 2026-11-22; replaces the `0007` §3 limit
+    - Files: `src/budget/` (`frequenciesFor`), `src/screens/BudgetSetup.tsx`, estimate scaling checks
+    - Verify: every Recurrence list; estimate scaling for Quarterly and Annual on the other categories; build + lint
+    - Deps: none
 12. **Read-only Day table under Add purchase** (v0.7/12) — a copy of the Day table below the form.
     - Source: roadmap v0.7 (decided 2026-11-08)
     - Files: `src/screens/AddBudget.tsx`, table component
@@ -118,7 +125,7 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
 - **F — Sync** (steps 2, 3, 3b; `src/storage/`, new adapter): right after A; step 2 needs human decisions, step 3 starts as soon as 2 is approved.
 - **A2 — Standards and layout** (steps 4, 5, 7; `App.css`, tokens): after F.
 - **B — Tables** (steps 6, 8, 9, 12, 13; `BudgetTable.tsx`, `App.css`): after A2.
-- **C — Names and moves** (steps 10, 11; `validate.ts`, `setupEdits.ts`, repository): after F; both need human decisions.
+- **C — Names and moves** (steps 10, 11b, 11; `validate.ts`, `setupEdits.ts`, repository): after F; both need human decisions.
 - **D — Import** (step 14; `tests/import/`): any time.
 - **E — Charts**: moved to v0.8.
 - **D004** (step 15b): after F, before the reviews.
