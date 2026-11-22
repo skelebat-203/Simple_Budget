@@ -43,6 +43,7 @@
   --font-size-base: 16px;
   --font-size-lg: 20px;
   --font-size-xl: 24px;
+  --line-height-help: 1.5; /* help text; .field-align reserves one line of it */
   --font-weight-normal: 400;
   --font-weight-bold: 700;
 

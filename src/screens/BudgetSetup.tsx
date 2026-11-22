@@ -406,7 +406,7 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, rewardsEnable
 
         {/* Settings sit side by side from 1280px, in DOM (reading and tab) order (0007 §10). */}
         <div className="form-grid setup-settings">
-        <div className="field">
+        <div className="field field-align">
           <label className="label" htmlFor="week_start">Week starts on</label>
           <select id="week_start" className="input" value={weekStart} onChange={e => setWeekStart(Number(e.target.value))}>
             {DAYS.map((d, i) => <option key={d} value={i}>{d}</option>)}

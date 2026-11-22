@@ -48,11 +48,13 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
    - Files: `src/App.css`, `src/styles/tokens.css`, components named in `0012`
    - Verify: checklist in `0012`; no hard-coded values; build + lint
    - Deps: 1 (all `0012` §10 gaps were decided 2026-11-06 and 2026-11-08)
+   - Progress (v0.7.20): built (G1, G3–G6, G8–G10, G12, G15–G17, §1 tokens, §4 field order); G11 Actual-column pin left for step 6. Waiting on: UI approval.
 5. **Max app width 1440px** (v0.7/5) — content stays centered.
    - Source: roadmap v0.7 (decided 2026-11-04)
    - Files: `src/App.css`, `src/styles/tokens.css`
    - Verify: 1440, 1920px; 320/640px unchanged
    - Deps: none
+   - Progress (v0.7.19): built; checked at 320/640/1280/1440/1920px. Waiting on: UI approval.
 6. **Sticky Item column and 250px minimum** (v0.7/6) — Item column sticky (left) in Week, Month, Annual and the highlight dialog above 500px; persistent 250px minimum width in every table.
    - Source: roadmap v0.7 (decided 2026-11-04)
    - Files: `src/components/BudgetTable.tsx`, `src/App.css`
@@ -63,6 +65,7 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
    - Files: `src/App.css`, form screens
    - Verify: Add purchase, Budget setup, dialogs at 1280/640/320px
    - Deps: 4
+   - Progress (v0.7.21): `.field-align` built and applied (Add purchase, purchase dialog, Edit-menu dialogs, Budget setup week start). Waiting on: UI approval.
 8. **Supporting text under the tables** (v0.7/8) — remove the help text under each table instead of rewriting it (human, 2026-11-22), and the `aria-describedby` references to it.
    - Source: roadmap v0.7
    - Files: `src/screens/`, table components

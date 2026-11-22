@@ -126,7 +126,7 @@ export function usePurchaseForm(roots: CatNode[], init: { target?: CatNode; amou
         </div>
       )}
       {isNewSub && (
-        <div className="field">
+        <div className="field field-align">
           <label className="label" htmlFor={id('where')}>Where? <span aria-hidden="true">*</span></label>
           <select id={id('where')} className="input" value={where} aria-required="true" aria-invalid={!!errors.where || undefined}
             aria-describedby={describe('where')} onChange={e => setWhere(e.target.value)}>
@@ -149,7 +149,7 @@ export function usePurchaseForm(roots: CatNode[], init: { target?: CatNode; amou
         <Input id={id('description')} maxLength={DESCRIPTION_MAX} autoComplete="off" value={description}
           onChange={e => setDescription(e.target.value)} aria-describedby={id('description-help')} />
       </div>
-      <div className="field">
+      <div className="field field-align">
         <label className="label" htmlFor={id('date')}>Date <span aria-hidden="true">*</span></label>
         <DatePicker id={id('date')} aria-required="true" value={date} min={bounds.min} max={bounds.max} aria-invalid={!!errors.date || undefined}
           aria-describedby={describe('date')} onChange={e => setDate(e.target.value)} />

@@ -13,7 +13,7 @@ export type SaveResult = string | void
 /** A field: label, help, control, error, in that order (0012 §4). Required fields show `*` (G5). */
 function Field({ id, label, error, help, required, children }: { id: string; label: string; error?: string; help?: string; required?: boolean; children: ReactNode }) {
   return (
-    <div className="field">
+    <div className={help ? 'field' : 'field field-align'}>
       <label className="label" htmlFor={id}>{label}{required && <span aria-hidden="true"> *</span>}</label>
       {help && <p id={`${id}-help`} className="help">{help}</p>}
       {children}
@@ -146,7 +146,7 @@ export function AmountDialog({ id, title, spoken, intro, initial, initialDescrip
           onChange={e => setValue(e.target.value)} />
       </Field>
       {dateField && (
-        <Field id={dateId} label="Date" error={dateError} help={dateField.min === dateField.max ? `${dateField.min}.` : `From ${dateField.min} to ${dateField.max}.`} required>
+        <Field id={dateId} label="Date" error={dateError} help={dateField.min === dateField.max ? `The day shown, ${dateField.min}.` : `From ${dateField.min} to ${dateField.max}.`} required>
           <DatePicker id={dateId} value={date} min={dateField.min} max={dateField.max} aria-required="true"
             aria-invalid={!!dateError || undefined} aria-describedby={[dateError && `${dateId}-error_msg`, `${dateId}-help`].filter(Boolean).join(' ')}
             onChange={e => setDate(e.target.value)} />

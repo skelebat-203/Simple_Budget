@@ -41,7 +41,10 @@
 
 /* --- Text --- */
 .label { font-weight: var(--font-weight-bold); }
-.help { font-size: var(--font-size-sm); color: var(--color-text); }
+.help { font-size: var(--font-size-sm); line-height: var(--line-height-help); color: var(--color-text); }
+/* Form field alignment (v0.7 step 7, 0012 §4): a field with no help text gets the space of one help
+   line (and its gap) under the label, so fields side by side line up in even rows. */
+.field-align > .label { margin-bottom: calc(var(--font-size-sm) * var(--line-height-help) + var(--space-xs)); }
 .error { font-size: var(--font-size-sm); color: var(--color-alert); font-weight: var(--font-weight-bold); }
 .status { color: var(--color-success); font-weight: var(--font-weight-bold); min-height: 1.5em; }
 .sr-only {
