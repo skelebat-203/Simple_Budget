@@ -62,26 +62,30 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
    - Files: `src/App.css`, form screens
    - Verify: Add purchase, Budget setup, dialogs at 1280/640/320px
    - Deps: 4
-8. **Supporting text under the tables** (v0.7/8) — rewrite the out-of-date text.
+8. **Supporting text under the tables** (v0.7/8) — remove the help text under each table instead of rewriting it (human, 2026-11-22), and the `aria-describedby` references to it.
    - Source: roadmap v0.7
    - Files: `src/screens/`, table components
-   - Verify: reading grade 10 or lower; accessible names unchanged
-   - Deps: **needs human decision**: final content first
-9. **Negative purchases as returns** (v0.7/9) — listed in the Day table as a return.
+   - Verify: no dangling `aria-describedby` ids; accessible names unchanged
+   - Deps: none
+9. **Negative purchases as returns** (v0.7/9) — listed in the Day table as a return, formatted "(-$n.nn)" (human, 2026-11-22).
    - Source: roadmap v0.7 (decided 2026-11-04); `0007` §9
    - Files: `src/components/BudgetTable.tsx`
    - Verify: refund and credit rows; totals unchanged; screen reader names
-   - Deps: **needs human decision**: the label and styling
-10. **Typed-name parsing** (v0.7/10) — spell check and common abbreviations (e.g. "Misc." becomes "Miscellaneous").
+   - Deps: none
+10. **Typed-name parsing** (v0.7/10) — spell check and common abbreviations (decided 2026-11-22):
+    - List: Misc / Misc. → Miscellaneous; Ins. → Insurance; Mtg → Mortgage; Util. / Utils → Utilities; Sub / Subs → Subscriptions; Groc. → Groceries; Med. → Medical; Ent. → Entertainment; Pmt → Payment; Acct → Account; Dept → Department; Govt → Government.
+    - Runs wherever a name is typed (new item in Add purchase, Budget setup, Rename); import is not affected.
+    - Fixes silently, except when the user edits a full name to an abbreviation: their edit is kept.
+    - Spell check: the browser's built-in spell check on name fields (no new dependency).
     - Source: roadmap v0.7 (decided 2026-11-04)
     - Files: `src/budget/validate.ts`, name fields
     - Verify: abbreviation cases; import names unaffected unless chosen
-    - Deps: **needs human decision**: the abbreviation list, where it runs, whether it corrects silently or asks
+    - Deps: none
 11. **Move subcategories and items between parents** (v0.7/11) — a subcategory moved into another becomes an item; an item moved out becomes a subcategory; a subcategory with items cannot move into another (error).
     - Source: roadmap v0.7 (decided 2026-11-04)
     - Files: `src/budget/setupEdits.ts`, `src/storage/repository.ts`, dialog component, `src/components/BudgetTable.tsx`
     - Verify: keyboard-only; purchases and estimates follow the row; backup restore; sync (step 3) carries the move; tree checks
-    - Deps: 1, 3; **needs human decision**: the interaction (a Move dialog or other) and what happens to purchases and estimates
+    - Deps: 1, 3; **needs human decision**: the option from the mockups in `docs/design/images/v0.7-move-rows/` (A Move dialog, B Rename + Inside, C Budget setup Move to), moves across categories, the purchases and estimate rule, recurrence that isn't allowed in the new category
 12. **Read-only Day table under Add purchase** (v0.7/12) — a copy of the Day table below the form.
     - Source: roadmap v0.7 (decided 2026-11-08)
     - Files: `src/screens/AddBudget.tsx`, table component
