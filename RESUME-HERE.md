@@ -30,6 +30,14 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
    - Verify: per the design doc; formula text in synced cells neutralized (v0.2 2.3)
    - Deps: 1, 2 (built immediately after 2)
    - Progress (v0.7.5, v0.7.6): engine, encryption, Dexie v9, Google adapter, CSP, Sync dialog and timing built; `npm run test:sync` passes. Waiting on: the human's Google Cloud setup (placeholders in `src/storage/sync/googleConfig.ts`), the end-to-end test with a test account (Q10) and UI approval of the Sync dialog.
+3b. **Sync placement in the wizard and main app** (v0.7/3b) — from the step 3 UI review (human, 2026-11-22):
+   - Wizard: sync becomes step 1 of 4; "How often do you get paid?" moves to the last step. Design: one of the three mockups in `docs/design/images/v0.7-wizard-sync/` (human to choose).
+   - Sync button: only in the Budget tab panel, at the right, in line with the date controls; in narrow views, once it would run into the date controls, it moves to the right of the Screens drop-down.
+   - Backup button: back at the far right, in line with the tabs.
+   - Source: step 3 UI review; `0015` Q9 (replaced: sync is offered in the wizard, not after it)
+   - Files: `src/screens/Onboarding.tsx`, `src/components/Sync.tsx`, `src/screens/Budget.tsx`, `src/components/ui/Tabs.tsx`, `src/App.tsx`, `src/App.css`
+   - Verify: `npm run test:dialogs` (wizard step order); 1280/640/320px; keyboard order matches visual order
+   - Deps: 3; **needs human decision**: the wizard step design
 4. **Design standards pass** (v0.7/4) — bring the app in line with `0012-design-standards.md`.
    - Source: roadmap v0.7; `0012` §10 gaps
    - Files: `src/App.css`, `src/styles/tokens.css`, components named in `0012`
@@ -99,7 +107,7 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
 
 ### Execution
 - **A — Dialogs** (step 1; `Dialog`, `App.css`): first.
-- **F — Sync** (steps 2, 3; `src/storage/`, new adapter): right after A; step 2 needs human decisions, step 3 starts as soon as 2 is approved.
+- **F — Sync** (steps 2, 3, 3b; `src/storage/`, new adapter): right after A; step 2 needs human decisions, step 3 starts as soon as 2 is approved.
 - **A2 — Standards and layout** (steps 4, 5, 7; `App.css`, tokens): after F; step 4 waits on the human's `0012` gaps.
 - **B — Tables** (steps 6, 8, 9, 12, 13; `BudgetTable.tsx`, `App.css`): after A2.
 - **C — Names and moves** (steps 10, 11; `validate.ts`, `setupEdits.ts`, repository): after F; both need human decisions.

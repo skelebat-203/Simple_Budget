@@ -51,7 +51,7 @@ The roadmap leaves this open: the earlier JSON-doc shape (version and `updatedAt
 - A **Sync** entry next to Backup that opens a `Dialog`: sign in with Google, then create a new sheet or link one (Picker), plus last sync time, Sync now, and Unlink.
 - Status messages go through the single live region. A sync error says what failed and that the local data is safe.
 
-**Q9 — decided 2026-11-21:** sync setup starts once onboarding is complete.
+**Q9 — decided 2026-11-21, replaced 2026-11-22:** sync is step 1 of the onboarding wizard; "How often do you get paid?" moves to the last step. The Sync button lives in the Budget tab panel, at the right of the date controls (v0.7 step 3b; mockups `images/v0.7-wizard-sync/`).
 
 ## 7. Security items to settle (from `security-v0.6.md`)
 
