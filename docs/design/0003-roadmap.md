@@ -128,7 +128,7 @@ tracked as a later-version item.
 - Move subcategories and items between parents: a subcategory moved into another becomes an item; an item moved out of a subcategory becomes a subcategory (e.g. a user creates "Retirement" under Savings and places IRA, 401k and 403b inside it). Must be fully keyboard accessible. Moving a subcategory that has items into another subcategory is refused with an error message (decided 2026-11-04). Decided 2026-11-22: a Move column in the highlight dialog (Up, Down, and a "Move to" menu of categories and subcategories; a row moved to a new parent becomes its last child); purchases and the estimate move with the row
 - Quarterly and Annual offered in every Recurrence drop-down, not only Debt, Utilities and Subscriptions (decided 2026-11-22)
 - Maximum app width of 1440px (decided 2026-11-04; content stays centered; the v0.8 charts use it)
-- Item column: sticky (left) in the Week, Month and Annual tables and the highlight dialog when the viewport is wider than 500px, and a persistent minimum width of 250px in every table in the app (decided 2026-11-04). Per the accessibility rules, sticky is removed at 500px and narrower, and focused cells must not be hidden behind the sticky column
+- Item column: a persistent minimum width of 250px in every table, growing so its content never wraps (decided 2026-11-04). Not sticky in any table (decided 2026-11-22: not enough room at 400px and narrower)
 - Consolidate dialogs into one component (today three: form dialogs, confirm dialogs and a generic dialog); migrate the v0.6 dialogs (Edit menu, highlight, wizard) to it (decided 2026-11-04)
 - Design standards pass: bring the app in line with the decided standards in `0012-design-standards.md` (decided 2026-11-08; the open gaps in its §10 are settled first)
 - Read-only copy of the Day table under the Add purchase form (decided 2026-11-08, from user feedback; placed in v0.7 per the new-item rule)
@@ -149,6 +149,8 @@ tracked as a later-version item.
 ## v0.8 — Graphs and charts
 - Charts moved from v0.7 (decided 2026-11-22). Sync moved to v0.7 earlier (decided 2026-11-18).
 - Chart view (Table/Chart switch)
+- Compact rows: an option that makes table rows smaller (decided 2026-11-22)
+- Zoom in and out (+/−) for the budget tables (decided 2026-11-22)
 - Chart types for Budget screen (chart types and the library to decide; a new dependency needs the human's go-ahead; security v0.2 4.5, 2.5: Trusted Types, escaped item names in chart labels)
 - UI/UX review (human approval)
 - Accessibility pass for charts (alt text, keyboard nav, screen reader)

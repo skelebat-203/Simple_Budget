@@ -55,10 +55,10 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
    - Verify: 1440, 1920px; 320/640px unchanged
    - Deps: none
    - Progress (v0.7.19): built; checked at 320/640/1280/1440/1920px. Waiting on: UI approval.
-6. **Sticky Item column and 250px minimum** (v0.7/6) — Item column sticky (left) in Week, Month, Annual and the highlight dialog above 500px; persistent 250px minimum width in every table.
-   - Source: roadmap v0.7 (decided 2026-11-04)
+6. **Item column width** (v0.7/6) — the Item column is not sticky in any table (human, 2026-11-22: not enough room at 400px and narrower). It has a 250px minimum and grows so its content never wraps; the table scrolls sideways instead.
+   - Source: roadmap v0.7 (decided 2026-11-04; sticky dropped 2026-11-22)
    - Files: `src/components/BudgetTable.tsx`, `src/App.css`
-   - Verify: sticky off at 500px and narrower; focused cells not hidden behind the column; keyboard scroll; 320px
+   - Verify: no wrapped names at 1280/640/320px, highlight dialog included; keyboard scroll; no page-level sideways scroll
    - Also: pin the Actual column in the Day table (`0012` G11; moved here from step 4, human 2026-11-22).
    - Deps: 5
 7. **Form field alignment class** (v0.7/7) — same label-to-control space as fields with help text, so side-by-side fields line up.
