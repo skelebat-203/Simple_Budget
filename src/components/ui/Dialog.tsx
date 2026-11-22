@@ -1,4 +1,6 @@
 import { useEffect, useRef, type ReactNode } from 'react'
+import { Button } from './Button'
+import { useAnnounce } from './announcer'
 
 const FOCUSABLE = 'button:not([disabled]), summary, [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
 
@@ -12,19 +14,39 @@ function tabStops(root: HTMLElement): HTMLElement[] {
   })
 }
 
+/** A confirmation: the children are its message; Cancel left, Confirm right (0007 §4.2). */
+export interface ConfirmMode {
+  label?: string
+  onConfirm: () => void
+}
+
+/** A form: Cancel left, the submit button right; Enter in a field submits (0009 §4). */
+export interface FormMode {
+  submitLabel: string
+  onSubmit: () => void
+  /** A message for the whole form (e.g. a failed save), shown below the fields and announced. */
+  error?: string
+  busy?: boolean
+  /** A button kept apart at the right (e.g. Delete); Cancel and the submit button then sit together at the left. */
+  endButton?: ReactNode
+}
+
 /**
- * Generic modal dialog (v0.4 step 8). Native `<dialog>` opened with showModal,
+ * The app's one modal dialog (v0.7 step 1). Native `<dialog>` opened with showModal,
  * so the page behind is inert. Focus starts on the dialog itself (tabIndex -1),
  * Tab and Shift+Tab wrap inside it, Escape calls `onClose`, and focus returns
  * to what had it before the dialog opened unless the caller moves it.
- * Title, content and buttons come from the caller; buttons go Cancel left, Confirm right (0007 §4.2).
+ * The footer is one of: `confirm` (a message with Cancel and Confirm), `form`
+ * (the children are the fields; Cancel and a submit button), or `buttons` (caller-made).
  */
-export function Dialog({ id, title, children, buttons, onClose, className, describedBy, footerClassName }: {
+export function Dialog({ id, title, children, buttons, confirm, form, onClose, className, describedBy, footerClassName }: {
   id: string
   title: ReactNode
   children: ReactNode
-  /** The action buttons, in visual order. */
-  buttons: ReactNode
+  /** Custom action buttons, in visual order. */
+  buttons?: ReactNode
+  confirm?: ConfirmMode
+  form?: FormMode
   /** Escape (the dialog's cancel). */
   onClose: () => void
   className?: string
@@ -33,7 +55,15 @@ export function Dialog({ id, title, children, buttons, onClose, className, descr
   /** Extra class for the button row (for example the sticky review footer). */
   footerClassName?: string
 }) {
+  useAnnounce(form?.error ?? '')
   const ref = useRef<HTMLDialogElement>(null)
+  const cancel = <Button type="button" className="secondary" onClick={onClose}>Cancel</Button>
+  const formId = `${id}-form`
+  const submit = form && <Button type="submit" form={formId} disabled={form.busy}>{form.submitLabel}</Button>
+  const footer = confirm ? <>{cancel}<Button type="button" className="confirm-ok" onClick={confirm.onConfirm}>{confirm.label ?? 'Confirm'}</Button></>
+    : form ? (form.endButton ? <><span className="actions">{cancel}{submit}</span>{form.endButton}</> : <>{cancel}{submit}</>)
+    : buttons
+  const kind = confirm ? 'confirm-dialog' : form ? 'form-dialog' : ''
   useEffect(() => {
     const d = ref.current
     const opener = document.activeElement as HTMLElement | null
@@ -47,8 +77,8 @@ export function Dialog({ id, title, children, buttons, onClose, className, descr
   }, [])
 
   return (
-    <dialog ref={ref} id={id} tabIndex={-1} className={`dialog ${className ?? ''}`.trim()} aria-modal="true"
-      aria-labelledby={`${id}-title`} aria-describedby={describedBy}
+    <dialog ref={ref} id={id} tabIndex={-1} className={`dialog ${kind} ${className ?? ''}`.replace(/\s+/g, ' ').trim()} aria-modal="true"
+      aria-labelledby={`${id}-title`} aria-describedby={describedBy ?? (confirm ? `${id}-desc` : undefined)}
       onCancel={e => { e.preventDefault(); if (e.target === e.currentTarget) onClose() }} // a dialog opened from this one's React tree must not close this one too
       onKeyDown={e => {
         if (e.key !== 'Tab') return
@@ -63,8 +93,15 @@ export function Dialog({ id, title, children, buttons, onClose, className, descr
       }}>
       <div className="dialog-body">
         <h2 id={`${id}-title`} className="section-title">{title}</h2>
-        {children}
-        <div className={`actions dialog-actions ${footerClassName ?? ''}`.trim()}>{buttons}</div>
+        {confirm ? <p id={`${id}-desc`}>{children}</p>
+          : form ? (
+            <form id={formId} noValidate className="dialog-form" onSubmit={e => { e.preventDefault(); form.onSubmit() }}>
+              {children}
+              {form.error && <p className="error">{form.error}</p>}
+            </form>
+          )
+          : children}
+        <div className={`actions dialog-actions ${footerClassName ?? ''}`.trim()}>{footer}</div>
       </div>
     </dialog>
   )

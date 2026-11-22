@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Button, ErrorSummary, FormDialog, focusFirstError } from './ui'
+import { Button, Dialog, ErrorSummary, focusFirstError } from './ui'
 import { usePurchaseForm, type PurchaseSave } from './PurchaseForm'
 import { NameTakenError } from '../storage/repository'
 import { formatAmount, type CatNode } from '../budget/tree'
@@ -45,9 +45,8 @@ export function PurchaseDialog({ id, title, roots, node, purchase, onSave, onDel
   }
 
   return (
-    <FormDialog id={id} title={title} submitLabel="Save" className="purchase-dialog"
-      onCancel={onCancel} onSubmit={submit} error={error} busy={busy}
-      endButton={<Button type="button" className="danger" onClick={onDelete}>Delete</Button>}>
+    <Dialog id={id} title={title} className="purchase-dialog" onClose={onCancel}
+      form={{ submitLabel: 'Save', onSubmit: submit, error, busy, endButton: <Button type="button" className="danger" onClick={onDelete}>Delete</Button> }}>
       <dl className="detail">
         <dt>Amount:</dt><dd>{formatAmount(purchase.amount) || '0.00'}</dd>
         <dt>Date:</dt><dd>{purchase.date}</dd>
@@ -55,6 +54,6 @@ export function PurchaseDialog({ id, title, roots, node, purchase, onSave, onDel
       <ErrorSummary ref={banner} errors={form.errorList} />
       {form.fields}
       {form.useInFutureField}
-    </FormDialog>
+    </Dialog>
   )
 }

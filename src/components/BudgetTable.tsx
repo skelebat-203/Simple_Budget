@@ -5,7 +5,7 @@ import { cleanName, NAME_MAX, slug } from '../budget/validate'
 import { addNewItem, budgetItemRepo, categoryRepo, NameTakenError, RowInUseError } from '../storage/repository'
 import { PurchaseDialog } from './PurchaseDialog'
 import type { PurchaseSave } from './PurchaseForm'
-import { AmountDialog, Button, ConfirmDialog, Dialog, RenameDialog, Tip, type SaveResult } from './ui'
+import { AmountDialog, Button, Dialog, RenameDialog, Tip, type SaveResult } from './ui'
 import { useCollapsed } from './ui/useCollapsed'
 import { fireReward } from '../rewards/rewards'
 import { useAnnounce } from './ui/announcer'
@@ -464,10 +464,10 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
             removePurchase(n, purchase, bought[k + 1] ? editId(n, bought[k + 1]) : bought[k - 1] ? editId(n, bought[k - 1]) : GRID) }
           : () => deleteRow(n)
         return (
-          <ConfirmDialog id={id} title={purchase ? `Delete the ${say(n)} purchase?` : `Delete ${say(n)}?`} confirmLabel="Delete"
-            onConfirm={confirmDelete} onCancel={close}>
+          <Dialog id={id} title={purchase ? `Delete the ${say(n)} purchase?` : `Delete ${say(n)}?`}
+            confirm={{ label: 'Delete', onConfirm: confirmDelete }} onClose={close}>
             {purchase ? `This deletes the purchase of ${formatAmount(purchase.amount) || '0.00'}.` : `This deletes ${n.cat.name}${withOne(n)}.`}
-          </ConfirmDialog>
+          </Dialog>
         )
       }
     }
@@ -514,11 +514,11 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
       )}
       {actions && <p className="status">{status}</p>}
       {pending && (
-        <ConfirmDialog id={`${idBase}-rename_confirm`} title={`Rename ${pending.n.cat.name}?`}
-          onConfirm={() => commitRename(pending.n, pending.name)}
-          onCancel={() => { setPending(null); closeRow(pending.n) }}>
+        <Dialog id={`${idBase}-rename_confirm`} title={`Rename ${pending.n.cat.name}?`}
+          confirm={{ onConfirm: () => commitRename(pending.n, pending.name) }}
+          onClose={() => { setPending(null); closeRow(pending.n) }}>
           This will change the name of all instances of {pending.n.cat.name} to {pending.name} across the application.
-        </ConfirmDialog>
+        </Dialog>
       )}
       {highlightDialog()}
       {dlg && editDialog(dlg)}

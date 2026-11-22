@@ -10,47 +10,6 @@ import { cleanDescription, cleanName, DESCRIPTION_MAX, moneyError, NAME_MAX, par
 /** What a dialog's save returns: an error message to show in the dialog, or nothing when it worked (the caller closes it). */
 export type SaveResult = string | void
 
-/**
- * Form inside a Dialog (0009 §4): Cancel at the left, the submit button at the right; Enter in a
- * field submits. `error` is a message for the whole form (e.g. a failed save); field errors are
- * shown by each dialog under its field. Messages go through the single live region.
- */
-export function FormDialog({ id, title, className, submitLabel, onCancel, onSubmit, error, busy, endButton, children }: {
-  id: string
-  title: string
-  className?: string
-  submitLabel: string
-  onCancel: () => void
-  onSubmit: () => void
-  error?: string
-  busy?: boolean
-  /** A button kept apart at the right (e.g. Delete); Cancel and the submit button then sit together at the left. */
-  endButton?: ReactNode
-  children: ReactNode
-}) {
-  useAnnounce(error ?? '')
-  return (
-    <Dialog id={id} title={title} className={`form-dialog ${className ?? ''}`.trim()} onClose={onCancel}
-      buttons={endButton
-        ? <>
-          <span className="actions">
-            <Button type="button" className="secondary" onClick={onCancel}>Cancel</Button>
-            <Button type="submit" form={`${id}-form`} disabled={busy}>{submitLabel}</Button>
-          </span>
-          {endButton}
-        </>
-        : <>
-          <Button type="button" className="secondary" onClick={onCancel}>Cancel</Button>
-          <Button type="submit" form={`${id}-form`} disabled={busy}>{submitLabel}</Button>
-        </>}>
-      <form id={`${id}-form`} noValidate className="dialog-form" onSubmit={e => { e.preventDefault(); onSubmit() }}>
-        {children}
-        {error && <p className="error">{error}</p>}
-      </form>
-    </Dialog>
-  )
-}
-
 /** A text field with its label above and its error below. */
 function Field({ id, label, error, help, children }: { id: string; label: string; error?: string; help?: string; children: ReactNode }) {
   return (
@@ -108,7 +67,7 @@ export function RenameDialog({ id, spoken, name, parentId, parents, level, onSav
   }
   useAnnounce(fieldError)
   return (
-    <FormDialog id={id} title={`Rename ${spoken}`} submitLabel="Save" onCancel={onCancel} onSubmit={submit} error={saver.error} busy={saver.busy}>
+    <Dialog id={id} title={`Rename ${spoken}`} onClose={onCancel} form={{ submitLabel: 'Save', onSubmit: submit, error: saver.error, busy: saver.busy }}>
       <div className="banner banner-warn" role="note">
         <p className="banner-title">This changes ALL historic records.</p>
       </div>
@@ -125,7 +84,7 @@ export function RenameDialog({ id, spoken, name, parentId, parents, level, onSav
           </select>
         </Field>
       )}
-    </FormDialog>
+    </Dialog>
   )
 }
 
@@ -178,8 +137,8 @@ export function AmountDialog({ id, title, spoken, intro, initial, initialDescrip
   useAnnounce(fieldError)
   useAnnounce(dateError)
   return (
-    <FormDialog id={id} title={title} className="amount-dialog" submitLabel={submitLabel} onCancel={onCancel} onSubmit={submit} error={saver.error} busy={saver.busy}
-      endButton={onDelete && <Button type="button" className="danger" onClick={onDelete}>Delete</Button>}>
+    <Dialog id={id} title={title} className="amount-dialog" onClose={onCancel}
+      form={{ submitLabel, onSubmit: submit, error: saver.error, busy: saver.busy, endButton: onDelete && <Button type="button" className="danger" onClick={onDelete}>Delete</Button> }}>
       <p id={`${id}-intro`} className="help">{intro}</p>
       <Field id={fieldId} label="Amount" error={fieldError}>
         <AmountField id={fieldId} className="amount" allowNegative value={value}
@@ -200,6 +159,6 @@ export function AmountDialog({ id, title, spoken, intro, initial, initialDescrip
             onChange={e => setDescription(e.target.value)} />
         </Field>
       )}
-    </FormDialog>
+    </Dialog>
   )
 }
