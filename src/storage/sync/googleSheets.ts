@@ -17,6 +17,7 @@ interface TokenResponse { access_token?: string; expires_in?: number; error?: st
 interface TokenClient { requestAccessToken(o?: { prompt?: string }): void }
 interface PickerDoc { id: string }
 interface PickerData { action: string; docs?: PickerDoc[] }
+interface PickerView { setMode(m: unknown): PickerView; setOwnedByMe(own: boolean): PickerView; setLabel(label: string): PickerView }
 interface PickerBuilder {
   addView(v: unknown): PickerBuilder
   setOAuthToken(t: string): PickerBuilder
@@ -31,7 +32,7 @@ interface GoogleNs {
     revoke(token: string, done?: () => void): void
   } }
   picker: {
-    DocsView: new (viewId: unknown) => { setMode(m: unknown): unknown }
+    DocsView: new (viewId: unknown) => PickerView
     ViewId: { SPREADSHEETS: unknown }
     DocsViewMode: { LIST: unknown }
     PickerBuilder: new () => PickerBuilder
@@ -178,9 +179,10 @@ export async function pickSpreadsheet(): Promise<string | null> {
   await new Promise<void>(resolve => w.gapi!.load('picker', resolve))
   const p = w.google!.picker
   return new Promise(resolve => {
-    const view = new p.DocsView(p.ViewId.SPREADSHEETS)
-    view.setMode(p.DocsViewMode.LIST)
-    new p.PickerBuilder().addView(view).setOAuthToken(t).setDeveloperKey(GOOGLE_CONFIG.apiKey).setAppId(GOOGLE_CONFIG.appId)
+    // Two tabs: sheets shared with this account (how a second person links, 0015 Q2) first, then their own.
+    const shared = new p.DocsView(p.ViewId.SPREADSHEETS).setMode(p.DocsViewMode.LIST).setOwnedByMe(false).setLabel('Shared with me')
+    const own = new p.DocsView(p.ViewId.SPREADSHEETS).setMode(p.DocsViewMode.LIST).setOwnedByMe(true).setLabel('My sheets')
+    new p.PickerBuilder().addView(shared).addView(own).setOAuthToken(t).setDeveloperKey(GOOGLE_CONFIG.apiKey).setAppId(GOOGLE_CONFIG.appId)
       .setCallback(d => {
         if (d.action === p.Action.PICKED) resolve(d.docs?.[0]?.id ?? null)
         else if (d.action === p.Action.CANCEL) resolve(null)
