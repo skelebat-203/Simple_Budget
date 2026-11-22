@@ -1,0 +1,19 @@
+<p class="mock-label">Option C — Budget setup Move column: "Move to…" (error)</p>
+<div class="table-box setup-table-box">
+<table class="table setup-table">
+  <thead><tr><th scope="col">Name</th><th scope="col">Estimate</th><th scope="col">Move</th></tr></thead>
+  <tbody>
+    <tr class="row depth-1"><th scope="row" class="name">Retirement</th><td>600.00</td><td><span class="reorder"><button class="secondary small">↑</button><button class="secondary small">↓</button><button class="secondary small" aria-expanded="true">Move to…</button></span></td></tr>
+  </tbody>
+</table>
+</div>
+<fieldset class="fieldset" aria-invalid="true" aria-describedby="dest-error_msg">
+  <legend class="legend">Move Retirement to</legend>
+  <ul class="plain-list">
+    <li><label class="check"><input type="radio" name="dest"> Savings — stays a subcategory (now)</label></li>
+    <li><label class="check"><input type="radio" name="dest" checked> Emergency fund — becomes an item</label></li>
+    <li><label class="check"><input type="radio" name="dest"> Home — stays a subcategory</label></li>
+  </ul>
+  <p class="error" id="dest-error_msg">Error: Retirement has 3 items, so it cannot go inside another subcategory. Move its items out first.</p>
+</fieldset>
+<div class="actions dialog-actions"><button type="button" class="secondary">Cancel</button><button type="button">Move</button></div>

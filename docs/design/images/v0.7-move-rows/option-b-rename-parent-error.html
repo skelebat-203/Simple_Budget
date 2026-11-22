@@ -1,0 +1,22 @@
+<p class="mock-label">Option B — Rename dialog with a Parent select (error)</p>
+<h2 class="section-title">Rename "Retirement"</h2>
+<form class="dialog-form">
+  <div class="field">
+    <label class="label" for="name">Name</label>
+    <input class="input" id="name" value="Retirement">
+  </div>
+  <div class="field">
+    <label class="label" for="category">Category</label>
+    <select class="input" id="category"><option selected>Savings</option><option>Home</option></select>
+  </div>
+  <div class="field">
+    <label class="label" for="parent">Inside</label>
+    <select class="input" id="parent" aria-invalid="true" aria-describedby="parent-help parent-error_msg">
+      <option>(none — a subcategory of Savings)</option>
+      <option selected>Emergency fund</option>
+    </select>
+    <p class="help" id="parent-help">Retirement would become an item in Emergency fund.</p>
+    <p class="error" id="parent-error_msg">Error: Retirement has 3 items, so it cannot go inside another subcategory. Move its items out first.</p>
+  </div>
+</form>
+<div class="actions dialog-actions"><button type="button" class="secondary">Cancel</button><button type="button">Save</button></div>

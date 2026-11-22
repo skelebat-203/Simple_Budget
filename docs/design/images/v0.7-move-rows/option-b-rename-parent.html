@@ -1,0 +1,22 @@
+<p class="mock-label">Option B — Rename dialog with a Parent select (normal)</p>
+<h2 class="section-title">Rename "IRA"</h2>
+<form class="dialog-form">
+  <div class="field">
+    <label class="label" for="name">Name</label>
+    <input class="input" id="name" value="IRA">
+  </div>
+  <div class="field">
+    <label class="label" for="category">Category</label>
+    <select class="input" id="category"><option selected>Savings</option><option>Home</option></select>
+  </div>
+  <div class="field">
+    <label class="label" for="parent">Inside</label>
+    <select class="input" id="parent" aria-describedby="parent-help">
+      <option>(none — a subcategory of Savings)</option>
+      <option>Emergency fund</option>
+      <option selected>Retirement</option>
+    </select>
+    <p class="help" id="parent-help">IRA will be an item in Retirement. Purchases and the estimate (200.00 per month) move with it.</p>
+  </div>
+</form>
+<div class="actions dialog-actions"><button type="button" class="secondary">Cancel</button><button type="button">Save</button></div>

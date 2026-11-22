@@ -1,0 +1,15 @@
+<p class="mock-label">Option A — Edit menu &gt; Move… (error)</p>
+<h2 class="section-title">Move "Retirement"</h2>
+<form class="dialog-form">
+  <div class="field">
+    <label class="label" for="move-to">Move to</label>
+    <select class="input" id="move-to" aria-invalid="true" aria-describedby="move-to-help move-to-error_msg">
+      <option>Savings (category) — stays a subcategory</option>
+      <option selected>&nbsp;&nbsp;Emergency fund — becomes an item</option>
+      <option>Home (category) — stays a subcategory</option>
+    </select>
+    <p class="help" id="move-to-help">Listed in table order. Each choice says what the row will become.</p>
+    <p class="error" id="move-to-error_msg">Error: Retirement has 3 items, so it cannot go inside another subcategory. Move its items out first, or pick a category.</p>
+  </div>
+</form>
+<div class="actions dialog-actions"><button type="button" class="secondary">Cancel</button><button type="button">Move</button></div>
