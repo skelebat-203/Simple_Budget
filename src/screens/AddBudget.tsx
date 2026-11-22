@@ -6,6 +6,7 @@ import { displayName, formatAmount, type CatNode } from '../budget/tree'
 import { useAnnounce } from '../components/ui/announcer'
 import { fireReward } from '../rewards/rewards'
 import { charityMovedText } from '../budget/charity'
+import { whenIdle } from '../storage/sync/controller'
 
 /** Add purchase (0007 §4, §9): the shared purchase form (Item, Amount, Description, Date; a typed new item adds Category, Where? and Use in future). */
 export function AddBudget({ roots, onSaved }: {
@@ -34,6 +35,8 @@ export function AddBudget({ roots, onSaved }: {
     const p = form.build()
     const shownAmount = (p.kind === 'existing' ? formatAmount(p.amount) : formatAmount(p.args.amount)) || '0.00'
     try {
+      // A save made while a sync runs is held, then written when the sync completes or fails (0015 Q4).
+      await whenIdle()
       if (p.kind === 'existing') {
         await budgetItemRepo.add({ categoryId: p.target.cat.id, amount: p.amount, date: p.date, description: p.description })
         setSaved({ what: `${displayName(p.target)}: ${shownAmount} on ${p.date}.`, extra: '' })

@@ -9,6 +9,10 @@ import { AmountDialog, Button, Dialog, RenameDialog, Tip, type SaveResult } from
 import { useCollapsed } from './ui/useCollapsed'
 import { fireReward } from '../rewards/rewards'
 import { useAnnounce } from './ui/announcer'
+import { isSyncBusy } from '../storage/sync/controller'
+
+/** While a sync runs the tables take no changes (0015 Q4). */
+const SYNC_BUSY = 'Error: Sync is running. Try again in a moment.'
 import { Chevron } from './ui/Expander'
 import { ActionsMenu, type MenuAction } from './ui/ActionsMenu'
 
@@ -108,6 +112,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
   const editId = (n: CatNode, i: BudgetItem) => [highlight ? 'hl_edit_purchase' : 'edit_purchase', n.parent && slug(n.parent.cat.name), slug(n.cat.name), i.id].filter(Boolean).join('-')
 
   async function removePurchase(n: CatNode, i: BudgetItem, next: string): Promise<SaveResult> {
+    if (isSyncBusy()) return SYNC_BUSY
     try {
       await budgetItemRepo.remove(i.id!)
     } catch {
@@ -163,6 +168,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
 
   /** Dialog rename, with a move when the Category select changed. */
   async function saveRename(n: CatNode, name: string, parentId: number): Promise<SaveResult> {
+    if (isSyncBusy()) return SYNC_BUSY
     let move: { parentId: number; recolor: { id: number; color: string }[] } | undefined
     const dest = flatten(tree).find(x => x.cat.id === parentId)!
     if (parentId !== n.parent!.cat.id) {
@@ -197,6 +203,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
 
   async function commitRename(n: CatNode, name: string) {
     setPending(null)
+    if (isSyncBusy()) { setError(SYNC_BUSY); focusAfter.current = did('rename_value', n); return }
     try {
       await categoryRepo.rename(n.cat.id, name)
     } catch (err) {
@@ -224,6 +231,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
   /** Dialog Add/Subtract, New purchase and a purchase's Edit (0009 §4.1). */
   async function saveAmount(d: Dlg, amount: number, description: string, date: string): Promise<SaveResult> {
     const { n } = d
+    if (isSyncBusy()) return SYNC_BUSY
     try {
       await budgetItemRepo.add({ categoryId: n.cat.id, amount, date, ...(description ? { description } : {}) })
     } catch {
@@ -239,6 +247,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
 
   /** Day purchase dialog Save: the old record is removed and a new one added (all or nothing). A name clash is thrown to the dialog. */
   async function savePurchase(old: BudgetItem, n: CatNode, p: PurchaseSave): Promise<SaveResult> {
+    if (isSyncBusy()) return SYNC_BUSY
     let charity = 0
     let target = n
     try {
@@ -261,6 +270,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
   }
 
   async function deleteRow(n: CatNode) {
+    if (isSyncBusy()) { setDlg(null); setError(SYNC_BUSY); return }
     try {
       await categoryRepo.removeEmpty(n.cat.id)
     } catch (err) {

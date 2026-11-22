@@ -5,11 +5,13 @@ import { defineConfig, type Plugin } from 'vite'
 // must still send this as a header, plus frame-ancestors (security-v0.2 5.1).
 const CSP = [
   "default-src 'self'",
-  "script-src 'self'",
+  // Google sign-in and the Picker for sync: exact hosts only, no wildcards (0015 §7.1).
+  "script-src 'self' https://accounts.google.com/gsi/client https://apis.google.com",
   "style-src 'self'",
   "img-src 'self' data:",
   "font-src 'self'",
-  "connect-src 'self'",
+  "connect-src 'self' https://sheets.googleapis.com https://www.googleapis.com",
+  "frame-src https://accounts.google.com https://docs.google.com",
   "manifest-src 'self'",
   "worker-src 'self'",
   "object-src 'none'",

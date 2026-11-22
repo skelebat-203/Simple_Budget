@@ -112,7 +112,7 @@ export async function link(spreadsheetId: string, passcode: string, isNew: boole
   set({ linked: true, lastSync: undefined, error: undefined, notes: [] })
   const r = await requestSync()
   // A wrong passcode for a linked sheet: forget it again, so nothing half-linked stays.
-  if (!r && state.error && !isNew) { const why = state.error; await unlink(); throw new PasscodeError(why) }
+  if (!r && state.error && !isNew) { await unlink(); throw new PasscodeError('The passcode doesn’t match this sheet, or the sheet isn’t set up for Simple Budget.') }
 }
 
 /** Stop syncing on this device: the key and link are removed; local data stays (0015 §5). */

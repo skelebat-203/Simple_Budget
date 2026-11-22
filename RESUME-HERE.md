@@ -29,6 +29,7 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
    - Files: `src/storage/`, new adapter, settings UI (built on the step 1 `Dialog`)
    - Verify: per the design doc; formula text in synced cells neutralized (v0.2 2.3)
    - Deps: 1, 2 (built immediately after 2)
+   - Progress (v0.7.5, v0.7.6): engine, encryption, Dexie v9, Google adapter, CSP, Sync dialog and timing built; `npm run test:sync` passes. Waiting on: the human's Google Cloud setup (placeholders in `src/storage/sync/googleConfig.ts`), the end-to-end test with a test account (Q10) and UI approval of the Sync dialog.
 4. **Design standards pass** (v0.7/4) — bring the app in line with `0012-design-standards.md`.
    - Source: roadmap v0.7; `0012` §10 gaps
    - Files: `src/App.css`, `src/styles/tokens.css`, components named in `0012`

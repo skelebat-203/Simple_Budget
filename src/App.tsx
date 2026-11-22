@@ -5,6 +5,10 @@ import { BudgetSetup } from './screens/BudgetSetup'
 import { RewardLayer } from './rewards/RewardLayer'
 import { Onboarding } from './screens/Onboarding'
 import { Backup } from './components/Backup'
+import { Sync } from './components/Sync'
+import { useSyncState } from './components/useSyncState'
+import * as sync from './storage/sync/controller'
+import { GoogleSheetsAdapter, isSignedIn, pickSpreadsheet } from './storage/sync/googleSheets'
 import { charityMovedText } from './budget/charity'
 import { Notices, type NoticeState } from './components/Notices'
 import { Tabs } from './components/ui'
@@ -25,6 +29,9 @@ function App() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(false)
   const [setupOpen, setSetupOpen] = useState(false)
   const [backupOpen, setBackupOpen] = useState(false)
+  const [syncOpen, setSyncOpen] = useState(false)
+  const [pickedId, setPickedId] = useState<string | null>(null)
+  const syncState = useSyncState()
   const [onboardOpen, setOnboardOpen] = useState(false)
   const [loaded, setLoaded] = useState({ settings: false, items: false })
   const [onboarded, setOnboarded] = useState(true)
@@ -86,6 +93,29 @@ function App() {
     }
   }, [note])
 
+  // Sync (0015 Q6): on open, every minute while visible, and when the app is shown again.
+  useEffect(() => {
+    let stop: (() => void) | undefined
+    let gone = false
+    sync.configure({ adapter: id => new GoogleSheetsAdapter(id), canSync: () => isSignedIn() && document.visibilityState === 'visible' })
+      .then(() => { if (!gone) stop = sync.startSchedule() })
+      .catch(() => { /* sync state unreadable: sync stays off */ })
+    return () => { gone = true; stop?.() }
+  }, [])
+  // A finished sync may have pulled changes: show them.
+  useEffect(() => {
+    if (syncState.lastSync) { reloadCats(); reloadItems(); reloadSettings() }
+  }, [syncState.lastSync, reloadCats, reloadItems, reloadSettings])
+  /** After each save (0015 Q6). */
+  const saved = useCallback(() => { reloadItems(); reloadCats(); void sync.requestSync() }, [reloadItems, reloadCats])
+
+  /** The Google Picker can't take clicks under a modal dialog, so Sync closes while it is open. */
+  async function pick() {
+    setSyncOpen(false)
+    try { const id = await pickSpreadsheet(); if (id) setPickedId(id) } catch { /* the dialog shows sign-in again */ }
+    setSyncOpen(true)
+  }
+
   const roots = useMemo(() => buildTree(cats), [cats])
 
   function dismissPersist() {
@@ -104,15 +134,20 @@ function App() {
       </div>
       <RewardLayer enabled={rewardsEnabled} />
       <Notices state={notices} onDismissPersist={dismissPersist} onDismissInfo={() => note({ charityMoved: undefined })} />
-      <Tabs label="Sections" actions={[{ id: 'backup', label: 'Backup', onSelect: () => setBackupOpen(true) }]} tabs={[
-        { id: 'add', label: 'Add purchase', panel: <AddBudget roots={roots} onSaved={() => { reloadItems(); reloadCats() }} /> },
-        { id: 'budget', label: 'Budget', panel: <Budget roots={roots} items={items} range={range} onRangeChange={setRange} calendar={calendar} onChanged={() => { reloadItems(); reloadCats() }} /> },
+      <Tabs label="Sections" actions={[
+        { id: 'backup', label: 'Backup', onSelect: () => setBackupOpen(true) },
+        // Sync setup is offered once onboarding is complete (0015 Q9).
+        ...(onboarded ? [{ id: 'sync', label: 'Sync', onSelect: () => setSyncOpen(true) }] : []),
+      ]} tabs={[
+        { id: 'add', label: 'Add purchase', panel: <AddBudget roots={roots} onSaved={saved} /> },
+        { id: 'budget', label: 'Budget', panel: <Budget roots={roots} items={items} range={range} onRangeChange={setRange} calendar={calendar} onChanged={saved} /> },
       ]} />
       {backupOpen && (
         <Backup onClose={() => setBackupOpen(false)} onRestored={() => {
           reloadCats(); reloadItems(); reloadSettings()
         }} onImported={() => { reloadCats(); reloadItems() }} />
       )}
+      {syncOpen && <Sync onboarded={onboarded} pickedId={pickedId} onPick={pick} onClose={() => { setSyncOpen(false); setPickedId(null) }} />}
       {showOnboarding && (
         <Onboarding cats={cats} firstRun={autoOnboard && !onboardOpen} onClose={() => setOnboardOpen(false)} onSkip={skipOnboarding}
           onDone={() => { setOnboardOpen(false); setDismissed(true); setOnboarded(true); reloadCats(); reloadItems() }}
@@ -127,7 +162,7 @@ function App() {
           rewardsEnabled={rewardsEnabled}
           notificationsEnabled={notificationsEnabled}
           onClose={() => setSetupOpen(false)}
-          onSaved={moved => { reloadCats(); reloadItems(); reloadSettings(); setSetupOpen(false); note({ charityMoved: moved ? charityMovedText(moved) : undefined }) }}
+          onSaved={moved => { reloadCats(); reloadItems(); reloadSettings(); setSetupOpen(false); void sync.requestSync(); note({ charityMoved: moved ? charityMovedText(moved) : undefined }) }}
         />
       )}
     </main>
