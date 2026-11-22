@@ -24,6 +24,11 @@ type Act = 'rename' | 'new' | 'adjust' | 'editPurchase' | 'delete'
 type Dlg = { act: Act; n: CatNode; purchase?: BudgetItem }
 
 const GRID = '__grid__'
+
+/** A negative Day purchase (refund or credit) is listed as a return, "(-$n.nn)" (v0.7 step 9). Totals still add the negative amount. */
+const isReturn = (i: BudgetItem) => i.amount < 0
+const purchaseAmount = (i: BudgetItem) => isReturn(i) ? `(-$${formatAmount(-i.amount)})` : formatAmount(i.amount) || '0.00'
+const purchaseNoun = (i: BudgetItem) => isReturn(i) ? `return of $${formatAmount(-i.amount)}` : `purchase of ${formatAmount(i.amount) || '0.00'}`
 const PENCIL_SIZE = 18
 
 /**
@@ -98,7 +103,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
     ? items.filter(i => i.categoryId === n.cat.id && i.date === periods[0].from).sort((a, b) => a.createdAt - b.createdAt)
     : []
   const purchaseLabel = (i: BudgetItem) =>
-    `Purchase, ${new Date(i.createdAt).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`
+    `${isReturn(i) ? 'Return' : 'Purchase'}, ${new Date(i.createdAt).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`
   /** A Day purchase's name opens its Edit dialog; an imported undated one also carries a tooltip (`describedBy`). */
   const nameButton = (n: CatNode, i: BudgetItem, describedBy?: string) => (
     <button type="button" className="name-link" id={`${editId(n, i)}-name`.replace('edit_purchase', 'name_purchase')} aria-haspopup="dialog"
@@ -116,7 +121,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
       return `Error: The ${n.cat.name} purchase wasn’t deleted. Try again.`
     }
     setDlg(null)
-    setStatus(`Deleted the ${say(n)} purchase of ${formatAmount(i.amount) || '0.00'}.`)
+    setStatus(`Deleted the ${say(n)} ${purchaseNoun(i)}.`)
     focusAfter.current = next
     onChanged?.()
   }
@@ -266,7 +271,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
   }
   const purchaseEdit = (n: CatNode, i: BudgetItem) => (
     <Button type="button" className="secondary small" id={editId(n, i)}
-      aria-label={`Edit ${say(n)} purchase of ${formatAmount(i.amount) || '0.00'}`} onClick={() => act(n, 'editPurchase', i)}>Edit</Button>
+      aria-label={`Edit ${say(n)} ${purchaseNoun(i)}`} onClick={() => act(n, 'editPurchase', i)}>Edit</Button>
   )
 
   const values = (n: CatNode, p: Period) => ({ est: estimateTotal(n, p), act: actualFor(n, p, items) })
@@ -345,7 +350,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
             {i.description && <span className="row-description">{i.description}</span>}
             {plain && i.undated && <span className="row-description">{UNDATED_NOTE}</span>}
           </th>
-          <td className={`num${i.amount < 0 ? ' neg' : ''}`}>{formatAmount(i.amount) || '0.00'}</td>
+          <td className={`num${isReturn(i) ? ' neg' : ''}`}>{purchaseAmount(i)}</td>
           {actionCol && (
             <td className="row-actions">{purchaseEdit(n, i)}</td>
           )}
@@ -412,7 +417,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
         return (
           <Dialog id={id} title={purchase ? `Delete the ${say(n)} purchase?` : `Delete ${say(n)}?`}
             confirm={{ label: 'Delete', danger: true, onConfirm: confirmDelete }} onClose={close}>
-            {purchase ? `This deletes the purchase of ${formatAmount(purchase.amount) || '0.00'}.` : `This deletes ${n.cat.name}${withOne(n)}.`}
+            {purchase ? `This deletes the ${purchaseNoun(purchase)}.` : `This deletes ${n.cat.name}${withOne(n)}.`}
           </Dialog>
         )
       }

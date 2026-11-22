@@ -82,6 +82,7 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
    - Files: `src/components/BudgetTable.tsx`
    - Verify: refund and credit rows; totals unchanged; screen reader names
    - Deps: none
+   - Progress (v0.7.29): a negative Day purchase is named "Return, {time}", its amount shows "(-$n.nn)" in red; Edit button, delete dialog and status say "return of $n.nn"; totals unchanged. Waiting on: UI approval.
 10. **Typed-name parsing** (v0.7/10) — spell check and common abbreviations (decided 2026-11-22):
     - List: Misc / Misc. → Miscellaneous; Ins. → Insurance; Mtg → Mortgage; Util. / Utils → Utilities; Sub / Subs → Subscriptions; Groc. → Groceries; Med. → Medical; Ent. → Entertainment; Pmt → Payment; Acct → Account; Dept → Department; Govt → Government.
     - Runs wherever a name is typed (new item in Add purchase, Budget setup, Rename); import is not affected.
