@@ -43,6 +43,7 @@
   --font-size-base: 16px;
   --font-size-lg: 20px;
   --font-size-xl: 24px;
+  --line-height-base: 1.5; /* labels and legends */
   --line-height-help: 1.5; /* help text; .field-align reserves one line of it */
   --font-weight-normal: 400;
   --font-weight-bold: 700;
@@ -62,16 +63,67 @@
   --size-dialog-setup: 1100px; /* Budget setup above 1280px (full screen below) */
   --size-field-wide: 40rem; /* widest readable field in the import review dialog (0013) */
 
+  /* Lines and focus */
+  --border-thin: 1px;
+  --border-medium: 2px;
+  --border-thick: 3px; /* category divider in Budget setup; underline on hover and on the chosen tab */
+  --border-accent: 4px; /* category-colour edge of a Create row */
+  --focus-width: 3px;
+  --focus-offset: 2px;
+  --focus-offset-inset: calc(-1 * var(--focus-width)); /* inside table cells and menus */
+  --focus-offset-panel: 4px; /* around a tab panel */
+  --underline-offset-tab: 0.3em;
+  --underline-offset-link: 4px; /* the dotted underline under a row name */
+  --opacity-disabled: 0.5;
+
   /* Surfaces */
   --shadow-popup: 0 6px 18px rgb(0 0 0 / 0.15); /* menus and listboxes */
   --color-backdrop: rgb(0 0 0 / 0.5); /* behind a modal dialog */
   --tint-banner: 90%; /* white mixed into a banner's kind colour, the same for every kind (0012 G1) */
+  --tint-page: 90%; /* white mixed into the brown page background beside the app (from 1440px) */
+  --tint-header: 5%; /* black mixed into the table header row */
+  --tint-net-row: 85%; /* white mixed into the Net Income row's blue */
+  --tint-selected: 92%; /* white mixed into a chosen card's brown */
+  --tint-selected-hover: 84%; /* the same card on hover */
+  --tint-create-row: 94%; /* white mixed into the Create row's grey */
+
+  /* Motion */
+  --duration-reward: 1.8s;
+  --reward-top: 22%; /* high on the screen, clear of Save */
 
   /* Controls */
   --size-touch: 44px; /* smallest touch target (WCAG 2.5.8 and the app standard) */
   --size-target-min: 24px; /* WCAG 2.5.8 minimum for small buttons and links in lists */
-  --space-control: 5px; /* least margin around a control (components.md) */
-  --space-control-gap: calc(2 * var(--space-control)); /* least gap between neighbouring controls */
+  --space-control: 5px; /* margin on every side of an interactive control, so neighbours are at least 10px apart (components.md) */
+  --size-fill: calc(100% - 2 * var(--space-control)); /* a control that fills its container, less its margin (0012 G4) */
+  --size-checkbox: 22px;
+  --size-twisty: 1.25rem; /* the open/closed triangle beside a Budget setup group */
+  --size-status-line: 1.5em; /* a status line keeps its height when empty */
+  --size-scrollbar: 16px;
+  --size-progress-bar: 0.75rem; /* wizard steps */
+
+  /* Popups, lists and columns */
+  --size-listbox-max: 300px;
+  --space-scroll-heading: 3rem; /* keeps a picked option clear of the sticky group heading */
+  --size-menu-min: 14rem; /* Screens menu */
+  --size-menu-row-min: 10rem; /* row Edit menu */
+  --size-tooltip-max: 16rem;
+  --space-tooltip-offset: 6px;
+  --size-column-min: 12rem; /* narrowest column in a settings grid, a choice card or a Create row name */
+  --size-create-name-max: 18rem;
+  --size-create-input: 14rem;
+  --size-select-min: 9rem;
+  --space-create-row-inset: 6rem; /* the Create row stays this far inside the screen width */
+  --size-amount-input: 8rem; /* Estimated amount in the Budget setup table */
+  --size-amount-col: 7.5rem; /* fits 222,222.99 */
+  --size-day-table-min: 500px;
+  --size-day-item-col: 60%;
+  --size-sheet-min: 16rem; /* import review: sheet list column and the Goes to column */
+  --size-toggle-list-min: 28rem;
+  --size-wizard-list-max: 20rem;
+  --space-footer-clear: 6rem; /* scroll padding above Budget setup's sticky footer */
+  --space-footer-clear-review: 8rem; /* the same for the review dialog */
+  --size-footer-fallback: 5rem; /* footer height before it is measured */
   --size-edit-button: 5rem; /* one minimum width for every Edit button in the tables (0012 G10) */
   --size-banner-icon: 24px;
   --size-tip-mark: 1.25rem; /* the "i" beside a name that has a tooltip */
