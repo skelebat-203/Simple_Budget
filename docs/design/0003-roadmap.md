@@ -141,6 +141,7 @@ tracked as a later-version item.
   - Sheet layout and data shape: open. The earlier JSON-doc shape (version + updatedAt per record) must be reconciled with a sheet that people can read, decided in the design doc
   - Sync-on-open: pull then push, last-write-wins, tombstones
   - Optional passphrase client-side encryption (open: whether encrypted content in a shared sheet is acceptable)
+  - Sync in the onboarding wizard as its first step ("Local only" or "Sync with Google"; New Budget / Existing Budget tabs; Existing skips the category steps); the pay-frequency step removed (set in Advanced options); Sync button in the Budget tab panel beside the date controls; Backup back at the far right of the tabs; Budget setup "Estimated spending" renamed "Estimated amount" (decided 2026-11-22, step 3 UI review)
   - ~~Seed categories/table layout from the sheet's current layout~~ dropped 2026-11-21: categories already sync as records (`0015` Q5)
 - UI/UX review (human approval)
 - Accessibility pass for charts (alt text, keyboard nav, screen reader)

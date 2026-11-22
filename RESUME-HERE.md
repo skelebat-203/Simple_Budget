@@ -32,12 +32,13 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
    - ✅ (v0.7.5 to v0.7.10; end-to-end test passed in Chromium and UI approved 2026-11-22; changes from the review are step 3b)
    - Progress (v0.7.5, v0.7.6): engine, encryption, Dexie v9, Google adapter, CSP, Sync dialog and timing built; `npm run test:sync` passes. Waiting on: the human's Google Cloud setup (placeholders in `src/storage/sync/googleConfig.ts`), the end-to-end test with a test account (Q10) and UI approval of the Sync dialog.
 3b. **Sync placement in the wizard and main app** (v0.7/3b) — from the step 3 UI review (human, 2026-11-22):
-   - Wizard: sync becomes the first step; "How often do you get paid?" moves to the last step. Design (human, 2026-11-22; mockups in `docs/design/images/v0.7-wizard-sync/`): option A with two answers, "Local only" and "Sync with Google". Choosing "Sync with Google" shows option C's content as a tab list (tabs "New Budget" and "Existing Budget") instead of two side-by-side boxes.
-   - The step count updates as the user moves through, because the branches have different lengths ("Step 2 of 5", for example). Assumed, to confirm when built: "Existing Budget" skips the steps whose answers come from the linked sheet (categories, pay frequency).
+   - Wizard: sync becomes the first step; the "How often do you get paid?" step is removed (human, 2026-11-22). Pay frequency is the Recurrence of the Income items, set in Advanced options (Budget setup) together with their estimated amount; it defaults to Monthly, as estimates have no default either. Design (human, 2026-11-22; mockups in `docs/design/images/v0.7-wizard-sync/`): option A with two answers, "Local only" and "Sync with Google". Choosing "Sync with Google" shows option C's content as a tab list (tabs "New Budget" and "Existing Budget") instead of two side-by-side boxes.
+   - The step count updates as the user moves through, because the branches have different lengths ("Step 2 of 5", for example). "Existing Budget" skips the categories steps (they come from the linked sheet) (human, 2026-11-22).
    - Sync button: only in the Budget tab panel, at the right, in line with the date controls; in narrow views, once it would run into the date controls, it moves to the right of the Screens drop-down.
    - Backup button: back at the far right, in line with the tabs.
+   - Budget setup table: the "Estimated spending" column (and its error messages) becomes "Estimated amount".
    - Source: step 3 UI review; `0015` Q9 (replaced: sync is offered in the wizard, not after it)
-   - Files: `src/screens/Onboarding.tsx`, `src/components/Sync.tsx`, `src/screens/Budget.tsx`, `src/components/ui/Tabs.tsx`, `src/App.tsx`, `src/App.css`
+   - Files: `src/screens/Onboarding.tsx`, `src/screens/BudgetSetup.tsx`, `src/components/Sync.tsx`, `src/screens/Budget.tsx`, `src/components/ui/Tabs.tsx`, `src/App.tsx`, `src/App.css`
    - Verify: `npm run test:dialogs` (wizard step order); 1280/640/320px; keyboard order matches visual order
    - Deps: 3
 4. **Design standards pass** (v0.7/4) — bring the app in line with `0012-design-standards.md`.
