@@ -117,7 +117,7 @@
   --size-amount-input: 8rem; /* Estimated amount in the Budget setup table */
   --size-amount-col: 7.5rem; /* fits 222,222.99 */
   --size-day-table-min: 500px;
-  --size-day-item-col: 60%;
+  --size-item-col-min: 250px; /* Item column minimum; it grows so names never wrap (v0.7 step 6) */
   --size-sheet-min: 16rem; /* import review: sheet list column and the Goes to column */
   --size-toggle-list-min: 28rem;
   --size-wizard-list-max: 20rem;

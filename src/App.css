@@ -447,10 +447,11 @@ nav.toolbar .btn.icon { flex: none; }
 .wizard-count { font-weight: var(--font-weight-bold); }
 .wizard-layout h3.legend { padding: 0; margin: 0 0 var(--space-xs); } /* aligned with the text and list below (0012 G17) */
 
-/* Day table only: at least 500px wide, Item column 60% of the table; descriptions and actions wrap. */
-.day-table { min-width: var(--size-day-table-min); table-layout: fixed; }
-.day-table thead th:first-child { width: var(--size-day-item-col); }
-.day-table .row-actions { white-space: normal; }
+/* Item column (v0.7 step 6): not sticky, at least 250px, grows so names never wrap; the table scrolls sideways in its box.
+   Descriptions still wrap under the name. Day table: at least 500px wide. */
+.budget-table th.name:first-child { min-width: var(--size-item-col-min); }
+.budget-table .name-line { flex-wrap: nowrap; }
+.day-table { min-width: var(--size-day-table-min); }
 
 /* --- Edit-menu dialogs (0009 §4) --- */
 .dialog-form { display: flex; flex-direction: column; gap: var(--space-md); }

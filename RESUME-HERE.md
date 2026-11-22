@@ -63,6 +63,7 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
    - Verify: no wrapped names at 1280/640/320px, highlight dialog included; keyboard scroll; no page-level sideways scroll
    - The Day table's Actual column is not pinned either (`0012` G11 pinning dropped, human 2026-11-22).
    - Deps: 5
+   - Progress (v0.7.27): built (Item column min 250px, names don't wrap, Day table auto layout); no wrapped names or page-level sideways scroll at 1280/640/320px, highlight dialog included. Waiting on: UI approval.
 7. **Form field alignment class** (v0.7/7) — same label-to-control space as fields with help text, so side-by-side fields line up.
    - Source: roadmap v0.7 (decided 2026-11-04)
    - Files: `src/App.css`, form screens
