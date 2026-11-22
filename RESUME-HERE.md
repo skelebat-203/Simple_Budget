@@ -1,137 +1,119 @@
 # RESUME-HERE
 
 Tracking file for current work status. Roadmap authority: `docs/design/0003-roadmap.md`.
-Design: `0004-table-design.md` (table), `0006-prototype.html` (v0.2 UI), `0007-v0.3-design-updates.md` (v0.3 changes), `0008-v0.5-design-updates.md` (v0.5 changes; wins on conflict), `0009-v0.6-design-updates.md` (v0.6; wins on conflict).
+Design: `0004-table-design.md` (table), `0006-prototype.html` (v0.2 UI), `0007-v0.3-design-updates.md` (v0.3 changes), `0008-v0.5-design-updates.md` (v0.5 changes), `0009-v0.6-design-updates.md` (v0.6), `0012-design-standards.md` (standards), `0014` (Annual Misc breakdown). Higher-numbered doc wins on conflict.
 
-## v0.6 plan of action
-Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per completed-work commit; trailer `Plan-Step: v0.6/N`). The final step bumps to v0.7.0. UI steps need human approval (`0005-ui-ux-review-checklist.md`). Baseline: v0.6.0; v0.5 complete (`docs/audits/security/security-v0.5.md`, `docs/audits/a11y/a11y-v0.5.md`). Data: Dexie v8 (`src/storage/structure.ts`; schedule fields and `Settings.onboarded` unindexed). Testing: headless Chromium via host flatpak + puppeteer-core; scripts in the session scratchpad. Import has a committed harness: `npm run test:import` (Node with fake-indexeddb; `tests/import/README.md`).
+## Current version
+v0.7.0 (v0.6 complete 2026-11-21, v0.6.0 to v0.6.37; reports: `docs/audits/a11y/a11y-v0.6.md`, `docs/audits/security/security-v0.6.md`). No v0.7 step started.
 
-**Before building (human):** the wizard (`0010`) is settled. The highlight (`0011`) is settled too (2px dotted name underline). Confirmed formats for import (step 13) and the Budget setup + help merge (step 15) also need the human.
+## v0.7 plan of action
+Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per completed-work commit; trailer `Plan-Step: v0.7/N`). The final step bumps to the next minor version (v0.8.0). UI steps need human approval (`0005-ui-ux-review-checklist.md`). Baseline: v0.7.0. Data: Dexie v8 (`src/storage/structure.ts`). Testing: headless Chromium (`tools/browsers/`, `lighthouse-sandbox.md`); import harness `npm run test:import` (`tests/import/README.md`).
 
-**Run option (estimate):** single session with fresh restarts. The steps share a few files (`BudgetTable.tsx`, `BudgetSetup.tsx`, `App.css`, `structure.ts`), so parallel subagents would collide, and most UI steps need approval mid-way.
+**Before building (human):** several items below are decided in the roadmap but have open design questions (marked "needs human decision"). Sync (steps 14 and 15) is blocked by the v0.2 5.4 network review and a design doc.
 
-1. **D001 name length** (v0.6/1) ✅ (v0.6.1) — stop typing at 60 characters in the onboarding multi-select; say the limit in the field help.
-   - Source: `docs/defects/D001`
-   - Files: `src/components/ui/MultiSelect.tsx`, `src/screens/Onboarding.tsx`
-   - Verify: 200 typed characters stop at 60; help text read by screen reader; build + lint
-   - Deps: none (step 11 replaces the onboarding screen; keep the fix in the shared component)
-2. **D002 duplicate settings rows** (v0.6/2) ✅ (v0.6.2) — create the default settings row inside one transaction that re-checks; ignore extra rows on restore.
-   - Source: `docs/defects/D002`
-   - Files: `src/storage/repository.ts`, `checkBackup`
-   - Verify: fresh database under StrictMode ends with one row; restore of a backup with two rows keeps one
-   - Deps: none
-3. **Informative "Saved" confirmation** (v0.6/3) ✅ (v0.6.3, v0.6.5) — the message says what was saved and how much (item name and amount). Primary user request.
-   - Source: roadmap v0.6
-   - Files: `src/screens/AddBudget.tsx`, `src/components/Notices.tsx`
-   - Verify: text for each save type; announced once through the single live region; no rewards-animation overlap
-   - Deps: none
-4. **Visually hidden panel headers** (v0.6/4) ✅ (v0.6.4) — each tab panel's header below the tab is hidden visually, kept for screen readers.
-   - Source: roadmap v0.6
-   - Files: `src/App.tsx`, `src/screens/*`, `src/App.css`
-   - Verify: headings still in the accessibility tree and in heading navigation; no layout shift; 320/640/1024px
-   - Deps: none
-5. **Add/subtract in amount fields** (v0.6/5) ✅ (v0.6.8) — amount fields accept typed expressions (e.g. `12.50+3`, `40-5.25`) and save the result.
-   - Source: roadmap v0.6; decided 2026-11-04: typed expressions only (no +/- buttons), in every field that adds a value or purchase: Add purchase form, Budget setup estimate fields, and the Add/Subtract dialog (step 9)
-   - Files: `src/screens/AddBudget.tsx`, `src/screens/BudgetSetup.tsx`, new `src/components/ui/AmountField.tsx`, `src/budget/validate.ts`
-   - Verify: parsing and rounding cases (only `+`, `-`, digits, decimal point, no code evaluation); invalid input message; result shown before saving; keyboard-only use; build + lint
-   - Deps: none
-6. **Optional description** (v0.6/6) ✅ (v0.6.9) — optional field below Amount, stored with the purchase/item.
-   - Source: roadmap v0.6; `0009` §4
-   - Files: `src/storage/structure.ts`, `src/storage/db.ts`, `src/storage/repository.ts`, `src/screens/AddBudget.tsx`, `src/budget/validate.ts`, backup restore
-   - Verify: persists across reload and backup restore; length limit and sanitising; Dexie bump only if needed
-   - Deps: 5; **needs human decision**: where it is stored and shown (decided with this item per `0009` §4)
-7. **Charity purchases** (v0.6/7) ✅ (v0.6.10) — Charity takes purchases until its first item; then they move to Charity › Miscellaneous and Charity becomes a roll-up (not selectable).
-   - Source: roadmap v0.6; `0009` §6 (replaces the Charity part of `0007` §2.1)
-   - Files: `src/storage/repository.ts`, `src/components/ui/ItemSelector.tsx`, `src/budget/tree.ts`
-   - Verify: purchases move once, at the first item; Charity leaves the dropdown; Medical unchanged; restore of a backup keeps the rule
-   - Deps: spec decided in `0009` §6 (2026-11-04)
-8. **Budget setup "Add" buttons** (v0.6/8) ✅ (v0.6.11, v0.6.12, v0.6.16) — one Add button per category replaces the four "Create in" field rows; selecting it shows that category\'s fields above the button (Save right of "Add to"; the button reads Cancel while open; Save hides the fields and focuses Add); announces "Fields added above". Approved 2026-11-04.
-   - Source: `0009` §2
-   - Files: `src/screens/BudgetSetup.tsx`, `src/App.css`
-   - Verify: focus moves to first new field; polite announcement through the single live region; Tab order; 320px
-   - Deps: none
-9. **Edit menu with dialogs** (v0.6/9) ✅ (v0.6.13, v0.6.17, v0.6.18, v0.6.19) — Day, Week, Month rows: "Actions" becomes "Edit" with Rename (moves item to the right category; warning banner), Add/Subtract (Day: New purchase), Delete (Day and Week only); each opens a dialog. Day purchase rows: an Edit button opens one dialog with the Add purchase form prepopulated (Cancel, Save, Delete). Annual unchanged.
-   - Source: `0009` §4, §4.1; roadmap v0.6
-   - Files: `src/components/BudgetTable.tsx`, new dialog components in `src/components/ui/`, `src/budget/setupEdits.ts`, `src/App.css`
-   - Verify: dialog focus trap and return; Week/Month date picker min/max are the viewed period's first and last day (custom month boundaries too); rename-to-other-category moves the item; delete only where allowed; five tables
-   - Deps: 5, 6; behavior decided 2026-11-04 in `0009` §4.1 (Day: New purchase button on category rows, amount update on purchase rows; Week/Month: add to or subtract from the item total, with a date picker limited to the viewed period; supersedes `0007` §9.1/§9.4 for the amount, so the roadmap's Post v1.0 item now covers the date only)
-10. **Highlight dialog** (v0.6/10) ✅ (v0.6.14, v0.6.17, v0.6.18) — clicking an item name opens a dialog with the row, its children and the table's functions; the chevron alone expands and collapses.
-    - Source: `0009` §3; prototype `0011`; decided 2026-11-04: dialog shows the row as in the table viewed (Day lists purchases; Week/Month/Annual do not); Delete confirms first, hidden in Month/Annual; Rename not offered for top-level categories; a purchase row in Day opens the purchase dialog (`0009` §4.1)
-    - Files: `src/components/BudgetTable.tsx`, new dialog component, `src/App.css`
-    - Verify: the name's clickable cue is a 2px dotted underline; name click no longer toggles (supersedes nothing in `0008` §1 except the name-toggle); same functions as the Edit menu; keyboard and screen reader
-    - Deps: 9; `0009` §3 is decided (not blocked)
-9a. **Hover styling** (v0.6/9a) ✅ (v0.6.15) — hover state on every button and link across the app (today only some have one).
-   - Source: roadmap v0.6; human request 2026-11-04 (highlight review)
+**Run option (estimate):** single session with fresh restarts for steps 1 to 13: they share `BudgetTable.tsx`, `App.css`, `Dialog` and `validate.ts`, and most need approval mid-way. Revisit before step 14: sync touches separate files (`src/storage/`, a new adapter) and may suit one subagent.
+
+1. **Consolidate dialogs** (v0.7/1) — one dialog component replaces form, confirm and generic dialogs; migrate the v0.6 dialogs (Edit menu, highlight, wizard, Backup).
+   - Source: roadmap v0.7 (decided 2026-11-04)
+   - Files: `src/components/ui/` (dialogs), `src/components/BudgetTable.tsx`, `src/screens/Onboarding.tsx`, `src/components/Backup.tsx`, `src/App.css`
+   - Verify: focus move, trap and return; Escape; stacked dialogs; the a11y scripts in the Lighthouse sweep (30 dialog focus checks) still pass; build + lint
+   - Deps: none (do first: later steps add dialogs)
+2. **Design standards pass** (v0.7/2) — bring the app in line with `0012-design-standards.md`.
+   - Source: roadmap v0.7; `0012` §10 gaps
+   - Files: `src/App.css`, `src/styles/tokens.css`, components named in `0012`
+   - Verify: checklist in `0012`; no hard-coded values; build + lint
+   - Deps: 1; **needs human decision**: the open gaps in `0012` §10 are settled first
+3. **Max app width 1440px** (v0.7/3) — content stays centered.
+   - Source: roadmap v0.7 (decided 2026-11-04)
    - Files: `src/App.css`, `src/styles/tokens.css`
-   - Verify: scripted list of every button/link class with a `:hover` rule; contrast 3:1 in both themes; no hover-only information; disabled buttons do not react
-   - Deps: 9, 10 (same `App.css`; covers what their dialogs do not)
-11. **Onboarding wizard** (v0.6/11) ✅ (v0.6.7) — three-step dialog wizard with progress bar replacing the single-dialog questionnaire.
-    - Source: `0009` §1; prototype `0010`; replaces `0008` §8
-    - Files: `src/screens/Onboarding.tsx`, `src/storage/seed.ts`, `src/storage/preselected.ts`, `src/App.css`
-    - Verify: progress "step X of 3" announced; Back, Done, presets and Advanced setup (closes the wizard) paths; no "Add your own" box; step 2 text is only "You can change presets later in Budget setup."; shows on empty DB only
-    - Deps: 1; decided 2026-11-04 in `0009` §1 (not blocked)
-12. **Deep subcategory nesting** (v0.6/12) — dropped 2026-11-08: the Category › Subcategory › Item model is already built (`MAX_DEPTH = 2`; a subcategory with items is a total row, an item is the deepest level). No work.
-13. **Import parsing** (v0.6/13) ✅ (v0.6.20) — read CSV and XLSX (ODS is step 13a), auto-categorize rows into categories/items, preview before writing; builds on the JSON backup export/restore.
-    - Source: roadmap v0.6; `0013` (mapping, reviewed); `docs/audits/security/security-v0.2.md` 1.1, 2.2, 6.2
-    - Files: new `src/import/`, `src/storage/repository.ts`, `src/storage/db.ts`, `src/budget/validate.ts` (date limit 1970), new `tests/import/`. `Backup.tsx` moved to step 14
-    - Verify: sample files per format; size/type limits and malformed files fail safely; formula and script content never run; no new dependency without asking (spreadsheet parser library)
-    - Deps: none now that step 12 is dropped; `0013` is decided; the library is chosen but installing it still needs the human's go-ahead. Test files: `docs/test_sheets/` (committed when `0013` is ready for work; the next commit when this step is done). Expect several test and refinement rounds
-13a. **ODS import** (v0.6/13a) ✅ (v0.6.33 to v0.6.35; help text and lost-values warning approved 2026-11-21) — a valid ODS test file (the generated ones fail to open in OnlyOffice: "format error in content.xml") and an ODS reader using the `0013` rules.
-    - Source: roadmap v0.6; `0013` §1
-    - Files: `src/import/`, `docs/test_sheets/` (ODS files)
-    - Verify: the ODS test files open in OnlyOffice and import with the same results as the XLSX files
-    - Deps: 13; **needs human**: a valid ODS file (for example saved from OnlyOffice or LibreOffice from the XLSX test workbook)
-    - Status 2026-11-21: **unblocked.** The human added a valid ODS saved from LibreOffice (`docs/test_sheets/test_ods_import_data.ods`; zip and `content.xml` check out). The generated file that failed in OnlyOffice is replaced. Use Opus for this step. Parse it with the same `0013` rules; the importer shows ".ods coming later" help text today (`ImportSection`), which this step updates
-    - Status 2026-11-21 (v0.6.33, v0.6.34): ODS reader built (`src/import/ods.ts`), wired into the importer, help text updated and approved. The LibreOffice file lost about 1,100 cell values (merged-cell leftovers stored as empty covered cells, mostly the first week's Est./Act.), so it can't match the XLSX totals. A second file the human saved (`test_ods_import_data_large.ods`) has the same loss (651 purchases), so the first file stays. **Decided (human, 2026-11-21): accept it.** The parity test checks every cell the file holds against the XLSX and fails if any other cell differs or a lost-cell count changes (`ODS_LOST_CELLS` in `tests/import/node-checks.ts`). v0.6.35 (human decision, option B): the import review shows a warning banner at the top ("Some values may be missing") when an ODS file has empty covered cells in its amount columns (1,110 in the test file); it stays silent for CSV, XLSX and ODS files whose merges are only in headers. Not checked: OnlyOffice opening the file, and a screen reader on the banner
-14. **Import flow UI** (v0.6/14) ✅ (v0.6.23 to v0.6.29; human approved 2026-11-21; built with the shared Toggle, Combobox, Banner and Tip components, D003, and fast-xml-parser 5.12.0) — Import section in the new Backup dialog (step 15), review/preview screen, error and success messages.
-    - Source: roadmap v0.6 "UI/UX for the upload flow"; `0013` §5 and §9 (undated purchases are marked and the Day table shows a tooltip note on them); D003
-    - API from step 13 (`src/import/index.ts`): `readImportFile(file)` → `previewImport(wb, await importSnapshot(), options)` after each choice → `applyImport(plan)`. `ImportError` messages start with "Invalid: " (changed in step 14; `0013` §9)
-    - Preview must show: sheets to tick (`excludedSheets`); the year (`year`, default the current year; day sheets keep their own year); month vs annual (`monthSource`); annual-only months that already have data (`annualExisting`); rows with a target dropdown (`targets`: auto, skip, Miscellaneous, an existing row); warnings, ignored columns and "Skip those items" (`skipDuplicates`)
-    - Rows that need a place (`0013` §4, `PlanRow.needsPlace`, `plan.unplaced`): a top-level row the app doesn't know. The user picks where it goes: under an existing row (`{ parentId }`, a top-level row or a subcategory directly under one), onto an existing row (`{ categoryId }`), or skip. Import stays disabled while `plan.unplaced` is not empty (`applyImport` refuses too). The picker design is part of this step's UI approval
-    - Choosing a new row name in a target dropdown is not built in step 13 (only existing rows); decide in this step's design whether it is needed
-    - D003 fix (confirmed for this step): editing a purchase keeps its time (`createdAt`) and its import mark (`undated`); the mark goes only when the date is changed. Files: `src/storage/repository.ts`, `src/components/BudgetTable.tsx`
-    - fast-xml-parser: on or after 2026-11-17 upgrade 5.11.2 → 5.12.0 (fixes GHSA-474x-hrwr-fgx4; approved 2026-11-11). If this step starts earlier, do it in step 19
-    - Files: `src/screens/BudgetSetup.tsx`, `src/components/Backup.tsx`, new import screen, `src/App.css`, `src/components/BudgetTable.tsx` (tooltip, D003)
-    - Verify: keyboard and screen reader path; progress and error announcements; 320px; `npm run test:import` still passes
-    - Deps: 13, 15 (Backup dialog shell; order changed 2026-11-11). **Mockups first** (headless Chromium, as for 0012): preview screen, "needs a place" picker, error and success messages. Build only after the human comments on them
-15. **Merge Budget setup and help; help text** (v0.6/15) ✅ (v0.6.21, v0.6.22; shell without the Import section, which step 14 adds; human approved 2026-11-21) — decided 2026-11-08 (`0009` §5): "?" opens the wizard (auto on first load) with "Advanced options" (opens Budget setup) in its footer; "Setup Budget" tab action removed; a "Backup" button in its place opens one export/restore/import dialog; the bottom Backup section is removed.
-    - Source: roadmap v0.6; `0009` §5
-    - Files: `src/App.tsx`, `src/components/Backup.tsx`, `src/screens/Onboarding.tsx`, `src/components/ui/Tabs.tsx`
-    - Verify: all old help and backup content kept; wizard, Advanced options and Backup dialog work by keyboard
-    - Deps: **order changed 2026-11-11: build this step first, without the Import section** (Backup dialog with export and restore, wizard "Advanced options", "Setup Budget" tab action removed, bottom Backup section removed). Step 14 then adds the Import section to the dialog. Mockups approved (`images/0012/g15-backup-button.jpg`, `g15-backup-dialog.jpg`); the dialog is a UI step, so it still pauses for approval of the built result
-16. **Upload step in onboarding** (v0.6/16) ✅ (v0.6.30, v0.6.31; human approved 2026-11-21) — wizard step 2 is a 3-option Toggle (Use presets, Add categories, Import a file); "Import a file" shows the import section, hides Next, and a successful import closes the wizard (pay frequency and checklist not applied). Spec: `0009` §1.
-    - Source: roadmap v0.6
-    - Files: `src/screens/Onboarding.tsx`, import components
-    - Verify: skipping works; imported data replaces the preset choice cleanly
-    - Deps: 11, 14
-17. **UI/UX review** (v0.6/17) ✅ (human approved 2026-11-21) — human approval, `0005` checklist, all widths and themes.
-    - Deps: 1–16
-18. **Accessibility pass** (v0.6/18) ⏳ (written 2026-11-21, fixes in v0.6.37) — `docs/audits/a11y/a11y-v0.6.md`. Lighthouse 100 in every state at 1280, 375 and 320px. Six findings fixed (A1 to A6; A6 is the wizard step 3 group row, rebuilt as a checkbox plus an Expander button 2px apart, no focus trap). Human screen reader test: pass. **Waiting on the human:** re-check of the A6 change, then approval; commits are held until the pass is approved.
+   - Verify: 1440, 1920px; 320/640px unchanged
+   - Deps: none
+4. **Sticky Item column and 250px minimum** (v0.7/4) — Item column sticky (left) in Week, Month, Annual and the highlight dialog above 500px; persistent 250px minimum width in every table.
+   - Source: roadmap v0.7 (decided 2026-11-04)
+   - Files: `src/components/BudgetTable.tsx`, `src/App.css`
+   - Verify: sticky off at 500px and narrower; focused cells not hidden behind the column; keyboard scroll; 320px
+   - Deps: 3
+5. **Form field alignment class** (v0.7/5) — same label-to-control space as fields with help text, so side-by-side fields line up.
+   - Source: roadmap v0.7 (decided 2026-11-04)
+   - Files: `src/App.css`, form screens
+   - Verify: Add purchase, Budget setup, dialogs at 1280/640/320px
+   - Deps: 2
+6. **Supporting text under the tables** (v0.7/6) — rewrite the out-of-date text.
+   - Source: roadmap v0.7
+   - Files: `src/screens/`, table components
+   - Verify: reading grade 10 or lower; accessible names unchanged
+   - Deps: **needs human decision**: final content first
+7. **Negative purchases as returns** (v0.7/7) — listed in the Day table as a return.
+   - Source: roadmap v0.7 (decided 2026-11-04); `0007` §9
+   - Files: `src/components/BudgetTable.tsx`
+   - Verify: refund and credit rows; totals unchanged; screen reader names
+   - Deps: **needs human decision**: the label and styling
+8. **Typed-name parsing** (v0.7/8) — spell check and common abbreviations (e.g. "Misc." becomes "Miscellaneous").
+   - Source: roadmap v0.7 (decided 2026-11-04)
+   - Files: `src/budget/validate.ts`, name fields
+   - Verify: abbreviation cases; import names unaffected unless chosen
+   - Deps: **needs human decision**: the abbreviation list, where it runs, whether it corrects silently or asks
+9. **Move subcategories and items between parents** (v0.7/9) — a subcategory moved into another becomes an item; an item moved out becomes a subcategory; a subcategory with items cannot move into another (error).
+   - Source: roadmap v0.7 (decided 2026-11-04)
+   - Files: `src/budget/setupEdits.ts`, `src/storage/repository.ts`, dialog component, `src/components/BudgetTable.tsx`
+   - Verify: keyboard-only; purchases and estimates follow the row; backup restore; tree checks
+   - Deps: 1; **needs human decision**: the interaction (a Move dialog or other) and what happens to purchases and estimates
+10. **Read-only Day table under Add purchase** (v0.7/10) — a copy of the Day table below the form.
+    - Source: roadmap v0.7 (decided 2026-11-08)
+    - Files: `src/screens/AddBudget.tsx`, table component
+    - Verify: updates after a save; read-only; one live region
+    - Deps: 7
+11. **Annual Misc row and breakdown** (v0.7/11) — a Misc row under Incidentals, a Misc. Breakdown table under the Annual table, December review highlight.
+    - Source: roadmap v0.7; `0014`
+    - Files: `src/components/BudgetTable.tsx`, new table component, `src/App.css`
+    - Verify: per `0014`; table headings and names
+    - Deps: 4
+12. **Week and Day import regression** (v0.7/12) — regression test the import of Week and Day sheets, then fill the gaps (e.g. a week sheet and a day sheet covering the same day are not cross-checked).
+    - Source: roadmap v0.7 (decided 2026-11-11)
+    - Files: `tests/import/`, `src/import/`
+    - Verify: `npm run test:import`
+    - Deps: none
+13. **Charts** (v0.7/13) — Table/Chart switch and chart types for the Budget screen.
+    - Source: roadmap v0.7; security v0.2 4.5, 2.5 (Trusted Types, escaped item names in chart labels)
+    - Files: new chart components, `src/screens/`, `src/App.css`
+    - Verify: alt text and a data-table alternative; keyboard and screen reader; contrast; no HTML-writing calls
+    - Deps: 3; **needs human decision**: chart types and the library (a new dependency needs the human's go-ahead, exact pin at least two weeks old)
+14. **Sync design and network review** (v0.7/14) — new design doc for sync to a Google Sheet; the sheet layout, data shape and encryption questions settled; the v0.2 5.4 network review done first.
+    - Source: roadmap v0.7; `security-v0.6.md` held items (v0.2 5.4 ⚠ REQUIRES REVIEW BEFORE PROCEEDING, v0.2 2.3, v0.3 6.2, v0.2 1.3, 2.4, 3.7, 4.3, 4.4, 6.6, 6.7, 7.7, 8.8, v0.5 3.2)
+    - Files: new `docs/design/` doc; roadmap update
+    - Verify: human approves the design doc; 5.4 re-rated
+    - Deps: none; blocks 15
+15. **Sync to a Google Sheet** (v0.7/15) — StorageAdapter interface, Google Sheets adapter, sync-on-open (pull then push, last-write-wins, tombstones), optional passphrase encryption (open), seed from the sheet's layout.
+    - Source: roadmap v0.7; the step 14 design doc
+    - Files: `src/storage/`, new adapter, settings UI
+    - Verify: per the design doc; formula text in synced cells neutralized (v0.2 2.3)
+    - Deps: 14
+16. **UI/UX review** (v0.7/16) — human approval, `0005` checklist, all widths.
+    - Deps: 1–15
+17. **Accessibility pass** (v0.7/17) — including chart alt text, keyboard navigation and screen reader.
+    - Deps: 16
+18. **Security review** (v0.7/18) — covers sync; carried items listed in step 14. On approval bump to v0.8.0.
     - Deps: 17
-19. **Security review** (v0.6/19) ⏳ (written 2026-11-21, fixes in v0.6.37; awaiting approval) — `docs/audits/security/security-v0.6.md`; import is the main new surface. One Low fixed (XLSX notes loop, 3.1), one Info fixed (restore descriptions, 3.2). 7.1 (Medium, fast-xml-parser installed 5.11.2 vs pinned 5.12.0) fixed by a targeted install; tests and build pass. Severity ratings (3.1 Low, 7.1 Medium) still need the human's confirmation: the matrix file is unreadable from this session. On approval bump to v0.7.0.
-    - Deps: 18
 
 ### Execution
-- ✅ **A — Small fixes** (steps 1, 2, 3, 4; MultiSelect, repository, AddBudget, App): parallel-safe, sequential in one session.
-- ✅ **B — Amounts and descriptions** (steps 5, 6, 7; AddBudget, structure, seed): after A step 3 (same `AddBudget.tsx`).
-- **C — Setup and table dialogs** (steps 8, 9, 10, 9a; BudgetSetup, BudgetTable, App.css): after B; design settled. Step 9a (hover styling) last. Built in v0.6.11–v0.6.18 and approved; only the Week/Month Add/Subtract date picker (step 9) remains.
-- ~~**D — Nesting**~~ dropped 2026-11-08 (step 12; the model already exists).
-- ✅ **E — Wizard** (step 11; Onboarding): after A; design settled, so it can run any time after A (before C or D if wanted).
-- **F — Import** (steps 13, 13a, 14, 15, 16; import, Backup, BudgetSetup, Onboarding): after E.
-- **Reviews** (steps 17–19): main session with the user.
-- Status: ✅ A · ✅ B · ✅ C · — D dropped · ✅ E · ✅ F (13, 13a, 14, 15, 16 all ✅) · ⏳ reviews (17 ✅; 18 and 19 written; A6 and 7.1 fixed, screen reader pass; waiting on the human: re-check of A6, severity confirmation, approval)
-- **Group F order (changed 2026-11-11):** 15 (without Import section) → 14 (mockups, approval, build) → 16 → 13a when an ODS file exists. Steps 15 and 14 were merged to `main` on 2026-11-21 (v0.6.21 to v0.6.29). Session model: Sonnet; Opus only for 13a and the security review if needed. Command style for agents: no `cd`, no chained commands, use the git-broker tools for git, and no mockups or screenshot sets unless the human asks for a specific change.
+- **A — Dialogs and standards** (steps 1, 2, 3, 5; `Dialog`, `App.css`, tokens): sequential, step 2 waits on the human's `0012` gaps.
+- **B — Tables** (steps 4, 6, 7, 10, 11; `BudgetTable.tsx`, `App.css`): after A.
+- **C — Names and moves** (steps 8, 9; `validate.ts`, `setupEdits.ts`, repository): after A; both need human decisions.
+- **D — Import** (step 12; `tests/import/`): any time.
+- **E — Charts** (step 13): after A step 3.
+- **F — Sync** (steps 14, 15): design doc and network review first.
+- **Reviews** (steps 16–18): main session with the user.
+- Status: ☐ A · ☐ B · ☐ C · ☐ D · ☐ E · ☐ F · ☐ reviews
 
 ### Session process
 Run option 1: one session per group, fresh start at each group boundary. A session starts by reading this file and the roadmap, then:
-0. **Work in a worktree** (`.claude/CLAUDE.md` "Workflow agents use a worktree"): create `.claude/worktrees/v0.6-group-<x>` from the latest `main`, build there, and at the end of the group or step stop and ask the human to approve the merge. Never merge to `main` without that approval. After approval, fast-forward merge, then remove the worktree.
-1. **Find the start:** the first group in the order below that is not ✅ and whose dependencies are met. Within it, the first step not marked ✅. Stop and ask if the status line and the step marks disagree.
-2. **Check blockers** listed on the steps of the group ("needs human decision", "needs spec", "blocked"). Do not build a blocked step: skip it, or stop and tell the user if it is the only one left.
-3. **Build one step at a time:** re-read the latest version on `main`, build and lint, commit with the next patch version and the `Plan-Step: v0.6/N` trailer, mark the step ✅ with its version(s). Check `git diff --cached --stat` before each commit.
+0. **Work in a worktree** (`dev-workflow.md`): create `.claude/worktrees/v0.7-group-<x>` from the latest `main` (or from `dev/v0.7` when a session builds several groups), build there, and at the end of the group or step stop and ask the human to approve the merge. Never merge to `main` without that approval.
+1. **Find the start:** the first group in the order above that is not ✅ and whose dependencies are met; within it, the first step not marked ✅. Stop and ask if the status line and the step marks disagree.
+2. **Check blockers** ("needs human decision", "blocked"). Do not build a blocked step: skip it, or stop and tell the user if it is the only one left.
+3. **Build one step at a time:** re-read the latest version on `main`, build and lint, commit with the next patch version and the `Plan-Step: v0.7/N` trailer, mark the step ✅ with its version(s). Check `git diff --cached --stat` before each commit.
 4. **UI steps** pause for human approval before they are marked ✅ (`0005`).
-5. **At the end of the group:** update the Execution status line (e.g. `✅ A · ☐ B`), commit in the worktree, and tell the user the group is done and waiting for merge approval. The status line on `main` changes only after the merge.
-6. **Group order:** A → B → C → F. E (wizard) can run any time after A (design settled); F needs E. Small groups (A) may share a session with the next group if context is light. F spans several sessions, each resuming at a step boundary.
-7. **Reviews** (17–19) are run in the main session with the user, not by a worker.
+5. **At the end of the group:** update the Execution status line, commit in the worktree, and tell the user the group is done and waiting for merge approval.
+6. **Reviews** (16–18) are run in the main session with the user, not by a worker.
 
 ## Rules
 - Each completed item: commit + version bump (per `.claude/CLAUDE.md` "Version numbering").

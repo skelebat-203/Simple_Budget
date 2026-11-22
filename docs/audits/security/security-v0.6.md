@@ -1,6 +1,6 @@
 # Security Review — v0.6 (NETWORKED matrix)
 
-Scope: v0.6 at v0.6.36 plus the fixes made in this review (v0.6.37) — PWA (Vite + React + Dexie IndexedDB), no backend yet. Rated on the calibration of v0.1–v0.5 under `issue-severity-matrix_NETWORKED.md` (the matrix file sits outside the folders this review session can read, so the human confirms the ratings, 3.1 and 7.1 in particular). Domains per `security-domains.md`, ASVS 5.0.0 chapter names. Open items from earlier reviews are carried forward with their original IDs (prefixed `v0.2` to `v0.5`); new findings are numbered in this file. Awaiting approval by the human.
+Scope: v0.6 at v0.6.36 plus the fixes made in this review (v0.6.37) — PWA (Vite + React + Dexie IndexedDB), no backend yet. Rated on the calibration of v0.1–v0.5 under `issue-severity-matrix_NETWORKED.md` (the matrix file sits outside the folders this review session can read, so the human confirms the ratings, 3.1 and 7.1 in particular). Domains per `security-domains.md`, ASVS 5.0.0 chapter names. Open items from earlier reviews are carried forward with their original IDs (prefixed `v0.2` to `v0.5`); new findings are numbered in this file. Approved by the human 2026-11-21.
 
 ## Summary
 
@@ -10,7 +10,7 @@ All 8 domains reviewed. v0.6 added the first user-chosen file input that the app
 
 One Low finding was found and fixed: the XLSX reader looped over every cell note once per row, so a 128 KB file with 40,000 notes froze the reader for 28 s (now 0.4 s, with a regression test). One Info finding was fixed (backup restore did not clean descriptions). One Medium was found and fixed: `package.json` and the lockfile pinned fast-xml-parser 5.12.0, but the installed copy in this checkout was 5.11.2, so a build from this checkout would have shipped the older parser (7.1; installed 5.12.0 with the human's approval, tests and build re-run). Everything else is Info. The production build reports no CSP violations or console errors in 111 browser states at three widths, and `npm audit --omit=dev` reports no advisories.
 
-Totals (new): 1 Medium (open), 1 Low (fixed), 9 Info (8 fixed, 1 not fixed). Carried: nothing new is held; sync-related items move with the sync work from v0.8 to v0.7 (roadmap decision 2026-11-18).
+Totals (new): 1 Medium (fixed), 1 Low (fixed), 9 Info (8 fixed, 1 not fixed). Carried: nothing new is held; sync-related items move with the sync work from v0.8 to v0.7 (roadmap decision 2026-11-18).
 
 ### Summary table
 

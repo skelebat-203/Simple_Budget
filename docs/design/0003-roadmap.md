@@ -91,34 +91,34 @@ tracked as a later-version item.
 - ✅ Accessibility pass (`docs/audits/a11y/a11y-v0.5.md`; one live region, table keyboard shortcuts removed, preview header fixed)
 - ✅ Security review (`docs/audits/security/security-v0.5.md`, approved): no Medium or higher → transition to v0.6.0
 
-## v0.6 — Data import + deep nesting
-- Defects (`docs/defects/`): D001 onboarding name length limit; D002 duplicate settings rows; D003 editing a purchase resets its time and drops its import mark (found 2026-11-11 in import work; fixed with the import flow UI, confirmed 2026-11-11)
-- Spreadsheet upload + auto-categorization parsing (mapping rules in `0013`, test files in `docs/test_sheets/`); an Import option in the Backup dialog accepts CSV and XLSX here, and ODS in the next item (decided 2026-11-08, ODS split out 2026-11-11) so a user can import an existing budget. Large effort: expect several testing and refinement rounds
-- (Primary User Request) More informative "Saved" confirmation: the text says what was saved and how much (e.g. the item name and amount), not just "Saved"
-- Combine "Budget setup" and help (decided 2026-11-08, `0009` §5): the "?" button opens the onboarding wizard (automatically on first load); the wizard footer offers "Advanced options" (opens Budget setup); the "Setup Budget" tab action is removed; a "Backup" button takes its place and opens a dialog for export, restore and import
-- UI/UX changes from the v0.5 review (`0009-v0.6-design-updates.md`; prototypes `0010` and `0011` are reviewed and refined before building):
-  - Onboarding as a three-step wizard with a progress bar
-  - Budget setup: "Add" buttons in place of the four "Create in" fields
-  - Highlight dialog: clicking an item name opens a dialog with the item and its children and the table's functions; the chevron alone expands and collapses
-  - Budget tables (not Annual): the Actions menu is renamed "Edit" with Rename (moves the item to its right category, with a warning that it changes all historic records), Add/Subtract (Day: New purchase) and Delete (Day and Week only), each opening a dialog; Day purchase rows have an Edit button instead, opening one dialog with the Add purchase form prepopulated (`0009` §4.1)
-  - Backup and upload described in the help dialog
-  - Add/Subtract: Day has a New purchase button on category rows; purchases are edited in their own dialog and adds to or subtracts from an item's total in Week and Month, with a date picker limited to the viewed period (`0009` §4.1)
-- Hover styling on buttons and links across the app (decided 2026-11-04; built v0.6.15)
-- Week, Month and Annual amount columns at least wide enough for 222,222.99, in the tables and the highlight dialog (decided 2026-11-04; built v0.6.17)
-- Refactor so each tab panel's header below the tab is visually hidden (still available to screen readers)
-- Add addition and subtraction to the amount fields: typed expressions (decided 2026-11-04)
-- Optional description field below Amount
-- Charity takes purchases itself until it gets its first item; then its purchases move to Charity › Miscellaneous and Charity becomes a roll-up (`0009` §6, draft pending human review)
-- UI/UX for the upload flow
-- ODS import: get a valid ODS test file (the generated ones fail to open in OnlyOffice) and build the importer for it, using the `0013` rules (decided 2026-11-11)
-- Import also reads Week and Day sheets (`0013` §3 and §5; invented test files in `docs/test_sheets/`, because the human has no real ones)
-- Imported purchases whose date was not in the file are placed on the first day of their week (or month) and marked; the Day table shows a tooltip note on each one (decided 2026-11-11, `0013` §5)
+## v0.6 — Data import + deep nesting (complete, v0.6.0 to v0.6.37)
+- ✅ (D001 v0.6.1, D002 v0.6.2, D003 v0.6.23 to v0.6.29) Defects (`docs/defects/`): D001 onboarding name length limit; D002 duplicate settings rows; D003 editing a purchase resets its time and drops its import mark (found 2026-11-11 in import work; fixed with the import flow UI, confirmed 2026-11-11)
+- ✅ (v0.6.20, v0.6.33 to v0.6.35) Spreadsheet upload + auto-categorization parsing (mapping rules in `0013`, test files in `docs/test_sheets/`); an Import option in the Backup dialog accepts CSV and XLSX here, and ODS in the next item (decided 2026-11-08, ODS split out 2026-11-11) so a user can import an existing budget. Large effort: expect several testing and refinement rounds
+- ✅ (v0.6.3, v0.6.5) (Primary User Request) More informative "Saved" confirmation: the text says what was saved and how much (e.g. the item name and amount), not just "Saved"
+- ✅ (v0.6.21, v0.6.22) Combine "Budget setup" and help (decided 2026-11-08, `0009` §5): the "?" button opens the onboarding wizard (automatically on first load); the wizard footer offers "Advanced options" (opens Budget setup); the "Setup Budget" tab action is removed; a "Backup" button takes its place and opens a dialog for export, restore and import
+- ✅ UI/UX changes from the v0.5 review (`0009-v0.6-design-updates.md`; prototypes `0010` and `0011` are reviewed and refined before building):
+  - ✅ (v0.6.7) Onboarding as a three-step wizard with a progress bar
+  - ✅ (v0.6.11, v0.6.12, v0.6.16) Budget setup: "Add" buttons in place of the four "Create in" fields
+  - ✅ (v0.6.14, v0.6.17, v0.6.18) Highlight dialog: clicking an item name opens a dialog with the item and its children and the table's functions; the chevron alone expands and collapses
+  - ✅ (v0.6.13, v0.6.17 to v0.6.19) Budget tables (not Annual): the Actions menu is renamed "Edit" with Rename (moves the item to its right category, with a warning that it changes all historic records), Add/Subtract (Day: New purchase) and Delete (Day and Week only), each opening a dialog; Day purchase rows have an Edit button instead, opening one dialog with the Add purchase form prepopulated (`0009` §4.1)
+  - ✅ (v0.6.21, v0.6.22) Backup and upload described in the help dialog
+  - ✅ (v0.6.13, v0.6.19) Add/Subtract: Day has a New purchase button on category rows; purchases are edited in their own dialog and adds to or subtracts from an item's total in Week and Month, with a date picker limited to the viewed period (`0009` §4.1)
+- ✅ (v0.6.15) Hover styling on buttons and links across the app (decided 2026-11-04)
+- ✅ (v0.6.17) Week, Month and Annual amount columns at least wide enough for 222,222.99, in the tables and the highlight dialog (decided 2026-11-04)
+- ✅ (v0.6.4) Refactor so each tab panel's header below the tab is visually hidden (still available to screen readers)
+- ✅ (v0.6.8) Add addition and subtraction to the amount fields: typed expressions (decided 2026-11-04)
+- ✅ (v0.6.9) Optional description field below Amount
+- ✅ (v0.6.10) Charity takes purchases itself until it gets its first item; then its purchases move to Charity › Miscellaneous and Charity becomes a roll-up (`0009` §6)
+- ✅ (v0.6.23 to v0.6.29) UI/UX for the upload flow
+- ✅ (v0.6.33 to v0.6.35) ODS import: a valid ODS test file (LibreOffice) and the importer, using the `0013` rules (decided 2026-11-11). Accepted loss: about 1,100 merged-cell values in the test file, with a warning banner in the review
+- ✅ (v0.6.20) Import also reads Week and Day sheets (`0013` §3 and §5; invented test files in `docs/test_sheets/`, because the human has no real ones)
+- ✅ (v0.6.20, v0.6.23 to v0.6.29) Imported purchases whose date was not in the file are placed on the first day of their week (or month) and marked; the Day table shows a tooltip note on each one (decided 2026-11-11, `0013` §5)
 - ~~Deep subcategory nesting~~ dropped 2026-11-08: the Category › Subcategory › Item model is already built (a subcategory that has items is a total row and takes no purchases; an item is the deepest level)
-- Add upload step to onboarding once it works
-- Data import / export: build on the v0.2 JSON backup export/restore (`docs/audits/security/security-v0.2.md` 6.2; file-handling requirements in 1.1 and 2.2)
-- UI/UX review (human approval)
-- Accessibility pass
-- Security review
+- ✅ (v0.6.30, v0.6.31) Add upload step to onboarding once it works
+- ✅ (v0.6.20 to v0.6.29) Data import / export: build on the v0.2 JSON backup export/restore (`docs/audits/security/security-v0.2.md` 6.2; file-handling requirements in 1.1 and 2.2)
+- ✅ UI/UX review (human approval, 2026-11-21)
+- ✅ Accessibility pass (`docs/audits/a11y/a11y-v0.6.md`, v0.6.37): Lighthouse 100 in 37 states at 1280, 375 and 320px; six findings fixed (A1 to A6; A6 is the wizard step 3 group row, now a checkbox beside an Expander button, 2px apart by owner exception to the control-margin rule); screen reader test passed
+- ✅ Security review (`docs/audits/security/security-v0.6.md`, approved 2026-11-21): the XLSX note loop (3.1, Low) and an out-of-sync parser install (7.1, Medium) fixed; no open finding of Medium or higher in v0.6 code → transition to v0.7.0. Carried to v0.7 (⚠ before any sync work): v0.2 5.4 (Medium, sync backend network configuration) and the sync-time items listed in the report; v0.2 5.1, 5.2 held till v0.9
 
 ## v0.7 — Graphs and charts
 - Rewrite the supporting text under the tables, which is out of date (decide its final content first)
