@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from 'react'
+import { useEffect, useRef, type ReactNode, type Ref } from 'react'
 import { Button } from './Button'
 import { useAnnounce } from './announcer'
 
@@ -39,7 +39,7 @@ export interface FormMode {
  * The footer is one of: `confirm` (a message with Cancel and Confirm), `form`
  * (the children are the fields; Cancel and a submit button), or `buttons` (caller-made).
  */
-export function Dialog({ id, title, children, buttons, confirm, form, onClose, className, describedBy, footerClassName }: {
+export function Dialog({ id, title, children, buttons, confirm, form, onClose, className, describedBy, footerClassName, footerRef }: {
   id: string
   title: ReactNode
   children: ReactNode
@@ -54,6 +54,8 @@ export function Dialog({ id, title, children, buttons, confirm, form, onClose, c
   describedBy?: string
   /** Extra class for the button row (for example the sticky review footer). */
   footerClassName?: string
+  /** Ref to the button row, for a caller that measures it. */
+  footerRef?: Ref<HTMLDivElement>
 }) {
   useAnnounce(form?.error ?? '')
   const ref = useRef<HTMLDialogElement>(null)
@@ -101,7 +103,7 @@ export function Dialog({ id, title, children, buttons, confirm, form, onClose, c
             </form>
           )
           : children}
-        <div className={`actions dialog-actions ${footerClassName ?? ''}`.trim()}>{footer}</div>
+        <div ref={footerRef} className={`actions dialog-actions ${footerClassName ?? ''}`.trim()}>{footer}</div>
       </div>
     </dialog>
   )

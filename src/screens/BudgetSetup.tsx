@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { AmountField, Button, ErrorSummary, focusFirstError, type FieldError } from '../components/ui'
+import { AmountField, Button, Dialog, ErrorSummary, focusFirstError, type FieldError } from '../components/ui'
 import { Expander } from '../components/ui/Expander'
 import { BudgetTable } from '../components/BudgetTable'
 import { announce, useAnnounce } from '../components/ui/announcer'
@@ -35,12 +35,10 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, rewardsEnable
   onClose: () => void
   onSaved: (charityMoved: number) => void
 }) {
-  const ref = useRef<HTMLDialogElement>(null)
-  const headingRef = useRef<HTMLHeadingElement>(null)
   const footerRef = useRef<HTMLDivElement>(null)
   // The setup table ends 24px above the sticky footer: expose the footer's height to CSS.
   useEffect(() => {
-    const f = footerRef.current, d = ref.current
+    const f = footerRef.current, d = f?.closest('dialog')
     if (!f || !d) return
     const ro = new ResizeObserver(() => d.style.setProperty('--footer-h', `${f.offsetHeight}px`))
     ro.observe(f)
@@ -88,17 +86,6 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, rewardsEnable
   }, [tipOff])
   const focusAfter = useRef<string | null>(null)
   const setFocusId = (id: string) => { focusAfter.current = id }
-
-  // Mounted only while open (see App): open modal, focus its heading, return focus to the opener on unmount.
-  // The opener is read on first render: in StrictMode the effect runs twice,
-  // and by the second run focus is already inside the dialog.
-  const [opener] = useState(() => document.activeElement as HTMLElement | null)
-  useEffect(() => {
-    const dialog = ref.current
-    dialog?.showModal()
-    headingRef.current?.focus()
-    return () => opener?.focus()
-  }, [opener])
 
   // Re-focus a control after its row moved in the table.
   useEffect(() => {
@@ -389,15 +376,18 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, rewardsEnable
   const errorList = Object.entries(errors).filter(([k]) => k.startsWith('estimate-') || k.startsWith('due_date-')).map(([fieldId, message]) => ({ fieldId, message }))
 
   return (
-    <dialog ref={ref} className="dialog setup" aria-labelledby="setup-heading" onClose={onClose}>
-      <div className="dialog-body">
-        <h2 id="setup-heading" ref={headingRef} tabIndex={-1} className="section-title">Budget setup</h2>
+    <Dialog id="setup" title="Budget setup" className="setup" onClose={onClose} footerClassName="sticky-footer" footerRef={footerRef}
+      buttons={<>
+        <Button type="button" className="secondary" onClick={onClose}>Cancel</Button>
+        <Button type="button" onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Save'}</Button>
+      </>}>
+      <>
         <ErrorSummary ref={bannerRef} errors={errorList} />
         <p id="setup-help" className="help">If you’d like to skip ahead just select “Save” at the bottom of the screen. Income, Tax, Emergency fund, Charity, and a few other items have been preselected for you.</p>
         <p className="status">{status}</p>
 
         <div className="table-box setup-table-box">
-          <table className="table setup-table" aria-labelledby="setup-heading" role="treegrid" aria-describedby="setup-help setup-key">
+          <table className="table setup-table" aria-labelledby="setup-title" role="treegrid" aria-describedby="setup-help setup-key">
             <thead>
               <tr>
                 <th scope="col">Item</th>
@@ -489,11 +479,7 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, rewardsEnable
         </section>
 
         {saveError && <p className="error">{saveError}</p>}
-      </div>
-      <div className="dialog-footer" ref={footerRef}>
-        <Button type="button" className="secondary" onClick={onClose}>Cancel</Button>
-        <Button type="button" onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Save'}</Button>
-      </div>
-    </dialog>
+      </>
+    </Dialog>
   )
 }

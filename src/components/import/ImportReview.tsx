@@ -145,7 +145,7 @@ export function ImportReview({ fileName, workbook, snapshot, onCancel, onDone, o
   const setSheetOpen = (i: number, on: boolean) => setOpenSheets(() => { const next = new Set(openNow); if (on) next.add(i); else next.delete(i); return next })
 
   return createPortal(
-    <Dialog id="import-review" title="Review import" onClose={onCancel} className="review" describedBy="review-file" footerClassName="review-footer"
+    <Dialog id="import-review" title="Review import" onClose={onCancel} className="review" describedBy="review-file" footerClassName="sticky-footer"
       buttons={<>
         <Button type="button" className="secondary" onClick={onCancel}>Cancel</Button>
         <Button type="button" aria-disabled={blocked || undefined} aria-describedby="review-summary" onClick={doImport}>Import</Button>

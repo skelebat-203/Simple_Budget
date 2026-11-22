@@ -146,9 +146,9 @@ Other observed differences:
 
 ## 5. Dialogs
 
-Observed. Four implementations, not the three in the roadmap: `Dialog` (generic),
-`FormDialog` (form), `ConfirmDialog` (confirm), and **Budget setup**, which is a raw
-`<dialog>` with its own CSS (`dialog.setup`).
+Observed before v0.7 step 1: four implementations, not the three in the roadmap: `Dialog` (generic),
+`FormDialog` (form), `ConfirmDialog` (confirm), and **Budget setup**, a raw `<dialog>` with its own
+CSS. Since v0.7.1 every dialog uses the one `Dialog` component (`confirm`, `form` or custom `buttons` footer).
 
 | Dialog | Width (1024px) | Title | Footer |
 |---|---|---|---|
