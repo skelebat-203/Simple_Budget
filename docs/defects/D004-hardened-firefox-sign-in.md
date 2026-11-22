@@ -7,4 +7,4 @@
 - Proposed fix: a full-page redirect sign-in (OAuth token flow with `redirect_uri`) instead of the pop-up, at least as a fallback. Needs an Authorized redirect URI added in the Google Cloud console, and the Sync dialog must survive leaving and re-opening the app.
 - Workaround: test sync in Chromium (human, 2026-11-22).
 - Files: `src/storage/sync/googleSheets.ts` (`signIn`), `src/components/Sync.tsx`.
-- Scheduled: v0.7, before the step 18 security review (not yet a plan step; human to confirm placement).
+- Scheduled: v0.7 step 15b, before the reviews; does not block the alpha launch (human, 2026-11-22).

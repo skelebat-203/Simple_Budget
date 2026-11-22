@@ -4,7 +4,7 @@ Tracking file for current work status. Roadmap authority: `docs/design/0003-road
 Design: `0015-sync-design.md` (sync), `0004-table-design.md` (table), `0006-prototype.html` (v0.2 UI), `0007-v0.3-design-updates.md` (v0.3 changes), `0008-v0.5-design-updates.md` (v0.5 changes), `0009-v0.6-design-updates.md` (v0.6), `0012-design-standards.md` (standards), `0014` (Annual Misc breakdown). Higher-numbered doc wins on conflict.
 
 ## Current version
-v0.7.0 (v0.6 complete 2026-11-21, v0.6.0 to v0.6.37; reports: `docs/audits/a11y/a11y-v0.6.md`, `docs/audits/security/security-v0.6.md`). Step 1 ✅ (v0.7.1 to v0.7.3). Step 2 ✅ (v0.7.4). Step 3 (sync build) in progress on `worktree-v0.7-group-a`; merge to `main` after sync is built and approved.
+v0.7.0 (v0.6 complete 2026-11-21, v0.6.0 to v0.6.37; reports: `docs/audits/a11y/a11y-v0.6.md`, `docs/audits/security/security-v0.6.md`). Step 1 ✅ (v0.7.1 to v0.7.3). Step 2 ✅ (v0.7.4). Step 3 ✅ (v0.7.5 to v0.7.10). Step 3b (sync placement) next, on `worktree-v0.7-group-a`; merge to `main` after sync is built and approved.
 
 ## v0.7 plan of action
 Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per completed-work commit; trailer `Plan-Step: v0.7/N`). The final step bumps to the next minor version (v0.8.0). UI steps need human approval (`0005-ui-ux-review-checklist.md`). Baseline: v0.7.0. Data: Dexie v8 (`src/storage/structure.ts`). Testing: headless Chromium (`tools/browsers/`, `lighthouse-sandbox.md`); import harness `npm run test:import` (`tests/import/README.md`).
@@ -29,15 +29,17 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
    - Files: `src/storage/`, new adapter, settings UI (built on the step 1 `Dialog`)
    - Verify: per the design doc; formula text in synced cells neutralized (v0.2 2.3)
    - Deps: 1, 2 (built immediately after 2)
+   - ✅ (v0.7.5 to v0.7.10; end-to-end test passed in Chromium and UI approved 2026-11-22; changes from the review are step 3b)
    - Progress (v0.7.5, v0.7.6): engine, encryption, Dexie v9, Google adapter, CSP, Sync dialog and timing built; `npm run test:sync` passes. Waiting on: the human's Google Cloud setup (placeholders in `src/storage/sync/googleConfig.ts`), the end-to-end test with a test account (Q10) and UI approval of the Sync dialog.
 3b. **Sync placement in the wizard and main app** (v0.7/3b) — from the step 3 UI review (human, 2026-11-22):
-   - Wizard: sync becomes step 1 of 4; "How often do you get paid?" moves to the last step. Design: one of the three mockups in `docs/design/images/v0.7-wizard-sync/` (human to choose).
+   - Wizard: sync becomes the first step; "How often do you get paid?" moves to the last step. Design (human, 2026-11-22; mockups in `docs/design/images/v0.7-wizard-sync/`): option A with two answers, "Local only" and "Sync with Google". Choosing "Sync with Google" shows option C's content as a tab list (tabs "New Budget" and "Existing Budget") instead of two side-by-side boxes.
+   - The step count updates as the user moves through, because the branches have different lengths ("Step 2 of 5", for example). Assumed, to confirm when built: "Existing Budget" skips the steps whose answers come from the linked sheet (categories, pay frequency).
    - Sync button: only in the Budget tab panel, at the right, in line with the date controls; in narrow views, once it would run into the date controls, it moves to the right of the Screens drop-down.
    - Backup button: back at the far right, in line with the tabs.
    - Source: step 3 UI review; `0015` Q9 (replaced: sync is offered in the wizard, not after it)
    - Files: `src/screens/Onboarding.tsx`, `src/components/Sync.tsx`, `src/screens/Budget.tsx`, `src/components/ui/Tabs.tsx`, `src/App.tsx`, `src/App.css`
    - Verify: `npm run test:dialogs` (wizard step order); 1280/640/320px; keyboard order matches visual order
-   - Deps: 3; **needs human decision**: the wizard step design
+   - Deps: 3
 4. **Design standards pass** (v0.7/4) — bring the app in line with `0012-design-standards.md`.
    - Source: roadmap v0.7; `0012` §10 gaps
    - Files: `src/App.css`, `src/styles/tokens.css`, components named in `0012`
@@ -98,6 +100,10 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
     - Files: new chart components, `src/screens/`, `src/App.css`
     - Verify: alt text and a data-table alternative; keyboard and screen reader; contrast; no HTML-writing calls
     - Deps: 5; **needs human decision**: chart types and the library (a new dependency needs the human's go-ahead, exact pin at least two weeks old)
+15b. **D004 hardened-browser sign-in** (v0.7/15b) — redirect sign-in so sync works in Firefox Strict, Brave and similar (`docs/defects/D004-hardened-firefox-sign-in.md`). Does not block the alpha launch (human, 2026-11-22).
+    - Files: `src/storage/sync/googleSheets.ts`, `src/components/Sync.tsx`; an Authorized redirect URI in the Google Cloud console (human)
+    - Verify: sign-in in Firefox Strict and in Chromium
+    - Deps: 3b
 16. **UI/UX review** (v0.7/16) — human approval, `0005` checklist, all widths.
     - Deps: 1–15
 17. **Accessibility pass** (v0.7/17) — including chart alt text, keyboard navigation and screen reader.
@@ -113,8 +119,9 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
 - **C — Names and moves** (steps 10, 11; `validate.ts`, `setupEdits.ts`, repository): after F; both need human decisions.
 - **D — Import** (step 14; `tests/import/`): any time.
 - **E — Charts** (step 15): after step 5.
+- **D004** (step 15b): after F, before the reviews.
 - **Reviews** (steps 16–18): main session with the user.
-- Status: ✅ A · ⏳ F (step 2 ✅; step 3 in progress) · ☐ A2 · ☐ B · ☐ C · ☐ D · ☐ E · ☐ reviews
+- Status: ✅ A · ⏳ F (steps 2, 3 ✅; step 3b next) · ☐ A2 · ☐ B · ☐ C · ☐ D · ☐ E · ☐ reviews
 
 ### Session process
 Run option 1: one session per group, fresh start at each group boundary. A session starts by reading this file and the roadmap, then:

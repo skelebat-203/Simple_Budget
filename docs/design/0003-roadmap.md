@@ -135,7 +135,7 @@ tracked as a later-version item.
 - Week and Day sheet import: regression test the import of Week and Day sheets, then find and fill the gaps (for example a week sheet and a day sheet that cover the same day are not checked against each other) (decided 2026-11-11)
 - Chart view (Table/Chart switch)
 - Chart types for Budget screen
-- Defect D004 (`docs/defects/`): Google sign-in fails in hardened Firefox; redirect sign-in proposed (found 2026-11-22; placement to confirm)
+- Defect D004 (`docs/defects/`): Google sign-in fails in hardened Firefox; redirect sign-in (found 2026-11-22; a later v0.7 fix, step 15b, does not block the alpha launch)
 - Sync to a Google Sheet (moved from v0.8, decided 2026-11-18): the spreadsheet is a remote copy of the budget, so the same budget can be used and updated on several devices. The user links an existing spreadsheet or the app creates one in their Google account. Google Sheets first; design in a new design doc before building (the design doc holds the spec; this item holds the scope)
   - StorageAdapter interface + Google Sheets adapter (assumed stable and easier than other options; reassess if Google Sheets proves otherwise)
   - Sheet layout and data shape: open. The earlier JSON-doc shape (version + updatedAt per record) must be reconciled with a sheet that people can read, decided in the design doc
