@@ -452,6 +452,8 @@ nav.toolbar .btn.icon { flex: none; }
 .budget-table th.name:first-child { min-width: var(--size-item-col-min); }
 .budget-table .name-line { flex-wrap: nowrap; }
 .day-table { min-width: var(--size-day-table-min); }
+/* Read-only Day table under Add purchase (v0.7 step 12). */
+.add-day-heading { margin: var(--space-md) 0 0; font-size: var(--font-size-lg); }
 
 /* --- Edit-menu dialogs (0009 §4) --- */
 .dialog-form { display: flex; flex-direction: column; gap: var(--space-md); }

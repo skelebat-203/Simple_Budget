@@ -139,7 +139,7 @@ function App() {
       <Tabs label="Sections" actions={[
         { id: 'backup', label: 'Backup', onSelect: () => setBackupOpen(true) },
       ]} menuEnd={current => (current === 'budget' ? syncButton : null)} tabs={[
-        { id: 'add', label: 'Add purchase', panel: <AddBudget roots={roots} onSaved={saved} /> },
+        { id: 'add', label: 'Add purchase', panel: <AddBudget roots={roots} items={items} calendar={calendar} onSaved={saved} /> },
         { id: 'budget', label: 'Budget', panel: <Budget roots={roots} items={items} range={range} onRangeChange={setRange} calendar={calendar} onChanged={saved} syncButton={syncButton} /> },
       ]} />
       {backupOpen && (

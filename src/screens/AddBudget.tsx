@@ -2,15 +2,20 @@ import { useRef, useState } from 'react'
 import { Button, ErrorSummary, focusFirstError } from '../components/ui'
 import { usePurchaseForm } from '../components/PurchaseForm'
 import { addNewItem, budgetItemRepo, NameTakenError } from '../storage/repository'
-import { displayName, formatAmount, type CatNode } from '../budget/tree'
+import { displayName, formatAmount, type Calendar, type CatNode } from '../budget/tree'
+import type { BudgetItem } from '../storage/db'
+import { BudgetTable } from '../components/BudgetTable'
 import { useAnnounce } from '../components/ui/announcer'
 import { fireReward } from '../rewards/rewards'
 import { charityMovedText } from '../budget/charity'
 import { whenIdle } from '../storage/sync/controller'
 
 /** Add purchase (0007 §4, §9): the shared purchase form (Item, Amount, Description, Date; a typed new item adds Category, Where? and Use in future). */
-export function AddBudget({ roots, onSaved }: {
+export function AddBudget({ roots, items, calendar, onSaved }: {
   roots: CatNode[]
+  /** For the read-only Day table under the form (v0.7 step 12). */
+  items: BudgetItem[]
+  calendar: Calendar
   onSaved: () => void
 }) {
   const form = usePurchaseForm(roots)
@@ -83,6 +88,9 @@ export function AddBudget({ roots, onSaved }: {
         <Button type="button" onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Save'}</Button>
       </div>
       {saveError && <p className="error">{saveError}</p>}
+      {/* Read-only copy of today's Day table (v0.7 step 12): no Edit buttons or highlight dialogs, no status line of its own. */}
+      <h3 id="add-day-heading" className="add-day-heading">Today’s purchases</h3>
+      <BudgetTable idBase="add-day" roots={roots} items={items} range="day" showEstimates={false} calendar={calendar} preview />
     </section>
   )
 }

@@ -109,6 +109,7 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
     - Files: `src/screens/AddBudget.tsx`, table component
     - Verify: updates after a save; read-only; one live region
     - Deps: 9
+    - Progress (v0.7.30): today's Day table under the form, heading "Today’s purchases" (h3, names the table with its date caption); every row open, no buttons or dialogs; updates after a save; one live region. Waiting on: UI approval (heading wording).
 13. **Annual Misc row and breakdown** (v0.7/13) — a Misc row under Incidentals, a Misc. Breakdown table under the Annual table, December review highlight.
     - Source: roadmap v0.7; `0014`
     - Files: `src/components/BudgetTable.tsx`, new table component, `src/App.css`
