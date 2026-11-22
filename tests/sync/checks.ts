@@ -207,6 +207,19 @@ export async function run(check: Check) {
   check(offline.includes('couldn’t be reached') && !offline.includes('passcode doesn’t match') && !sync.syncState().linked, `a network failure on link is not reported as a wrong passcode (${offline})`)
   await sync.link('s1', PASSCODE, false)
 
+  // Two requests in the same moment start one run, not two: while the first run is held, only one read has started.
+  const readsBefore = sheet().reads
+  sheet().hold()
+  const both = Promise.all([sync.requestSync(), sync.requestSync()])
+  for (let i = 0; i < 200 && sheet().reads === readsBefore; i++) await new Promise(r => setTimeout(r, 5))
+  await new Promise(r => setTimeout(r, 50))
+  const concurrent = sheet().reads - readsBefore
+  sheet().release()
+  await both
+  await sync.whenIdle()
+  for (let i = 0; i < 200 && sync.isSyncBusy(); i++) await new Promise(r => setTimeout(r, 5))
+  check(concurrent === 1, `simultaneous requests start one run (${concurrent} read(s) in flight)`)
+
   // ----- queued saves while a sync runs (0015 Q4) -----
   sheet().hold()
   const running = syncNow()

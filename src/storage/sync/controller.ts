@@ -72,9 +72,10 @@ export async function requestSync(): Promise<SyncResult | null> {
   if (!state.linked || !makeAdapter || !canSync()) return null
   if (state.busy) { again = true; return null }
   if (clock() < nextAllowed) return null
-  const [link, key] = await Promise.all([db.syncConfig.get('link'), db.syncConfig.get('cryptoKey')])
-  if (!link?.spreadsheetId || !key?.cryptoKey) { set({ linked: false }); return null }
+  // Busy before the first await, so a second request in the same moment queues instead of starting a second run.
   set({ busy: true, error: undefined })
+  const [link, key] = await Promise.all([db.syncConfig.get('link'), db.syncConfig.get('cryptoKey')])
+  if (!link?.spreadsheetId || !key?.cryptoKey) { set({ busy: false, linked: false }); return null }
   lastFailure = null
   let result: SyncResult | null = null
   try {
