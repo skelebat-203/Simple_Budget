@@ -1,7 +1,7 @@
 // In-memory stand-in for a Google Sheet (0015 §8): same rows-and-cells shape the Google
 // adapter returns, so the sync engine runs unchanged against it.
 import type { SyncTab } from '../../src/storage/db'
-import type { CellWrite, RemoteSheet, StorageAdapter } from '../../src/storage/sync/adapter'
+import { RemoteError, type CellWrite, type RemoteSheet, type StorageAdapter } from '../../src/storage/sync/adapter'
 import { TABS } from '../../src/storage/sync/cells'
 
 export class FakeSheet implements StorageAdapter {
@@ -10,6 +10,8 @@ export class FakeSheet implements StorageAdapter {
   writes = 0
   /** Set to make the next call fail with this error. */
   failNext: Error | null = null
+  /** Set to make the read with this count (see `reads`) fail as if offline. */
+  failReadAt = 0
   /** Set to hold the next read until `release()` is called. */
   private gate: Promise<void> | null = null
   private open: (() => void) | null = null
@@ -21,6 +23,7 @@ export class FakeSheet implements StorageAdapter {
     this.reads++
     if (this.gate) await this.gate
     if (this.failNext) { const e = this.failNext; this.failNext = null; throw e }
+    if (this.failReadAt && this.reads === this.failReadAt) { this.failReadAt = 0; throw new RemoteError('The sheet couldn’t be reached.') }
     const out = {} as RemoteSheet
     // Like the Sheets API: trailing blank rows dropped, cells copied.
     for (const t of TABS) out[t] = this.tabs[t].map((cells, i) => ({ row: i + 1, cells: [...cells] }))

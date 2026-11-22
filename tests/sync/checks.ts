@@ -131,6 +131,12 @@ export async function run(check: Check) {
   check(!!r?.notes.some(n => n.includes('couldn’t be read')) && JSON.stringify(await categoryRepo.list()) === before, 'a hand-edited encrypted cell is skipped with a note; local data unchanged')
   check((await remoteRecord('Categories', gUid)).data.name === 'Tie Name', 'the skipped row is repaired from this device')
 
+  // A repeated row (e.g. copied by hand): the older copy is cleared from the sheet.
+  const orig = sheet().tabs.Categories[sheet().rowOf('Categories', gUid)]
+  sheet().tabs.Categories.push([orig[0], Number(orig[1]) - 1000, orig[2], orig[3]])
+  r = await syncNow()
+  check(sheet().tabs.Categories.filter(row => row[0] === gUid).length === 1 && !!r?.notes.some(n => n.includes('repeats')), 'a repeated row is removed from the sheet, with a note')
+
   const exp = (await catByName('Expenses'))!
   const badRows: [string, unknown][] = [
     ['bad-color', { name: 'Bad color', color: 'x" onclick="y', parentUid: exp.uid }],
@@ -181,6 +187,12 @@ export async function run(check: Check) {
   let refused = ''
   try { await sync.link('s1', 'not the passcode', false) } catch (e) { refused = String(e instanceof Error ? e.message : e) }
   check(!!refused && !sync.syncState().linked && !(await db.syncConfig.get('cryptoKey')), `wrong passcode: refused (${refused}), key removed`)
+  check(refused.includes('passcode doesn’t match'), 'a wrong passcode says so')
+  // Network failure during the first sync on link: its own message, nothing left linked.
+  let offline = ''
+  sheet().failReadAt = sheet().reads + 2 // the salt read passes; the sync's read fails
+  try { await sync.link('s1', PASSCODE, false) } catch (e) { offline = String(e instanceof Error ? e.message : e) }
+  check(offline.includes('couldn’t be reached') && !offline.includes('passcode doesn’t match') && !sync.syncState().linked, `a network failure on link is not reported as a wrong passcode (${offline})`)
   await sync.link('s1', PASSCODE, false)
 
   // ----- queued saves while a sync runs (0015 Q4) -----

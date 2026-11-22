@@ -13,6 +13,8 @@ The same budget can be used and updated on several devices. A Google Sheet in th
 - **StorageAdapter interface** in `src/storage/`: the Dexie store stays the local source of truth. A Google Sheets adapter pulls and pushes changes. Later adapters (another provider) plug into the same interface.
 - **Human setup task:** a Google Cloud project with an OAuth client ID (web application, the app's origins as allowed origins), and the OAuth consent screen. Only the human can create this. The client ID is public by design; there is no client secret in a browser app.
 
+**Android (input to the v0.9 packaging decision):** the PWA uses a Web application OAuth client. A TWA APK keeps using it; a Capacitor APK also needs an Android OAuth client and native sign-in, because Google blocks sign-in inside WebViews. Either can be added to the same Cloud project.
+
 **Q1 — decided 2026-11-21:** browser-only, no server of ours. Several people can share one budget: each signs in with their own Google account, and the owner shares the sheet with them in Google Drive.
 
 **Q2 — decided 2026-11-21:** scope `drive.file` with the Google Picker. The app reaches only sheets it created or the user picked. To share, user A creates the sheet in the app and shares it with user B in Google Drive; B picks it once per device with "Link a sheet". Google sign-in tokens expire after about an hour.

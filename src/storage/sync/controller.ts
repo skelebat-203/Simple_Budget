@@ -32,6 +32,8 @@ let again = false
 let backoff = 0
 let nextAllowed = 0
 let clock = Date.now
+/** The last run's failure, so linking can tell a wrong passcode from a network error. */
+let lastFailure: unknown = null
 
 function set(p: Partial<SyncState>) {
   state = { ...state, ...p }
@@ -73,6 +75,7 @@ export async function requestSync(): Promise<SyncResult | null> {
   const [link, key] = await Promise.all([db.syncConfig.get('link'), db.syncConfig.get('cryptoKey')])
   if (!link?.spreadsheetId || !key?.cryptoKey) { set({ linked: false }); return null }
   set({ busy: true, error: undefined })
+  lastFailure = null
   let result: SyncResult | null = null
   try {
     result = await syncOnce(makeAdapter(link.spreadsheetId), key.cryptoKey, clock)
@@ -81,6 +84,7 @@ export async function requestSync(): Promise<SyncResult | null> {
     backoff = 0
     set({ busy: false, lastSync, notes: result.notes })
   } catch (e) {
+    lastFailure = e
     if (e instanceof RateLimitError) {
       backoff = Math.min(MAX_BACKOFF_MS, backoff ? backoff * 2 : SYNC_INTERVAL_MS)
       nextAllowed = clock() + backoff
@@ -112,7 +116,12 @@ export async function link(spreadsheetId: string, passcode: string, isNew: boole
   set({ linked: true, lastSync: undefined, error: undefined, notes: [] })
   const r = await requestSync()
   // A wrong passcode for a linked sheet: forget it again, so nothing half-linked stays.
-  if (!r && state.error && !isNew) { await unlink(); throw new PasscodeError('The passcode doesn’t match this sheet, or the sheet isn’t set up for Simple Budget.') }
+  if (!r && state.error && !isNew) {
+    const failure = lastFailure
+    await unlink()
+    if (failure instanceof PasscodeError) throw new PasscodeError('The passcode doesn’t match this sheet, or the sheet isn’t set up for Simple Budget.')
+    throw new RemoteError('The sheet couldn’t be reached to check the passcode. Check your connection and try again.')
+  }
 }
 
 /** Stop syncing on this device: the key and link are removed; local data stays (0015 §5). */

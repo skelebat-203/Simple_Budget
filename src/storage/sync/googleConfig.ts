@@ -1,16 +1,16 @@
 /**
  * Google Cloud settings for sync (0015 §2). These are public by design: a browser app has
- * no client secret. PLACEHOLDER values: the human creates the Google Cloud project, the
- * OAuth client (web application, the app's origins as allowed origins), an API key limited
- * to the Picker API, and the consent screen, then fills these in (0015 Q10).
+ * no client secret. Project "Simple Budget" (created 2026-11-22): OAuth web client with the
+ * dev origins http://localhost:5173 and :4173; API key limited to those sites and the Picker API.
+ * A new public origin must be added to both in the Google Cloud console.
  */
 export const GOOGLE_CONFIG = {
-  /** OAuth 2.0 client id, e.g. 1234-abc.apps.googleusercontent.com. PLACEHOLDER. */
-  clientId: 'PLACEHOLDER_GOOGLE_OAUTH_CLIENT_ID',
-  /** API key for the Google Picker. PLACEHOLDER. */
-  apiKey: 'PLACEHOLDER_GOOGLE_PICKER_API_KEY',
-  /** Cloud project number, so a picked sheet is granted to this app (drive.file). PLACEHOLDER. */
-  appId: 'PLACEHOLDER_GOOGLE_CLOUD_PROJECT_NUMBER',
+  /** OAuth 2.0 client id (web application). */
+  clientId: '437554241666-ch4heef0a4jqfgn0119dlp8f2red1b4n.apps.googleusercontent.com',
+  /** API key for the Google Picker. */
+  apiKey: 'AIzaSyACVfCq-1tnwQPAG4eUSba41_20xlKivoE',
+  /** Cloud project number, so a picked sheet is granted to this app (drive.file). */
+  appId: '437554241666',
 }
 
 export const isGoogleConfigured = () => !Object.values(GOOGLE_CONFIG).some(v => v.startsWith('PLACEHOLDER_'))

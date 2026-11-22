@@ -111,6 +111,7 @@ export async function syncOnce(adapter: StorageAdapter, key: CryptoKey, clock: C
   // can't wait on Web Crypto), then the import-style checks run inside it.
   const remote = Object.fromEntries(TABS.map(t => [t, new Map<string, Remote>()])) as Record<SyncTab, Map<string, Remote>>
   let check: string | undefined
+  const dupClears: { tab: SyncTab; row: number }[] = []
   for (const tab of TABS) {
     for (const raw of sheet[tab]) {
       if (raw.row < FIRST_DATA_ROW) continue
@@ -124,8 +125,10 @@ export async function syncOnce(adapter: StorageAdapter, key: CryptoKey, clock: C
       if (p.id.startsWith(META_PREFIX)) { if (tab === 'Settings' && p.id === CHECK_ID) check = p.content; continue }
       const prior = remote[tab].get(p.id)
       if (prior) {
-        notes.push(`${tab} row ${p.row} repeats an earlier row, so the older copy was skipped.`)
-        if (prior.updatedAt >= p.updatedAt) continue
+        // A repeated row: keep the newer copy and clear the older one from the sheet.
+        notes.push(`${tab} row ${p.row} repeats an earlier row, so the older copy was removed.`)
+        if (prior.updatedAt >= p.updatedAt) { dupClears.push({ tab, row: p.row }); continue }
+        dupClears.push({ tab, row: prior.row })
       }
       const r: Remote = { row: p.row, updatedAt: p.updatedAt, deleted: p.deleted }
       if (!p.deleted) {
@@ -157,7 +160,7 @@ export async function syncOnce(adapter: StorageAdapter, key: CryptoKey, clock: C
     const content = p.deleted ? '' : await encrypt(key, aadOf(p.tab, p.uid), JSON.stringify(p.data))
     writes.push({ tab: p.tab, row: remote[p.tab].get(p.uid)?.row, cells: toCells(p.uid, p.updatedAt, p.deleted, content) })
   }
-  for (const c of merged.clears) writes.push({ tab: c.tab, row: c.row, cells: ['', '', '', ''] })
+  for (const c of [...dupClears, ...merged.clears]) writes.push({ tab: c.tab, row: c.row, cells: ['', '', '', ''] })
   if (writes.length) await adapter.write(writes)
   return { pulled: merged.pulled, pushed: merged.pushes.length, purged: merged.clears.length, notes }
 }
