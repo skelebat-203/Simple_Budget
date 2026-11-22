@@ -1,4 +1,4 @@
-import { db, type BudgetItem, type Category, type Frequency, type DefaultRange, type MonthBoundary, type Settings } from './db'
+import { db, markTx, type BudgetItem, type Category, type Frequency, type DefaultRange, type MonthBoundary, type Settings } from './db'
 import { cleanDescription, cleanName, DESCRIPTION_MAX, MONEY_MAX, slug } from '../budget/validate'
 import { toV7Structure } from './structure'
 import { ImportError } from '../import/grid'
@@ -12,7 +12,7 @@ const validWeekStart = (n: unknown): n is number => Number.isInteger(n) && (n as
 const validBoundary = (b: unknown): b is MonthBoundary => b === 'weeks' || b === 'calendar'
 
 /** Stored settings with every value checked and defaults filled in (0007 §1). */
-function cleanSettings(s: Partial<Settings>): Settings {
+export function cleanSettings(s: Partial<Settings>): Settings {
   return {
     id: s.id,
     rewardsEnabled: s.rewardsEnabled ?? true,
@@ -24,19 +24,19 @@ function cleanSettings(s: Partial<Settings>): Settings {
   }
 }
 
-const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
-const isMoney = (n: unknown): n is number => typeof n === 'number' && Number.isFinite(n) && Math.abs(n) <= MONEY_MAX
+export const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
+export const isMoney = (n: unknown): n is number => typeof n === 'number' && Number.isFinite(n) && Math.abs(n) <= MONEY_MAX
 
 // ---------- shape checks for stored rows (security-v0.2 6.5) ----------
 
-function validItem(r: unknown): r is BudgetItem {
+export function validItem(r: unknown): r is BudgetItem {
   const x = r as BudgetItem
   return !!x && Number.isInteger(x.categoryId) && isMoney(x.amount) && typeof x.date === 'string' && DATE_RE.test(x.date)
     && (x.description === undefined || (typeof x.description === 'string' && x.description.length <= DESCRIPTION_MAX))
     && (x.undated === undefined || typeof x.undated === 'boolean')
 }
 
-function validCategory(r: unknown): r is Category {
+export function validCategory(r: unknown): r is Category {
   const x = r as Category
   return !!x && typeof x.name === 'string' && x.name.length > 0 && typeof x.color === 'string'
     && (x.parentId === null || Number.isInteger(x.parentId))
@@ -366,7 +366,7 @@ export function checkBackup(data: unknown): Backup {
   return {
     ...b,
     // Descriptions get the same cleaning as names (control and format characters out), as when they are typed or imported.
-    budgetItems: b.budgetItems.map(({ id, categoryId, amount, date, description, undated, createdAt, updatedAt }) => ({ id, categoryId, amount, date, ...(description && cleanDescription(description) ? { description: cleanDescription(description) } : {}), ...(undated ? { undated } : {}), createdAt, updatedAt })),
+    budgetItems: b.budgetItems.map(({ id, uid, categoryId, amount, date, description, undated, createdAt, updatedAt }) => ({ id, ...(typeof uid === 'string' ? { uid } : {}), categoryId, amount, date, ...(description && cleanDescription(description) ? { description: cleanDescription(description) } : {}), ...(undated ? { undated } : {}), createdAt, updatedAt })),
     categories: cats.map(c => ({ ...c, name: cleanName(c.name) })),
     settings: b.settings.slice(0, 1).map(s => cleanSettings({ ...s, rewardsEnabled: !!s.rewardsEnabled })),
   }
@@ -430,7 +430,8 @@ export async function applyImport(plan: ImportPlan): Promise<{ purchases: number
 
 /** Replace all data with a checked backup, all-or-nothing. */
 export async function restoreBackup(b: Backup) {
-  await db.transaction('rw', db.categories, db.budgetItems, db.settings, async () => {
+  await db.transaction('rw', db.categories, db.budgetItems, db.settings, async tx => {
+    markTx(tx, 'restore')
     await Promise.all([db.categories.clear(), db.budgetItems.clear(), db.settings.clear()])
     await db.categories.bulkAdd(b.categories)
     await db.budgetItems.bulkAdd(b.budgetItems)

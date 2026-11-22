@@ -13,6 +13,8 @@ export type DefaultRange = Exclude<Range, 'annual'>
 /** One recorded amount (a purchase, paycheck, credit…). Negative = credit. */
 export interface BudgetItem {
   id?: number
+  /** Random UUID shared across synced devices (0015 §4, security-v0.2 8.8). Set by the creating hook. */
+  uid?: string
   /** Category-tree node the amount belongs to (an item, or a subcategory that takes amounts directly). */
   categoryId: number
   amount: number
@@ -34,6 +36,10 @@ export interface BudgetItem {
  */
 export interface Category {
   id?: number
+  /** Random UUID shared across synced devices (0015 §4). Set by the creating hook. */
+  uid?: string
+  /** Last local or synced change (ms); set by the hooks (0015 §4 last-write-wins). */
+  updatedAt?: number
   name: string
   /** Color token suffix, e.g. 'lighter-orange' → `clr-lighter-orange`. */
   color: string
@@ -72,6 +78,8 @@ export type DueDay = number | 'last'
 
 export interface Settings {
   id?: number
+  /** Last local or synced change (ms); set by the hooks. */
+  updatedAt?: number
   rewardsEnabled: boolean
   notificationsEnabled: boolean
   /** Set when the onboarding questionnaire was finished or skipped (0008 §8). */
@@ -85,10 +93,51 @@ export interface Settings {
 
 export type MonthBoundary = 'weeks' | 'calendar'
 
+/** Sheet tab a synced record lives in (0015 §3). */
+export type SyncTab = 'Categories' | 'Purchases' | 'Settings'
+
+/**
+ * What this device last knew of a synced record: lets the sync tell a local delete
+ * from a record it never had, and holds local tombstones until they are purged (0015 §4).
+ */
+export interface SyncRecord {
+  tab: SyncTab
+  uid: string
+  updatedAt: number
+  deleted: boolean
+}
+
+/** Sync link and key, one row each by `key` (0015 §5: the key is a non-extractable CryptoKey). */
+export interface SyncConfig {
+  key: 'link' | 'cryptoKey'
+  spreadsheetId?: string
+  lastSync?: number
+  cryptoKey?: CryptoKey
+}
+
+/**
+ * How the hooks treat a transaction's writes: 'sync' keeps the uid and updatedAt it is
+ * given (pulled rows); 'restore' keeps the uid but stamps the time (a backup is the user's
+ * newest intent). Unmarked writes get a fresh uid on create and the current time.
+ */
+type TxMode = 'sync' | 'restore'
+const txModes = new WeakMap<object, TxMode>()
+export function markTx(tx: object, mode: TxMode) { txModes.set(tx, mode) }
+function modeOf(tx: unknown): TxMode | undefined {
+  for (let t = tx as { parent?: unknown } | undefined; t; t = t.parent as typeof t) {
+    const m = txModes.get(t)
+    if (m) return m
+  }
+  return undefined
+}
+const newUid = () => crypto.randomUUID()
+
 class SimpleBudgetDB extends Dexie {
   budgetItems!: Table<BudgetItem, number>
   categories!: Table<Category, number>
   settings!: Table<Settings, number>
+  syncRecords!: Table<SyncRecord, [SyncTab, string]>
+  syncConfig!: Table<SyncConfig, string>
 
   constructor() {
     super('simple-budget')
@@ -164,6 +213,38 @@ class SimpleBudgetDB extends Dexie {
       await tx.table('categories').toCollection().modify((c: Record<string, unknown>) => { if (c.frequency === 'year') c.frequency = 'annual' })
       await tx.table('settings').toCollection().modify((s: Record<string, unknown>) => { if (s.defaultRange === 'year') s.defaultRange = 'annual' })
     })
+    // v9: sync (0015 §4). Synced records get a random UUID (auto-increment ids clash
+    // between devices); categories and settings get updatedAt; sync state tables.
+    this.version(9).stores({
+      budgetItems: '++id, categoryId, date, uid',
+      categories: '++id, name, parentId, uid',
+      syncRecords: '[tab+uid]',
+      syncConfig: 'key',
+    }).upgrade(async tx => {
+      const now = Date.now()
+      await tx.table('categories').toCollection().modify((c: Category) => { c.uid ??= newUid(); c.updatedAt ??= now })
+      await tx.table('budgetItems').toCollection().modify((i: BudgetItem) => { i.uid ??= newUid() })
+      await tx.table('settings').toCollection().modify((s: Settings) => { s.updatedAt ??= now })
+    })
+
+    // Stamp every local write so sync can merge it (last-write-wins by updatedAt).
+    const stamp = (table: Table<{ uid?: string; updatedAt?: number }, number>, withUid: boolean) => {
+      table.hook('creating', (_key, obj, tx) => {
+        const mode = modeOf(tx)
+        if (withUid && (mode == null || !obj.uid)) obj.uid = newUid()
+        if (mode !== 'sync' || obj.updatedAt == null) obj.updatedAt = Date.now()
+      })
+      table.hook('updating', (mods, _key, _obj, tx) => {
+        const mode = modeOf(tx)
+        const patch: Record<string, unknown> = {}
+        if (mode !== 'sync' && withUid && 'uid' in mods) patch.uid = (_obj as { uid?: string }).uid
+        if (mode !== 'sync' || !('updatedAt' in mods)) patch.updatedAt = Date.now()
+        return patch
+      })
+    }
+    stamp(this.categories, true)
+    stamp(this.budgetItems as Table<{ uid?: string; updatedAt?: number }, number>, true)
+    stamp(this.settings, false)
   }
 }
 
