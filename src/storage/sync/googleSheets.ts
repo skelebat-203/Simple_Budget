@@ -13,7 +13,7 @@ const MS_PER_S = 1000
 
 // ---------- the parts of Google's browser libraries used here ----------
 
-interface TokenResponse { access_token?: string; expires_in?: number; error?: string }
+interface TokenResponse { access_token?: string; expires_in?: number; error?: string; scope?: string }
 interface TokenClient { requestAccessToken(o?: { prompt?: string }): void }
 interface PickerDoc { id: string }
 interface PickerData { action: string; docs?: PickerDoc[] }
@@ -27,7 +27,7 @@ interface PickerBuilder {
 }
 interface GoogleNs {
   accounts: { oauth2: {
-    initTokenClient(o: { client_id: string; scope: string; callback: (r: TokenResponse) => void; error_callback?: () => void }): TokenClient
+    initTokenClient(o: { client_id: string; scope: string; callback: (r: TokenResponse) => void; error_callback?: (e: { type?: string }) => void }): TokenClient
     revoke(token: string, done?: () => void): void
   } }
   picker: {
@@ -65,6 +65,17 @@ let token: { value: string; expires: number } | null = null
 export const isSignedIn = () => !!token && token.expires > Date.now()
 export const accessToken = () => (isSignedIn() ? token!.value : null)
 
+/** Our message for each sign-in failure; Google's own text is never shown (0015 §7.1). Known codes only. */
+function signInMessage(code?: string): string {
+  switch (code) {
+    case 'popup_failed_to_open': return 'Google’s sign-in window was blocked. Allow pop-ups for this site and try again.'
+    case 'popup_closed': return 'The Google sign-in window closed before sign-in finished. Try again; if it keeps closing, allow pop-ups and third-party sign-in for this site.'
+    case 'access_denied': return 'Google access wasn’t granted. Sync needs it to reach your sheet.'
+    case 'scope_missing': return 'The permission to see and edit files used with this app was left unticked. Try again and tick it.'
+    default: return `Google sign-in didn’t finish (${code && /^[a-z_]{1,40}$/.test(code) ? code : 'unknown'}).`
+  }
+}
+
 /** Google Identity Services token flow; must run from a click (it opens Google's window). */
 export async function signIn(): Promise<void> {
   await loadScript(GSI_SCRIPT)
@@ -75,11 +86,13 @@ export async function signIn(): Promise<void> {
       client_id: GOOGLE_CONFIG.clientId,
       scope: DRIVE_FILE_SCOPE,
       callback: r => {
-        if (!r.access_token || r.error) { reject(new AuthError('Google sign-in didn’t finish.')); return }
+        if (!r.access_token || r.error) { reject(new AuthError(signInMessage(r.error))); return }
+        // Granular consent: the user can untick the one permission sync needs.
+        if (r.scope && !r.scope.split(' ').includes(DRIVE_FILE_SCOPE)) { reject(new AuthError(signInMessage('scope_missing'))); return }
         token = { value: r.access_token, expires: Date.now() + (r.expires_in ?? 0) * MS_PER_S - TOKEN_MARGIN_MS }
         resolve()
       },
-      error_callback: () => reject(new AuthError('Google sign-in didn’t finish.')),
+      error_callback: e => reject(new AuthError(signInMessage(e?.type))),
     })
     client.requestAccessToken()
   })
