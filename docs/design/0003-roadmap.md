@@ -151,6 +151,7 @@ tracked as a later-version item.
 - Chart view (Table/Chart switch)
 - Compact rows: an option that makes table rows smaller (decided 2026-11-22)
 - Zoom in and out (+/−) for the budget tables (decided 2026-11-22)
+- Misc. Breakdown review threshold as a setting (default 6; fixed at 6 in v0.7, `0014` M4; decided 2026-11-22)
 - Chart types for Budget screen (chart types and the library to decide; a new dependency needs the human's go-ahead; security v0.2 4.5, 2.5: Trusted Types, escaped item names in chart labels)
 - UI/UX review (human approval)
 - Accessibility pass for charts (alt text, keyboard nav, screen reader)
