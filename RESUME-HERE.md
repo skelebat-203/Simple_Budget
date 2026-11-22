@@ -4,7 +4,7 @@ Tracking file for current work status. Roadmap authority: `docs/design/0003-road
 Design: `0015-sync-design.md` (sync), `0004-table-design.md` (table), `0006-prototype.html` (v0.2 UI), `0007-v0.3-design-updates.md` (v0.3 changes), `0008-v0.5-design-updates.md` (v0.5 changes), `0009-v0.6-design-updates.md` (v0.6), `0012-design-standards.md` (standards), `0014` (Annual Misc breakdown). Higher-numbered doc wins on conflict.
 
 ## Current version
-v0.7.0 (v0.6 complete 2026-11-21, v0.6.0 to v0.6.37; reports: `docs/audits/a11y/a11y-v0.6.md`, `docs/audits/security/security-v0.6.md`). Step 1 ✅ (v0.7.1 to v0.7.3). Step 2 ✅ (v0.7.4). Step 3 ✅ (v0.7.5 to v0.7.10). Step 3b ✅ (v0.7.12 to v0.7.17). Group A2 (steps 4, 5, 7) in progress on `worktree-v0.7-group-a`.
+v0.7.0 (v0.6 complete 2026-11-21, v0.6.0 to v0.6.37; reports: `docs/audits/a11y/a11y-v0.6.md`, `docs/audits/security/security-v0.6.md`). Step 1 ✅ (v0.7.1 to v0.7.3). Step 2 ✅ (v0.7.4). Step 3 ✅ (v0.7.5 to v0.7.10). Step 3b ✅ (v0.7.12 to v0.7.17). Group A2 (steps 4, 5, 7) ✅ (v0.7.19 to v0.7.25). Next: group B (tables).
 
 ## v0.7 plan of action
 Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per completed-work commit; trailer `Plan-Step: v0.7/N`). The final step bumps to the next minor version (v0.8.0). UI steps need human approval (`0005-ui-ux-review-checklist.md`). Baseline: v0.7.0. Data: Dexie v8 (`src/storage/structure.ts`). Testing: headless Chromium (`tools/browsers/`, `lighthouse-sandbox.md`); import harness `npm run test:import` (`tests/import/README.md`).
@@ -48,24 +48,27 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
    - Files: `src/App.css`, `src/styles/tokens.css`, components named in `0012`
    - Verify: checklist in `0012`; no hard-coded values; build + lint
    - Deps: 1 (all `0012` §10 gaps were decided 2026-11-06 and 2026-11-08)
+   - ✅ (v0.7.19 to v0.7.25; UI approved 2026-11-22)
    - Progress (v0.7.20): built (G1, G3–G6, G8–G10, G12, G15–G17, §1 tokens, §4 field order); G11 Actual-column pin left for step 6. Waiting on: UI approval.
 5. **Max app width 1440px** (v0.7/5) — content stays centered.
    - Source: roadmap v0.7 (decided 2026-11-04)
    - Files: `src/App.css`, `src/styles/tokens.css`
    - Verify: 1440, 1920px; 320/640px unchanged
    - Deps: none
+   - ✅ (v0.7.19 to v0.7.25; UI approved 2026-11-22)
    - Progress (v0.7.19): built; checked at 320/640/1280/1440/1920px. Waiting on: UI approval.
 6. **Item column width** (v0.7/6) — the Item column is not sticky in any table (human, 2026-11-22: not enough room at 400px and narrower). It has a 250px minimum and grows so its content never wraps; the table scrolls sideways instead.
    - Source: roadmap v0.7 (decided 2026-11-04; sticky dropped 2026-11-22)
    - Files: `src/components/BudgetTable.tsx`, `src/App.css`
    - Verify: no wrapped names at 1280/640/320px, highlight dialog included; keyboard scroll; no page-level sideways scroll
-   - Also: pin the Actual column in the Day table (`0012` G11; moved here from step 4, human 2026-11-22).
+   - The Day table's Actual column is not pinned either (`0012` G11 pinning dropped, human 2026-11-22).
    - Deps: 5
 7. **Form field alignment class** (v0.7/7) — same label-to-control space as fields with help text, so side-by-side fields line up.
    - Source: roadmap v0.7 (decided 2026-11-04)
    - Files: `src/App.css`, form screens
    - Verify: Add purchase, Budget setup, dialogs at 1280/640/320px
    - Deps: 4
+   - ✅ (v0.7.19 to v0.7.25; UI approved 2026-11-22)
    - Progress (v0.7.21): `.field-align` built and applied (Add purchase, purchase dialog, Edit-menu dialogs, Budget setup week start). Waiting on: UI approval.
 8. **Supporting text under the tables** (v0.7/8) — remove the help text under each table instead of rewriting it (human, 2026-11-22), and the `aria-describedby` references to it.
    - Source: roadmap v0.7
@@ -135,7 +138,7 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
 - **E — Charts**: moved to v0.8.
 - **D004** (step 15b): after F, before the reviews.
 - **Reviews** (steps 16–18): main session with the user.
-- Status: ✅ A · ✅ F · ⏳ A2 · ☐ B · ☐ C · ☐ D · ~~E~~ · ☐ reviews
+- Status: ✅ A · ✅ F · ✅ A2 · ☐ B · ☐ C · ☐ D · ~~E~~ · ☐ reviews
 
 ### Session process
 Run option 1: one session per group, fresh start at each group boundary. A session starts by reading this file and the roadmap, then:
