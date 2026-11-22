@@ -120,21 +120,19 @@ tracked as a later-version item.
 - ✅ Accessibility pass (`docs/audits/a11y/a11y-v0.6.md`, v0.6.37): Lighthouse 100 in 37 states at 1280, 375 and 320px; six findings fixed (A1 to A6; A6 is the wizard step 3 group row, now a checkbox beside an Expander button, 2px apart by owner exception to the control-margin rule); screen reader test passed
 - ✅ Security review (`docs/audits/security/security-v0.6.md`, approved 2026-11-21): the XLSX note loop (3.1, Low) and an out-of-sync parser install (7.1, Medium) fixed; no open finding of Medium or higher in v0.6 code → transition to v0.7.0. Carried to v0.7 (⚠ before any sync work): v0.2 5.4 (Medium, sync backend network configuration) and the sync-time items listed in the report; v0.2 5.1, 5.2 held till v0.9
 
-## v0.7 — Graphs and charts
+## v0.7 — Sync, dialogs and table updates
 - Rewrite the supporting text under the tables, which is out of date (decide its final content first)
 - Form field alignment class: adds the same space between a label and its control as appears when supporting (help) text sits between them, so fields shown side by side in columns line up in even rows (decided 2026-11-04)
 - Negative purchases (refunds or credits, `0007` §9) are listed in the Day table as a return (decided 2026-11-04; the exact label and styling are decided when built)
 - Input parsing for typed names: spell check and common abbreviations (e.g. "Misc." is tracked as "Miscellaneous") (decided 2026-11-04; the abbreviation list, where it runs and whether it corrects silently or asks are decided when built)
 - Move subcategories and items between parents: a subcategory moved into another becomes an item; an item moved out of a subcategory becomes a subcategory (e.g. a user creates "Retirement" under Savings and places IRA, 401k and 403b inside it). Must be fully keyboard accessible. Moving a subcategory that has items into another subcategory is refused with an error message (decided 2026-11-04). The interaction (a Move dialog, as Rename's Category select in `0009` §4, versus other ways) and what happens to the moved row's purchases and estimates are designed before building
-- Maximum app width of 1440px (decided 2026-11-04; content stays centered and the charts below use it)
+- Maximum app width of 1440px (decided 2026-11-04; content stays centered; the v0.8 charts use it)
 - Item column: sticky (left) in the Week, Month and Annual tables and the highlight dialog when the viewport is wider than 500px, and a persistent minimum width of 250px in every table in the app (decided 2026-11-04). Per the accessibility rules, sticky is removed at 500px and narrower, and focused cells must not be hidden behind the sticky column
 - Consolidate dialogs into one component (today three: form dialogs, confirm dialogs and a generic dialog); migrate the v0.6 dialogs (Edit menu, highlight, wizard) to it (decided 2026-11-04)
 - Design standards pass: bring the app in line with the decided standards in `0012-design-standards.md` (decided 2026-11-08; the open gaps in its §10 are settled first)
 - Read-only copy of the Day table under the Add purchase form (decided 2026-11-08, from user feedback; placed in v0.7 per the new-item rule)
 - Annual table: a Misc row under Incidentals and a Misc. Breakdown table under the Annual table, with a December review highlight (decided 2026-11-11; spec `0014`; placed in v0.7 under the new-item rule)
 - Week and Day sheet import: regression test the import of Week and Day sheets, then find and fill the gaps (for example a week sheet and a day sheet that cover the same day are not checked against each other) (decided 2026-11-11)
-- Chart view (Table/Chart switch)
-- Chart types for Budget screen
 - Defect D004 (`docs/defects/`): Google sign-in fails in hardened Firefox; redirect sign-in (found 2026-11-22; a later v0.7 fix, step 15b, does not block the alpha launch)
 - Sync to a Google Sheet (moved from v0.8, decided 2026-11-18): the spreadsheet is a remote copy of the budget, so the same budget can be used and updated on several devices. The user links an existing spreadsheet or the app creates one in their Google account. Google Sheets first; design in a new design doc before building (the design doc holds the spec; this item holds the scope)
   - StorageAdapter interface + Google Sheets adapter (assumed stable and easier than other options; reassess if Google Sheets proves otherwise)
@@ -144,11 +142,16 @@ tracked as a later-version item.
   - Sync in the onboarding wizard as its first step ("Local only" or "Sync with Google"; New Budget / Existing Budget tabs; Existing skips the category steps); the pay-frequency step removed (set in Advanced options); Sync button in the Budget tab panel beside the date controls; Backup back at the far right of the tabs; Budget setup "Estimated spending" renamed "Estimated amount" (decided 2026-11-22, step 3 UI review)
   - ~~Seed categories/table layout from the sheet's current layout~~ dropped 2026-11-21: categories already sync as records (`0015` Q5)
 - UI/UX review (human approval)
-- Accessibility pass for charts (alt text, keyboard nav, screen reader)
+- Accessibility pass
 - Security review (covers sync)
 
-## v0.8 — (no items)
-- Sync moved to v0.7 (decided 2026-11-18). Version kept so numbering stays stable.
+## v0.8 — Graphs and charts
+- Charts moved from v0.7 (decided 2026-11-22). Sync moved to v0.7 earlier (decided 2026-11-18).
+- Chart view (Table/Chart switch)
+- Chart types for Budget screen (chart types and the library to decide; a new dependency needs the human's go-ahead; security v0.2 4.5, 2.5: Trusted Types, escaped item names in chart labels)
+- UI/UX review (human approval)
+- Accessibility pass for charts (alt text, keyboard nav, screen reader)
+- Security review
 
 ## v0.9 — Distribution + polish
 - Per-OS install instructions (web, Android, GrapheneOS)

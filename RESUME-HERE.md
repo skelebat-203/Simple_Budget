@@ -46,7 +46,7 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
    - Source: roadmap v0.7; `0012` §10 gaps
    - Files: `src/App.css`, `src/styles/tokens.css`, components named in `0012`
    - Verify: checklist in `0012`; no hard-coded values; build + lint
-   - Deps: 1; **needs human decision**: the open gaps in `0012` §10 are settled first
+   - Deps: 1 (all `0012` §10 gaps were decided 2026-11-06 and 2026-11-08)
 5. **Max app width 1440px** (v0.7/5) — content stays centered.
    - Source: roadmap v0.7 (decided 2026-11-04)
    - Files: `src/App.css`, `src/styles/tokens.css`
@@ -97,11 +97,7 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
     - Files: `tests/import/`, `src/import/`
     - Verify: `npm run test:import`
     - Deps: none
-15. **Charts** (v0.7/15) — Table/Chart switch and chart types for the Budget screen.
-    - Source: roadmap v0.7; security v0.2 4.5, 2.5 (Trusted Types, escaped item names in chart labels)
-    - Files: new chart components, `src/screens/`, `src/App.css`
-    - Verify: alt text and a data-table alternative; keyboard and screen reader; contrast; no HTML-writing calls
-    - Deps: 5; **needs human decision**: chart types and the library (a new dependency needs the human's go-ahead, exact pin at least two weeks old)
+15. ~~**Charts** (v0.7/15)~~ — moved to v0.8 (human, 2026-11-22).
 15b. **D004 hardened-browser sign-in** (v0.7/15b) — redirect sign-in so sync works in Firefox Strict, Brave and similar (`docs/defects/D004-hardened-firefox-sign-in.md`). Does not block the alpha launch (human, 2026-11-22).
     - Files: `src/storage/sync/googleSheets.ts`, `src/components/Sync.tsx`; an Authorized redirect URI in the Google Cloud console (human)
     - Verify: sign-in in Firefox Strict and in Chromium
@@ -116,14 +112,14 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
 ### Execution
 - **A — Dialogs** (step 1; `Dialog`, `App.css`): first.
 - **F — Sync** (steps 2, 3, 3b; `src/storage/`, new adapter): right after A; step 2 needs human decisions, step 3 starts as soon as 2 is approved.
-- **A2 — Standards and layout** (steps 4, 5, 7; `App.css`, tokens): after F; step 4 waits on the human's `0012` gaps.
+- **A2 — Standards and layout** (steps 4, 5, 7; `App.css`, tokens): after F.
 - **B — Tables** (steps 6, 8, 9, 12, 13; `BudgetTable.tsx`, `App.css`): after A2.
 - **C — Names and moves** (steps 10, 11; `validate.ts`, `setupEdits.ts`, repository): after F; both need human decisions.
 - **D — Import** (step 14; `tests/import/`): any time.
-- **E — Charts** (step 15): after step 5.
+- **E — Charts**: moved to v0.8.
 - **D004** (step 15b): after F, before the reviews.
 - **Reviews** (steps 16–18): main session with the user.
-- Status: ✅ A · ⏳ F (steps 2, 3 ✅; step 3b next) · ☐ A2 · ☐ B · ☐ C · ☐ D · ☐ E · ☐ reviews
+- Status: ✅ A · ⏳ F (steps 2, 3 ✅; step 3b next) · ☐ A2 · ☐ B · ☐ C · ☐ D · ~~E~~ · ☐ reviews
 
 ### Session process
 Run option 1: one session per group, fresh start at each group boundary. A session starts by reading this file and the roadmap, then:
