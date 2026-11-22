@@ -17,7 +17,19 @@ const DAY_MS = 24 * 60 * 60 * 1000
 /** The sync clock runs ahead of the real one when a test jumps time (tombstone purge, back-off). */
 let offset = 0
 const now = () => Date.now() + offset
-const tick = () => new Promise(res => setTimeout(res, 2))
+const TICK_MS = 2
+const WAIT_LIMIT_MS = 5000
+/** Wait until the millisecond clock has moved on, so the next local write is strictly newer than anything before it.
+    A timer can fire before Date.now() moves on, so a plain setTimeout isn't enough. */
+const tick = async () => {
+  const start = Date.now()
+  do await new Promise(res => setTimeout(res, TICK_MS)); while (Date.now() <= start)
+}
+/** Wait (on real time, not a tick count) until `ok()` is true or the limit passes. */
+const waitFor = async (ok: () => boolean) => {
+  const end = Date.now() + WAIT_LIMIT_MS
+  while (!ok() && Date.now() < end) await new Promise(res => setTimeout(res, TICK_MS))
+}
 const sheets = new Map<string, FakeSheet>()
 const sheet = () => sheets.get('s1')!
 const key = async () => (await db.syncConfig.get('cryptoKey'))!.cryptoKey!
@@ -198,7 +210,7 @@ export async function run(check: Check) {
   // ----- queued saves while a sync runs (0015 Q4) -----
   sheet().hold()
   const running = syncNow()
-  for (let i = 0; i < 100 && !sync.isSyncBusy(); i++) await tick()
+  await waitFor(sync.isSyncBusy)
   check(sync.isSyncBusy(), 'sync reports busy while it runs')
   const target = (await catByName('Groceries'))!
   let written = false
@@ -231,6 +243,7 @@ export async function run(check: Check) {
   check(sheet().reads === readsAfter429 + 1 && !sync.syncState().error, 'sync resumes after the back-off')
 
   // ----- settings sync; onboarding stays per device -----
+  await tick() // the edit must be strictly newer than the last settings write
   await settingsRepo.update({ weekStart: 3, onboarded: true })
   await syncNow()
   const s = await remoteRecord('Settings', 'settings')

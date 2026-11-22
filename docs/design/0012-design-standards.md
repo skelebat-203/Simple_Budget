@@ -131,7 +131,7 @@ Other observed differences:
 
 **Proposed standard** (one `Field` component for every form):
 
-1. Order: label, then help text, then control, then error. Help is always above the control so it is read before typing.
+1. Order: label, then help text, then control, then error. Help is always above the control so it is read before typing. **Decided 2026-11-22** (built in v0.7 step 4).
 2. A fixed space below the label and below the help, equal whether help is present or not (the v0.7 class: reserve the help line's height, so columns align).
 3. Required fields marked `*` everywhere, or optional fields marked "(optional)"
    everywhere — not both (G5).

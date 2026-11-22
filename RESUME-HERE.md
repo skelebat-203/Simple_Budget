@@ -59,6 +59,7 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
    - Source: roadmap v0.7 (decided 2026-11-04)
    - Files: `src/components/BudgetTable.tsx`, `src/App.css`
    - Verify: sticky off at 500px and narrower; focused cells not hidden behind the column; keyboard scroll; 320px
+   - Also: pin the Actual column in the Day table (`0012` G11; moved here from step 4, human 2026-11-22).
    - Deps: 5
 7. **Form field alignment class** (v0.7/7) — same label-to-control space as fields with help text, so side-by-side fields line up.
    - Source: roadmap v0.7 (decided 2026-11-04)
