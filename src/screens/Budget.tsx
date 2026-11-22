@@ -1,9 +1,10 @@
-import { useRef, useState } from 'react'
+import { useRef, useState, type ReactNode } from 'react'
 import type { BudgetItem, Range } from '../storage/db'
 import { isoDate, parseIso, periodsFor, rangeHasEstimates, shiftRange, type Calendar, type CatNode } from '../budget/tree'
 import { dateBounds } from '../budget/validate'
 import { BudgetTable } from '../components/BudgetTable'
 import { Button } from '../components/ui'
+import { useWide } from '../components/ui/useWide'
 
 const RANGES: { value: Range; label: string }[] = [
   { value: 'day', label: 'Day' },
@@ -21,7 +22,9 @@ const Chevron = ({ dir }: { dir: 'left' | 'right' }) => (
 /** Noun for the Previous / Next button names. */
 const UNIT: Record<Range, string> = { day: 'day', week: 'week', month: 'month', annual: 'year' }
 
-export function Budget({ roots, items, range, onRangeChange, calendar, onChanged }: {
+export function Budget({ roots, items, range, onRangeChange, calendar, onChanged, syncButton }: {
+  /** From 640px the Sync button sits at the right of the date controls; narrower, Tabs shows it beside the Screens button. */
+  syncButton?: ReactNode
   roots: CatNode[]
   onChanged: () => void
   calendar: Calendar
@@ -29,6 +32,7 @@ export function Budget({ roots, items, range, onRangeChange, calendar, onChanged
   range: Range
   onRangeChange: (r: Range) => void
 }) {
+  const wide = useWide()
   const [showEstimates, setShowEstimates] = useState(true)
   // Date nav (0007 §9.5): the shown range contains `anchor`; defaults to today.
   const [anchor, setAnchor] = useState(() => new Date())
@@ -69,27 +73,30 @@ export function Budget({ roots, items, range, onRangeChange, calendar, onChanged
           </label>
         )}
       </div>
-      <nav className="toolbar" aria-label="Date range">
-        <Button type="button" className="secondary icon" disabled={shown.from <= bounds.min} onClick={() => setAnchor(prev)}
-          aria-label={`Previous ${UNIT[range]}`}>
-          <Chevron dir="left" />
-        </Button>
-        {/* The title opens the browser calendar; the date input is a hidden helper the calendar attaches to. */}
-        <span className="date-nav-title">
-          <button type="button" className="btn secondary" ref={pickerButton} id="nav_date-button"
-            aria-label={`${title}, choose a date`} onClick={openCalendar}>
-            {title}
-          </button>
-          <input type="date" ref={dateInput} id="nav_date" className={fallback ? 'input' : 'date-helper'}
-            tabIndex={fallback ? 0 : -1} aria-hidden={fallback ? undefined : true} aria-label={`Go to date: shows the ${UNIT[range]} that contains it`}
-            min={bounds.min} max={bounds.max} value={isoDate(anchor)}
-            onChange={e => { pick(e.target.value); if (!fallback) pickerButton.current?.focus() }} />
-        </span>
-        <Button type="button" className="secondary icon" disabled={shown.to >= bounds.max} onClick={() => setAnchor(next)}
-          aria-label={`Next ${UNIT[range]}`}>
-          <Chevron dir="right" />
-        </Button>
-      </nav>
+      <div className="date-row">
+        <nav className="toolbar" aria-label="Date range">
+          <Button type="button" className="secondary icon" disabled={shown.from <= bounds.min} onClick={() => setAnchor(prev)}
+            aria-label={`Previous ${UNIT[range]}`}>
+            <Chevron dir="left" />
+          </Button>
+          {/* The title opens the browser calendar; the date input is a hidden helper the calendar attaches to. */}
+          <span className="date-nav-title">
+            <button type="button" className="btn secondary" ref={pickerButton} id="nav_date-button"
+              aria-label={`${title}, choose a date`} onClick={openCalendar}>
+              {title}
+            </button>
+            <input type="date" ref={dateInput} id="nav_date" className={fallback ? 'input' : 'date-helper'}
+              tabIndex={fallback ? 0 : -1} aria-hidden={fallback ? undefined : true} aria-label={`Go to date: shows the ${UNIT[range]} that contains it`}
+              min={bounds.min} max={bounds.max} value={isoDate(anchor)}
+              onChange={e => { pick(e.target.value); if (!fallback) pickerButton.current?.focus() }} />
+          </span>
+          <Button type="button" className="secondary icon" disabled={shown.to >= bounds.max} onClick={() => setAnchor(next)}
+            aria-label={`Next ${UNIT[range]}`}>
+            <Chevron dir="right" />
+          </Button>
+        </nav>
+        {wide && syncButton}
+      </div>
       <BudgetTable date={anchor} roots={roots} items={items} range={range} showEstimates={showEstimates} calendar={calendar} onChanged={onChanged} />
     </section>
   )

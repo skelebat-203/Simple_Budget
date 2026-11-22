@@ -39,7 +39,7 @@ export interface FormMode {
  * The footer is one of: `confirm` (a message with Cancel and Confirm), `form`
  * (the children are the fields; Cancel and a submit button), or `buttons` (caller-made).
  */
-export function Dialog({ id, title, children, buttons, confirm, form, onClose, className, describedBy, footerClassName, footerRef }: {
+export function Dialog({ id, title, children, buttons, confirm, form, onClose, className, describedBy, footerClassName, footerRef, suspended }: {
   id: string
   title: ReactNode
   children: ReactNode
@@ -56,6 +56,8 @@ export function Dialog({ id, title, children, buttons, confirm, form, onClose, c
   footerClassName?: string
   /** Ref to the button row, for a caller that measures it. */
   footerRef?: Ref<HTMLDivElement>
+  /** Closed for a while but kept mounted (state kept), e.g. while the Google Picker is open: it can't take clicks under a modal dialog. */
+  suspended?: boolean
 }) {
   useAnnounce(form?.error ?? '')
   const ref = useRef<HTMLDialogElement>(null)
@@ -77,6 +79,12 @@ export function Dialog({ id, title, children, buttons, confirm, form, onClose, c
       if (opener?.isConnected && (document.activeElement === document.body || !document.activeElement)) opener.focus()
     }
   }, [])
+  useEffect(() => {
+    const d = ref.current
+    if (!d) return
+    if (suspended && d.open) d.close()
+    else if (!suspended && !d.open) d.showModal()
+  }, [suspended])
 
   return (
     <dialog ref={ref} id={id} tabIndex={-1} className={`dialog ${kind} ${className ?? ''}`.replace(/\s+/g, ' ').trim()} aria-modal="true"

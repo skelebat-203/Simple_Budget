@@ -1,12 +1,9 @@
-import { useEffect, useRef, useState, useSyncExternalStore, type KeyboardEvent, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
+import { useWide } from './useWide'
 
 export interface Tab { id: string; label: string; panel: ReactNode }
 /** A command shown beside the tabs (wide) or as a menu item (narrow), e.g. opening a dialog. */
 export interface TabAction { id: string; label: string; onSelect: () => void }
-
-const WIDE = '(min-width: 640px)'
-const subscribe = (cb: () => void) => { const m = matchMedia(WIDE); m.addEventListener('change', cb); return () => m.removeEventListener('change', cb) }
-const useWide = () => useSyncExternalStore(subscribe, () => matchMedia(WIDE).matches)
 
 /**
  * Screen switcher (0007 §6, §10). From 640px: ARIA tabs (Left/Right with
@@ -14,7 +11,11 @@ const useWide = () => useSyncExternalStore(subscribe, () => matchMedia(WIDE).mat
  * a "Screens" menu button listing the screens and the actions.
  * Hidden panels stay mounted so a half-filled form keeps its values.
  */
-export function Tabs({ label, tabs, actions = [] }: { label: string; tabs: Tab[]; actions?: TabAction[] }) {
+export function Tabs({ label, tabs, actions = [], menuEnd }: {
+  label: string; tabs: Tab[]; actions?: TabAction[]
+  /** Small screens: a control shown right of the Screens button for the current screen (e.g. Sync on Budget). */
+  menuEnd?: (current: string) => ReactNode
+}) {
   const wide = useWide()
   const [current, setCurrent] = useState(tabs[0].id)
   const refs = useRef<Record<string, HTMLButtonElement | null>>({})
@@ -53,14 +54,19 @@ export function Tabs({ label, tabs, actions = [] }: { label: string; tabs: Tab[]
             ))}
           </div>
         )
-        : <ScreensMenu tabs={tabs} actions={actions} current={current} onPick={id => {
-          setCurrent(id)
-          // New screen: focus its heading (SPA navigation rule).
-          requestAnimationFrame(() => {
-            const h = document.querySelector<HTMLElement>(`#tabpanel-${id} h2`)
-            if (h) { h.tabIndex = -1; h.focus() }
-          })
-        }} />}
+        : (
+          <div className="menu-row">
+            <ScreensMenu tabs={tabs} actions={actions} current={current} onPick={id => {
+              setCurrent(id)
+              // New screen: focus its heading (SPA navigation rule).
+              requestAnimationFrame(() => {
+                const h = document.querySelector<HTMLElement>(`#tabpanel-${id} h2`)
+                if (h) { h.tabIndex = -1; h.focus() }
+              })
+            }} />
+            {menuEnd?.(current)}
+          </div>
+        )}
       {tabs.map(t => (
         <div key={t.id} id={`tabpanel-${t.id}`} hidden={current !== t.id}
           {...(wide ? { role: 'tabpanel', 'aria-labelledby': `tab-${t.id}`, tabIndex: 0, className: 'tabpanel' } : { className: 'screen' })}>

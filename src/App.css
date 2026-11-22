@@ -590,3 +590,13 @@ nav .btn.icon:hover:not(:disabled) { background: var(--color-border); }
   .review-table .depth-2 .row-name { padding-left: calc(var(--space-md) * 2); }
 }
 .sheet-block .table-box { max-height: none; } /* the dialog scrolls, not each table */
+
+/* --- Sync placement (v0.7 step 3b) --- */
+/* Budget screen: date controls left, Sync right (from 640px; narrower, Sync sits beside the Screens button). */
+.date-row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-md); flex-wrap: wrap; }
+.menu-row { display: flex; align-items: center; gap: var(--space-md); flex-wrap: wrap; }
+/* Wizard sync tabs: New Budget / Existing Budget. */
+.wizard-sync { display: flex; flex-direction: column; margin-top: var(--space-md); }
+.wizard-sync .tablist { border-bottom: 2px solid var(--color-secondary-background); }
+.wizard-tabpanel { padding: var(--space-md); border: 2px solid var(--color-secondary-background); border-top: 0; border-radius: 0 0 var(--radius-md) var(--radius-md); }
+.wizard-tabpanel .status:empty { display: none; }

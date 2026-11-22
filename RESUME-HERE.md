@@ -41,6 +41,7 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
    - Files: `src/screens/Onboarding.tsx`, `src/screens/BudgetSetup.tsx`, `src/components/Sync.tsx`, `src/screens/Budget.tsx`, `src/components/ui/Tabs.tsx`, `src/App.tsx`, `src/App.css`
    - Verify: `npm run test:dialogs` (wizard step order); 1280/640/320px; keyboard order matches visual order
    - Deps: 3
+   - Progress (v0.7.13): built; build, lint, `test:dialogs`, `test:sync`, `test:import` pass; layouts checked at 1280/640/375/320px. Waiting on: the human's sign-in test in Chromium and UI approval.
 4. **Design standards pass** (v0.7/4) — bring the app in line with `0012-design-standards.md`.
    - Source: roadmap v0.7; `0012` §10 gaps
    - Files: `src/App.css`, `src/styles/tokens.css`, components named in `0012`

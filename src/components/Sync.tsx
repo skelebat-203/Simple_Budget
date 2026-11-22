@@ -1,16 +1,17 @@
 import { useState } from 'react'
 import { useSyncState } from './useSyncState'
 import { useAnnounce } from './ui/announcer'
-import { Button, Dialog, Input } from './ui'
+import { Button, Dialog } from './ui'
 import * as sync from '../storage/sync/controller'
 import { isGoogleConfigured } from '../storage/sync/googleConfig'
-import { createSpreadsheet, isSignedIn, signIn } from '../storage/sync/googleSheets'
+import { isSignedIn, signIn } from '../storage/sync/googleSheets'
+import { createAndLink, CREATED_TEXT, LINKED_TEXT, linkSheet, syncFailText, usePasscode } from './syncActions'
+import { PasscodeField } from './syncForms'
 
 const syncedText = (skipped: number) => `Synced.${skipped ? ` ${skipped} row${skipped === 1 ? '' : 's'} from the sheet needed attention; see the list in Sync.` : ''}`
-const plain = (e: unknown) => (e instanceof Error && e.message ? e.message : 'Something went wrong.')
 
 /**
- * Sync dialog (0015 §6), next to Backup: sign in with Google, create or link a sheet with
+ * Sync dialog (0015 §6), opened from the Budget screen: sign in with Google, create or link a sheet with
  * its passcode, then last sync time, Sync now and Unlink. One live region (useAnnounce).
  * `pickedId` is a sheet chosen in the Google Picker, which App opens with this dialog
  * closed (a modal dialog would keep the Picker from taking clicks).
@@ -18,53 +19,28 @@ const plain = (e: unknown) => (e instanceof Error && e.message ? e.message : 'So
 export function Sync({ onboarded, pickedId, onPick, onClose }: { onboarded: boolean; pickedId: string | null; onPick: () => void; onClose: () => void }) {
   const s = useSyncState()
   const [signedIn, setSignedIn] = useState(isSignedIn())
-  const [passcode, setPasscode] = useState('')
-  const [confirm, setConfirm] = useState('')
-  const [fieldError, setFieldError] = useState('')
+  const p = usePasscode()
   const [status, setStatus] = useState('')
   const [error, setError] = useState('')
   const [working, setWorking] = useState(false)
   const [unlinking, setUnlinking] = useState(false)
   useAnnounce(status)
   useAnnounce(error || s.error || '')
-  useAnnounce(fieldError)
+  useAnnounce(p.error)
 
   async function run(f: () => Promise<string>) {
     setError(''); setStatus(''); setWorking(true)
-    try { setStatus(await f()) } catch (e) { setError(`Error: ${plain(e)} Your data on this device is safe.`) } finally { setWorking(false) }
+    try { setStatus(await f()) } catch (e) { setError(syncFailText(e)) } finally { setWorking(false) }
   }
 
   const login = () => run(async () => { await signIn(); setSignedIn(true); void sync.requestSync(); return 'Signed in with Google.' })
-
-  function checkPasscode(isNew: boolean) {
-    if (!passcode) { setFieldError('Error: Passcode cannot be empty'); return false }
-    if (isNew && passcode.length < sync.PASSCODE_MIN) { setFieldError(`Invalid: Passcode use at least ${sync.PASSCODE_MIN} characters`); return false }
-    if (isNew && passcode !== confirm) { setFieldError('Invalid: Confirm passcode doesn’t match the passcode'); return false }
-    setFieldError('')
-    return true
-  }
-  const create = () => { if (checkPasscode(true)) void run(async () => { await sync.link(await createSpreadsheet(), passcode, true); setPasscode(''); setConfirm(''); return 'Sheet created and synced. Give the passcode to anyone you share the sheet with.' }) }
-  const linkPicked = () => { if (pickedId && checkPasscode(false)) void run(async () => { await sync.link(pickedId, passcode, false); setPasscode(''); return 'Sheet linked and synced.' }) }
+  const create = () => { if (p.check(true)) void run(async () => { await createAndLink(p.passcode); p.clear(); return CREATED_TEXT }) }
+  const linkPicked = () => { if (pickedId && p.check(false)) void run(async () => { await linkSheet(pickedId, p.passcode); p.clear(); return LINKED_TEXT }) }
   const syncNow = () => run(async () => { const r = await sync.requestSync(); return r ? syncedText(r.notes.length) : '' })
   const unlink = () => run(async () => { await sync.unlink(); setUnlinking(false); return 'Sync stopped on this device. Your data here stays.' })
 
   const shownError = error || s.error
-  const passcodeField = (isNew: boolean) => (
-    <>
-      <label htmlFor="sync-passcode" className="label">Passcode<span aria-hidden="true"> *</span></label>
-      <p id="sync-passcode-help" className="help">{isNew
-        ? `At least ${sync.PASSCODE_MIN} characters. It locks the sheet. If it is lost, the sheet can’t be read; data on your devices is safe.`
-        : 'The passcode set when the sheet was created.'}</p>
-      <Input id="sync-passcode" type="password" autoComplete={isNew ? 'new-password' : 'current-password'} value={passcode} aria-required="true"
-        aria-invalid={!!fieldError || undefined} aria-describedby={fieldError ? 'sync-passcode-help sync-passcode-error_msg' : 'sync-passcode-help'}
-        onChange={e => setPasscode(e.target.value)} />
-      {isNew && <>
-        <label htmlFor="sync-passcode-confirm" className="label">Confirm passcode<span aria-hidden="true"> *</span></label>
-        <Input id="sync-passcode-confirm" type="password" autoComplete="new-password" value={confirm} aria-required="true" onChange={e => setConfirm(e.target.value)} />
-      </>}
-      {fieldError && <p id="sync-passcode-error_msg" className="error">{fieldError}</p>}
-    </>
-  )
+  const passcodeField = (isNew: boolean) => <PasscodeField id="sync-passcode" isNew={isNew} p={p} />
 
   let body
   if (!isGoogleConfigured()) body = <p className="help">Sync isn’t set up in this version of the app yet.</p>

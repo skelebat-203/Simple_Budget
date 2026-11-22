@@ -11,7 +11,7 @@ import * as sync from './storage/sync/controller'
 import { GoogleSheetsAdapter, isSignedIn, pickSpreadsheet } from './storage/sync/googleSheets'
 import { charityMovedText } from './budget/charity'
 import { Notices, type NoticeState } from './components/Notices'
-import { Tabs } from './components/ui'
+import { Button, Tabs } from './components/ui'
 import { budgetItemRepo, categoryRepo, settingsRepo, skipped } from './storage/repository'
 import { dbEvents, type BudgetItem, type Category, type DefaultRange, type Range } from './storage/db'
 import { buildTree, DEFAULT_CALENDAR, type Calendar } from './budget/tree'
@@ -117,6 +117,8 @@ function App() {
   }
 
   const roots = useMemo(() => buildTree(cats), [cats])
+  // Sync opens from the Budget screen only (step 3b); onboarding (which offers sync first) comes before it.
+  const syncButton = onboarded ? <Button type="button" id="sync" onClick={() => setSyncOpen(true)}>Sync</Button> : null
 
   function dismissPersist() {
     try { localStorage.setItem(PERSIST_DISMISSED, '1') } catch { /* storage unavailable */ }
@@ -136,11 +138,9 @@ function App() {
       <Notices state={notices} onDismissPersist={dismissPersist} onDismissInfo={() => note({ charityMoved: undefined })} />
       <Tabs label="Sections" actions={[
         { id: 'backup', label: 'Backup', onSelect: () => setBackupOpen(true) },
-        // Sync setup is offered once onboarding is complete (0015 Q9).
-        ...(onboarded ? [{ id: 'sync', label: 'Sync', onSelect: () => setSyncOpen(true) }] : []),
-      ]} tabs={[
+      ]} menuEnd={current => (current === 'budget' ? syncButton : null)} tabs={[
         { id: 'add', label: 'Add purchase', panel: <AddBudget roots={roots} onSaved={saved} /> },
-        { id: 'budget', label: 'Budget', panel: <Budget roots={roots} items={items} range={range} onRangeChange={setRange} calendar={calendar} onChanged={saved} /> },
+        { id: 'budget', label: 'Budget', panel: <Budget roots={roots} items={items} range={range} onRangeChange={setRange} calendar={calendar} onChanged={saved} syncButton={syncButton} /> },
       ]} />
       {backupOpen && (
         <Backup onClose={() => setBackupOpen(false)} onRestored={() => {
@@ -150,8 +150,8 @@ function App() {
       {syncOpen && <Sync onboarded={onboarded} pickedId={pickedId} onPick={pick} onClose={() => { setSyncOpen(false); setPickedId(null) }} />}
       {showOnboarding && (
         <Onboarding cats={cats} firstRun={autoOnboard && !onboardOpen} onClose={() => setOnboardOpen(false)} onSkip={skipOnboarding}
-          onDone={() => { setOnboardOpen(false); setDismissed(true); setOnboarded(true); reloadCats(); reloadItems() }}
-          onAdvanced={() => { setOnboardOpen(false); setDismissed(true); setOnboarded(true); reloadCats().then(() => setSetupOpen(true)) }} />
+          onDone={() => { setOnboardOpen(false); setDismissed(true); setOnboarded(true); reloadCats(); reloadItems(); reloadSettings(); void sync.requestSync() }}
+          onAdvanced={() => { setOnboardOpen(false); setDismissed(true); setOnboarded(true); void sync.requestSync(); reloadCats().then(() => setSetupOpen(true)) }} />
       )}
       {setupOpen && (
         <BudgetSetup

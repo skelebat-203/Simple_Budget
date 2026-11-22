@@ -11,6 +11,7 @@ const PORT = 4173
 const URL = `http://127.0.0.1:${PORT}/`
 const SHELL_PATH = 'tools/browsers/chrome-headless-shell-linux64/chrome-headless-shell'
 const WIDTH = 1280
+const NARROW = 375
 const HEIGHT = 900
 const SETTLE_MS = 150
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
@@ -64,6 +65,38 @@ try {
   check('first load: wizard opens', (await openIds()).includes('onboarding'), JSON.stringify(await openIds()))
   await clickId('onboarding-skip')
   check('first load: Skip closes it', (await openIds()).length === 0)
+
+  // Sync button (v0.7 step 3b): only in the Budget panel, beside the date controls; beside Screens when narrow.
+  const syncIn = () => page.evaluate(() => { const b = document.getElementById('sync'); return b ? (b.closest('[id^=tabpanel-]')?.id ?? b.parentElement?.className ?? '') : null })
+  check('Sync: not shown on Add purchase', await page.evaluate(() => !document.getElementById('sync')?.getClientRects().length))
+  check('Sync: Backup is the last button in the tab row', await page.evaluate(() => document.querySelector('.tab-row > :last-child')?.textContent?.trim() === 'Backup'))
+  await clickId('tab-budget')
+  check('Sync: in the Budget panel', (await syncIn()) === 'tabpanel-budget', String(await syncIn()))
+  check('Sync: after the date controls in reading order', await page.evaluate(() => document.querySelector('.date-row > nav + #sync') !== null))
+  await page.setViewport({ width: NARROW, height: HEIGHT }); await settle()
+  check('Sync (narrow): beside the Screens button', (await syncIn()) === 'menu-row', String(await syncIn()))
+  check('Sync (narrow): one instance', await page.evaluate(() => document.querySelectorAll('#sync').length === 1))
+  await page.setViewport({ width: WIDTH, height: HEIGHT }); await settle()
+  await clickId('tab-add')
+
+  // Wizard steps (v0.7 step 3b): sync first, the count follows the path.
+  const stepText = () => page.evaluate(() => document.getElementById('onboarding-step')?.textContent ?? '')
+  await clickId('help-button')
+  check('wizard: step 1 is the sync choice', await page.evaluate(() => !!document.getElementById('sync_mode-local')?.matches(':checked')))
+  check('wizard: no pay frequency step', await page.evaluate(() => !document.querySelector('[name=pay_frequency]')))
+  check('wizard: Step 1 of 2 (Local only)', (await stepText()) === 'Step 1 of 2', await stepText())
+  await page.click('label:has(#sync_mode-google)'); await settle()
+  check('wizard: Sync with Google shows tabs', await page.evaluate(() => document.querySelectorAll('#onboarding [role=tab]').length === 2 && !!document.querySelector('#onboarding [role=tabpanel]')))
+  await page.focus('#wizard-tab-new'); await press('ArrowRight')
+  check('wizard: arrow key moves to Existing Budget', (await activeId()) === 'wizard-tab-existing' && await page.evaluate(() => document.getElementById('wizard-tab-existing')?.getAttribute('aria-selected') === 'true'))
+  check('wizard: Existing Budget is Step 1 of 1 with Done', (await stepText()) === 'Step 1 of 1' && await page.evaluate(() => !!document.getElementById('onboarding-done')), await stepText())
+  await clickId('onboarding-done')
+  check('wizard: Done before linking shows an error', await page.evaluate(() => !!document.querySelector('#onboarding .error')))
+  await page.click('label:has(#sync_mode-local)'); await settle()
+  await clickId('onboarding-next')
+  check('wizard: Next goes to Step 2 of 2', (await stepText()) === 'Step 2 of 2', await stepText())
+  check('wizard: pay frequency help points to Advanced options', await page.evaluate(() => [...document.querySelectorAll('#onboarding .help')].some(p => p.textContent.includes('Advanced options'))))
+  await press('Escape')
 
   // Help button reopens the wizard.
   await clickId('help-button')

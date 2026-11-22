@@ -157,7 +157,7 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, rewardsEnable
       if (text === '') { final = edit.patch(final, n.cat.id, { estimate: undefined }); continue }
       const r = parseAmount(text, { allowNegative: false })
       if (r.ok) final = edit.patch(final, n.cat.id, { estimate: r.value })
-      else errs[domId('estimate', n)] = moneyError(`Estimated spending for ${say(n)}`, r, '40, 40+5.25 or 1,200.00')
+      else errs[domId('estimate', n)] = moneyError(`Estimated amount for ${say(n)}`, r, '40, 40+5.25 or 1,200.00')
     }
     setErrors(errs)
     const list: FieldError[] = Object.entries(errs).map(([fieldId, message]) => ({ fieldId, message }))
@@ -391,7 +391,7 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, rewardsEnable
             <thead>
               <tr>
                 <th scope="col">Item</th>
-                <th scope="col" id="setup-est-col">Estimated spending</th>
+                <th scope="col" id="setup-est-col">Estimated amount</th>
                 <th scope="col">Recurrence</th>
                 <th scope="col">Autopay</th>
                 <th scope="col">Schedule</th>

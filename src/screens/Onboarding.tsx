@@ -3,13 +3,22 @@ import { Button, Dialog, Toggle } from '../components/ui'
 import { Expander } from '../components/ui/Expander'
 import { useAnnounce } from '../components/ui/announcer'
 import { ImportSection } from '../components/import/ImportSection'
+import { WizardSync, type SyncTabId } from '../components/WizardSync'
+import { useSyncState } from '../components/useSyncState'
 import { saveSetup, settingsRepo } from '../storage/repository'
-import type { Category, Frequency } from '../storage/db'
-import { buildTree, FREQUENCIES, flatten, isTotal, scheduleClears, type Cat } from '../budget/tree'
+import type { Category } from '../storage/db'
+import { buildTree, flatten, isTotal, type Cat } from '../budget/tree'
 import * as edit from '../budget/setupEdits'
 
 type Step = 1 | 2 | 3
-const STEPS = 3
+type Mode = 'local' | 'google'
+const MODE_OPTIONS: { value: Mode; label: string }[] = [
+  { value: 'local', label: 'Local only' },
+  { value: 'google', label: 'Sync with Google' },
+]
+const MODE_HELP = 'Sync keeps the same budget on your devices and with people you share it with, using a Google Sheet.'
+const PAY_HELP = 'Set how often you get paid, and your estimated amounts, later in Advanced options.'
+const NOT_LINKED = 'Error: The budget isn’t synced yet. Finish New Budget or Existing Budget, or choose Local only.'
 const GROUPS_OPEN = 2 // step 3: how many groups start open
 
 type Choice = 'presets' | 'own' | 'import'
@@ -25,8 +34,9 @@ const IMPORT_NOTE = 'Your other answers in this setup are not used when you impo
 interface Option { key: string; name: string; group: string; groupKey: string }
 
 /**
- * Onboarding wizard (0009 §1, prototype 0010): three steps with a progress bar.
- * 1 pay frequency; 2 presets or own categories; 3 a grouped, collapsible checklist.
+ * Onboarding wizard (0009 §1, prototype 0010; v0.7 step 3b): up to three steps with a progress bar.
+ * 1 local only or sync with Google (new or existing budget); 2 presets or own categories;
+ * 3 a grouped, collapsible checklist. An existing synced budget skips 2 and 3 (its categories come from the sheet).
  * Shown on first run (Skip remembers it was skipped) and reopened by the ? help button (Cancel).
  */
 export function Onboarding({ cats, firstRun, onClose, onSkip, onDone, onAdvanced }: {
@@ -41,10 +51,6 @@ export function Onboarding({ cats, firstRun, onClose, onSkip, onDone, onAdvanced
 }) {
   const original = useMemo(() => cats.filter((c): c is Cat => typeof c.id === 'number'), [cats])
   const roots = useMemo(() => buildTree(original), [original])
-  const incomeItems = useMemo(() => {
-    const income = roots.find(r => r.cat.name === 'Income')
-    return income ? flatten([income]).filter(n => n !== income && !isTotal(n)) : []
-  }, [roots])
 
   // Every preloaded Savings and Expenses item, grouped by its parent (0009 §1 step 3).
   const options: Option[] = useMemo(() => roots
@@ -63,7 +69,10 @@ export function Onboarding({ cats, firstRun, onClose, onSkip, onDone, onAdvanced
   }, [options])
 
   const [step, setStep] = useState<Step>(1)
-  const [freq, setFreq] = useState<Frequency>(incomeItems[0]?.cat.frequency ?? 'month')
+  const syncState = useSyncState()
+  const [mode, setMode] = useState<Mode>(() => (syncState.linked ? 'google' : 'local'))
+  const [syncTab, setSyncTab] = useState<SyncTabId>('new')
+  const [suspended, setSuspended] = useState(false)
   const [selected, setSelected] = useState(() => new Set(options.filter(o => original.find(c => String(c.id) === o.key)?.selected).map(o => o.key)))
   const [choice, setChoice] = useState<Choice>('presets')
   const [saving, setSaving] = useState(false)
@@ -90,7 +99,17 @@ export function Onboarding({ cats, firstRun, onClose, onSkip, onDone, onAdvanced
     onDone()
   }
 
-  function go(s: Step) { setStep(s); setStatus(`Step ${s} of ${STEPS}`) }
+  // The step count follows the chosen path.
+  const existing = mode === 'google' && syncTab === 'existing'
+  const total = existing ? 1 : choice === 'own' ? 3 : 2
+  function go(s: Step) { setError(''); setStep(s); setStatus(`Step ${s} of ${s === 1 || !existing ? total : choice === 'own' ? 3 : 2}`) }
+  function chooseMode(m: Mode) { setMode(m); setError(''); setStatus(m === 'google' ? 'Sync options shown' : '') }
+  /** Step 1: sync must be finished before going on, unless Local only. */
+  function leaveStep1() {
+    if (mode === 'google' && !syncState.linked) { setError(NOT_LINKED); return }
+    if (existing) void finish(false, onDone)
+    else go(2)
+  }
   // Step 3 groups: the first two start open; a group the user toggled uses their choice.
   const [openGroups, setOpenGroups] = useState(() => new Map<string, boolean>())
   const isOpen = (key: string, i: number) => openGroups.get(key) ?? i < GROUPS_OPEN
@@ -98,11 +117,10 @@ export function Onboarding({ cats, firstRun, onClose, onSkip, onDone, onAdvanced
   const toggle = (key: string) => setSelected(s => { const n = new Set(s); if (n.has(key)) n.delete(key); else n.add(key); return n })
   const toggleGroup = (items: Option[], on: boolean) => setSelected(s => { const n = new Set(s); for (const o of items) { if (on) n.add(o.key); else n.delete(o.key) } return n })
 
-  /** Saves the pay frequency (the Recurrence of every Income item), and the checklist when `withCats`. */
+  /** Marks the wizard done, and saves the checklist when `withCats`. */
   async function finish(withCats: boolean, then: () => void) {
     setSaving(true); setError('')
     let work: Cat[] = original
-    for (const n of incomeItems) work = edit.patch(work, n.cat.id, { frequency: freq, ...scheduleClears(n.cat, freq) })
     if (withCats) for (const o of options) work = edit.patch(work, Number(o.key), { selected: selected.has(o.key) })
     try {
       await saveSetup(work, original, { onboarded: true })
@@ -119,7 +137,9 @@ export function Onboarding({ cats, firstRun, onClose, onSkip, onDone, onAdvanced
     ? <Button type="button" className="secondary" id="onboarding-skip" onClick={cancel}>{firstRun ? 'Skip' : 'Cancel'}</Button>
     : <Button type="button" className="secondary" id="onboarding-back" onClick={() => go((step - 1) as Step)} disabled={saving}>Back</Button>
   const right = step === 1
-    ? <Button type="button" id="onboarding-next" onClick={() => go(2)}>Next</Button>
+    ? existing
+      ? <Button type="button" id="onboarding-done" onClick={leaveStep1} disabled={saving}>{saving ? 'Saving…' : 'Done'}</Button>
+      : <Button type="button" id="onboarding-next" onClick={leaveStep1}>Next</Button>
     : step === 2
       ? choice === 'import' ? null : <Button type="button" id="onboarding-next" onClick={() => (choice === 'presets' ? finish(false, onDone) : go(3))} disabled={saving}>{saving ? 'Saving…' : 'Next'}</Button>
       : step === 3
@@ -127,39 +147,44 @@ export function Onboarding({ cats, firstRun, onClose, onSkip, onDone, onAdvanced
       : null
 
   return (
-    <Dialog id="onboarding" title="Let’s set up your budget" onClose={cancel} className="onboarding"
+    <Dialog id="onboarding" title="Let’s set up your budget" onClose={cancel} className="onboarding" suspended={suspended}
       buttons={<>
         <div className="actions">{left}{right}</div>
         <Button type="button" className="secondary" id="onboarding-advanced-options" onClick={() => finish(step === 3, onAdvanced)} disabled={saving}>Advanced options</Button>
       </>}>
       <div ref={body}>
         <div className="wizard-steps">
-          <p id="onboarding-step" aria-hidden="true">Step {step} of {STEPS}</p>
-          <div className="wizard-bar" role="progressbar" aria-labelledby="onboarding-step" aria-valuemin={1} aria-valuemax={STEPS} aria-valuenow={step}>
-            <span style={{ width: `${step / STEPS * 100}%` }} />
+          <p id="onboarding-step" aria-hidden="true">Step {step} of {total}</p>
+          <div className="wizard-bar" role="progressbar" aria-labelledby="onboarding-step" aria-valuemin={1} aria-valuemax={total} aria-valuenow={step}>
+            <span style={{ width: `${step / total * 100}%` }} />
           </div>
         </div>
 
         {step === 1 && (
-          <fieldset className="fieldset" role="radiogroup" aria-labelledby="pay_frequency-legend">
-            <legend id="pay_frequency-legend" className="legend">How often do you get paid?</legend>
-            <ul className="plain-list choice-buttons">
-              {FREQUENCIES.map(f => (
-                <li key={f.value}>
-                  <label className="choice-button">
-                    <input type="radio" className="sr-only" name="pay_frequency" id={`pay_frequency-${f.value}`} value={f.value}
-                      checked={freq === f.value} onChange={() => setFreq(f.value)} />
-                    {f.label}
-                  </label>
-                </li>
-              ))}
-            </ul>
-          </fieldset>
+          <>
+            <fieldset className="fieldset" role="radiogroup" aria-labelledby="sync_mode-legend" aria-describedby="sync_mode-help">
+              <legend id="sync_mode-legend" className="legend">Keep your budget on this device only, or sync it?</legend>
+              <p id="sync_mode-help" className="help">{MODE_HELP}</p>
+              <ul className="plain-list choice-buttons">
+                {MODE_OPTIONS.map(m => (
+                  <li key={m.value}>
+                    <label className="choice-button">
+                      <input type="radio" className="sr-only" name="sync_mode" id={`sync_mode-${m.value}`} value={m.value}
+                        checked={mode === m.value} onChange={() => chooseMode(m.value)} />
+                      {m.label}
+                    </label>
+                  </li>
+                ))}
+              </ul>
+            </fieldset>
+            {mode === 'google' && <WizardSync tab={syncTab} onTab={t => { setSyncTab(t); setError('') }} onSuspend={setSuspended} />}
+          </>
         )}
 
         {step === 2 && (
           <>
             <Toggle stacked name={STEP2_NAME} hint={STEP2_HINT} value={choice} options={STEP2_OPTIONS} onChange={chooseStep2} />
+            <p className="help">{PAY_HELP}</p>
             {choice === 'import' && <ImportSection onImported={imported} note={IMPORT_NOTE} />}
           </>
         )}
