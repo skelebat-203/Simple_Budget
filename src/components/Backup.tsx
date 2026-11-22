@@ -70,6 +70,7 @@ export function Backup({ onClose, onRestored, onImported }: { onClose: () => voi
       <section className="field" aria-labelledby="backup-restore-heading">
         <h3 id="backup-restore-heading" className="label">Restore from a backup file</h3>
         <p id="backup-help" className="help">Choose a .json file exported from Simple Budget. Restoring replaces everything currently in the app.</p>
+        <label htmlFor="backup-file" className="sr-only">Backup file (.json)</label>
         <input id="backup-file" ref={fileRef} type="file" accept=".json,application/json" className="input"
           aria-describedby={error ? 'backup-help backup-error' : 'backup-help'} aria-invalid={!!error || undefined}
           onChange={e => choose(e.target.files?.[0])} />

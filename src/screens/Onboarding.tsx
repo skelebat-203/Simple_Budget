@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Button, Dialog, Toggle } from '../components/ui'
+import { Expander } from '../components/ui/Expander'
 import { useAnnounce } from '../components/ui/announcer'
 import { ImportSection } from '../components/import/ImportSection'
 import { saveSetup, settingsRepo } from '../storage/repository'
@@ -9,6 +10,7 @@ import * as edit from '../budget/setupEdits'
 
 type Step = 1 | 2 | 3
 const STEPS = 3
+const GROUPS_OPEN = 2 // step 3: how many groups start open
 
 type Choice = 'presets' | 'own' | 'import'
 const STEP2_NAME = 'Use presets, choose your own categories, or import a file?'
@@ -89,6 +91,10 @@ export function Onboarding({ cats, firstRun, onClose, onSkip, onDone, onAdvanced
   }
 
   function go(s: Step) { setStep(s); setStatus(`Step ${s} of ${STEPS}`) }
+  // Step 3 groups: the first two start open; a group the user toggled uses their choice.
+  const [openGroups, setOpenGroups] = useState(() => new Map<string, boolean>())
+  const isOpen = (key: string, i: number) => openGroups.get(key) ?? i < GROUPS_OPEN
+  const toggleOpen = (key: string, i: number) => setOpenGroups(m => new Map(m).set(key, !isOpen(key, i)))
   const toggle = (key: string) => setSelected(s => { const n = new Set(s); if (n.has(key)) n.delete(key); else n.add(key); return n })
   const toggleGroup = (items: Option[], on: boolean) => setSelected(s => { const n = new Set(s); for (const o of items) { if (on) n.add(o.key); else n.delete(o.key) } return n })
 
@@ -167,26 +173,29 @@ export function Onboarding({ cats, firstRun, onClose, onSkip, onDone, onAdvanced
                 {groups.map((g, i) => {
                   const n = g.items.filter(o => selected.has(o.key)).length
                   return (
-                    <details key={g.key} open={i < 2}>
-                      <summary>
-                        <label>
-                          <input type="checkbox" id={`group-${g.key}`} checked={n === g.items.length}
+                    <div key={g.key}>
+                      {/* Two separate controls, no nesting: the checkbox selects the group, the name button expands it. */}
+                      <div className="wizard-group">
+                        <label className="wizard-group-check">
+                          <input type="checkbox" id={`group-${g.key}`} aria-label={`Select all in ${g.label}`} checked={n === g.items.length}
                             ref={el => { if (el) el.indeterminate = n > 0 && n < g.items.length }}
                             onChange={e => toggleGroup(g.items, e.target.checked)} />
-                          {g.label}
                         </label>
-                      </summary>
-                      <ul className="plain-list">
-                        {g.items.map(o => (
-                          <li key={o.key}>
-                            <label>
-                              <input type="checkbox" id={`item-${g.key}-${o.key}`} checked={selected.has(o.key)} onChange={() => toggle(o.key)} />
-                              {o.name}
-                            </label>
-                          </li>
-                        ))}
-                      </ul>
-                    </details>
+                        <Expander open={isOpen(g.key, i)} onToggle={() => toggleOpen(g.key, i)} id={`group-expand-${g.key}`}>{g.label}</Expander>
+                      </div>
+                      {isOpen(g.key, i) && (
+                        <ul className="plain-list">
+                          {g.items.map(o => (
+                            <li key={o.key}>
+                              <label>
+                                <input type="checkbox" id={`item-${g.key}-${o.key}`} checked={selected.has(o.key)} onChange={() => toggle(o.key)} />
+                                {o.name}
+                              </label>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
                   )
                 })}
               </div>

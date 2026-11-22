@@ -30,6 +30,7 @@
   --color-cat-even-lighter-orange: #b45309; /* expense category items */
 
   /* Spacing */
+  --space-hairline: 2px; /* gap between the wizard group checkbox and its name button */
   --space-xs: 4px;
   --space-sm: 8px;
   --space-md: 16px;
@@ -57,6 +58,7 @@
 
   /* Controls */
   --size-touch: 44px; /* smallest touch target (WCAG 2.5.8 and the app standard) */
+  --size-target-min: 24px; /* WCAG 2.5.8 minimum for small buttons and links in lists */
   --size-banner-icon: 24px;
   --size-tip-mark: 1.25rem; /* the "i" beside a name that has a tooltip */
   --size-toggle-option: 8.5rem; /* one Toggle option, desktop */

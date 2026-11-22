@@ -41,12 +41,22 @@ const sheet = (rows: string) => `<?xml version="1.0"?><worksheet xmlns="http://s
 const str = (ref: string, t: string) => `<c r="${ref}" t="inlineStr"><is><t>${t}</t></is></c>`
 
 /** A minimal XLSX with the given sheet parts. */
-export function xlsx(sheets: (string | Uint8Array)[]): Uint8Array {
+export function xlsx(sheets: (string | Uint8Array)[], extra: Record<string, Uint8Array> = {}): Uint8Array {
   const files: Record<string, Uint8Array> = {
-    '[Content_Types].xml': strToU8(CT), 'xl/workbook.xml': strToU8(workbook(sheets.length)), 'xl/_rels/workbook.xml.rels': strToU8(rels(sheets.length)),
+    '[Content_Types].xml': strToU8(CT), 'xl/workbook.xml': strToU8(workbook(sheets.length)), 'xl/_rels/workbook.xml.rels': strToU8(rels(sheets.length)), ...extra,
   }
   sheets.forEach((s, i) => { files[`xl/worksheets/sheet${i + 1}.xml`] = typeof s === 'string' ? strToU8(s) : s })
   return zipSync(files, { level: 9 })
+}
+
+/** One sheet of `rows` rows with `notes` cell notes (comments): the reader must stay fast as both grow (security-v0.6 3.1). */
+export function manyNotesXlsx(rows: number, notes: number): Uint8Array {
+  const body = Array.from({ length: rows }, (_, i) => `<row r="${i + 1}">${str(`A${i + 1}`, 'x')}</row>`).join('')
+  const comments = '<comments><commentList>' + Array.from({ length: notes }, (_, i) => `<comment ref="B${i + 1}"><text><t>n</t></text></comment>`).join('') + '</commentList></comments>'
+  return xlsx([sheet(body)], {
+    'xl/worksheets/_rels/sheet1.xml.rels': strToU8('<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments" Target="../comments1.xml"/></Relationships>'),
+    'xl/comments1.xml': strToU8(comments),
+  })
 }
 
 const ODS_MIME = 'application/vnd.oasis.opendocument.spreadsheet'
@@ -59,10 +69,19 @@ export const odsStr = (t: string) => `<table:table-cell office:value-type="strin
 const mergedStr = (t: string) => '<table:table-cell office:value-type="string" table:number-columns-spanned="2"><text:p>' + t + '</text:p></table:table-cell><table:covered-table-cell/>'
 export const ods = (content: string) => zipSync({ mimetype: strToU8(ODS_MIME), 'content.xml': strToU8(content) }, { level: 9 })
 
+/** A copy of a zip with the "encrypted" flag (bit 0) set in every central directory entry, as a password-protected file has. */
+function markEncrypted(zip: Uint8Array): Uint8Array {
+  const out = zip.slice()
+  for (let i = 0; i + 8 < out.length; i++) if (out[i] === 0x50 && out[i + 1] === 0x4b && out[i + 2] === 0x01 && out[i + 3] === 0x02) out[i + 8] |= 1
+  return out
+}
+
 /** Files that must fail with a plain "Invalid: …" message and write nothing. */
 export function badFiles(): Record<string, Uint8Array> {
   const real = readTestFile('test_xlsx_import_data.xlsx')
   return {
+    'encrypted.xlsx': markEncrypted(xlsx([sheet('')])),
+    'encrypted.ods': markEncrypted(ods(odsDoc(''))),
     // One sheet that unpacks to 200 MB of spaces.
     'bomb.xlsx': xlsx([new Uint8Array(200 * 1024 * 1024).fill(32)]),
     'fourteen.xlsx': xlsx(Array.from({ length: 14 }, () => sheet(''))),

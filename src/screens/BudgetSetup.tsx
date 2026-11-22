@@ -207,7 +207,8 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, rewardsEnable
 
   function setupRow(n: CatNode) {
     const total = isTotal(n)
-    const nameId = domId('name', n)
+    // Prefixed so the ids stay unique while the Budget table is open behind this dialog (as the highlight dialog's `hl_` prefix does).
+    const nameId = domId('setup_name', n)
     const estId = domId('estimate', n)
     const sibs = n.parent?.children ?? roots
     const i = sibs.indexOf(n)
@@ -228,7 +229,7 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, rewardsEnable
               </label>
             )}
             {expandable
-              ? <Expander open={expanded.has(n.cat.id)} onToggle={() => toggleRow(n.cat.id)} id={domId('expand', n)}>{label}</Expander>
+              ? <Expander open={expanded.has(n.cat.id)} onToggle={() => toggleRow(n.cat.id)} id={domId('setup_expand', n)}>{label}</Expander>
               : <span>{label}</span>}
           </span>
         </th>

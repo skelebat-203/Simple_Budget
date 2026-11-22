@@ -138,6 +138,15 @@ export function readXlsx(data: Uint8Array): Workbook {
     if (!rel || !rel.type.endsWith('/worksheet')) return { name, rows }
     const ws = xml(zip, rel.target)?.worksheet as Node | undefined
     const sheetNotes = notes(zip, rels(zip, rel.target))
+    // Notes grouped by row once, so each row looks up only its own (a loop over every note per row is quadratic).
+    const notesByRow = new Map<number, { c: number; note: string }[]>()
+    for (const [k, note] of sheetNotes) {
+      const at = ref(k)
+      if (!at) continue
+      const list = notesByRow.get(at.r)
+      if (list) list.push({ c: at.c, note })
+      else notesByRow.set(at.r, [{ c: at.c, note }])
+    }
     let r = -1
     for (const row of arr((ws?.sheetData as Node | undefined)?.row)) {
       r = row.r != null ? Number(row.r) - 1 : r + 1
@@ -167,16 +176,20 @@ export function readXlsx(data: Uint8Array): Workbook {
         cells[c] = note ? { v, note } : { v }
       }
       // Notes on cells that hold no value element at all.
-      for (const [k, note] of sheetNotes) {
-        const at = ref(k)
-        if (at && at.r === r && !cells[at.c]) { budget.take(); cells[at.c] = { v: '', note } }
+      for (const n of notesByRow.get(r) ?? []) {
+        if (!cells[n.c]) { budget.take(); cells[n.c] = { v: '', note: n.note } }
       }
       rows[r] = cells
     }
     // Notes on rows with no cells.
-    for (const [k, note] of sheetNotes) {
-      const at = ref(k)
-      if (at && at.r < IMPORT_MAX_ROWS && at.c < IMPORT_MAX_COLS && !rows[at.r]) { budget.take(); rows[at.r] = []; rows[at.r][at.c] = { v: '', note } }
+    for (const [at, list] of notesByRow) {
+      if (at >= IMPORT_MAX_ROWS || rows[at]) continue
+      for (const n of list) {
+        if (n.c >= IMPORT_MAX_COLS) continue
+        budget.take()
+        rows[at] ??= []
+        rows[at][n.c] = { v: '', note: n.note }
+      }
     }
     return { name, rows }
   })

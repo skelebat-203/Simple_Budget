@@ -365,7 +365,8 @@ export function checkBackup(data: unknown): Backup {
   if (badTreeRows(cats).size) throw new BackupError('has categories nested in a loop or more than three levels deep. Export a new backup and try again.')
   return {
     ...b,
-    budgetItems: b.budgetItems.map(({ id, categoryId, amount, date, description, undated, createdAt, updatedAt }) => ({ id, categoryId, amount, date, ...(description ? { description } : {}), ...(undated ? { undated } : {}), createdAt, updatedAt })),
+    // Descriptions get the same cleaning as names (control and format characters out), as when they are typed or imported.
+    budgetItems: b.budgetItems.map(({ id, categoryId, amount, date, description, undated, createdAt, updatedAt }) => ({ id, categoryId, amount, date, ...(description && cleanDescription(description) ? { description: cleanDescription(description) } : {}), ...(undated ? { undated } : {}), createdAt, updatedAt })),
     categories: cats.map(c => ({ ...c, name: cleanName(c.name) })),
     settings: b.settings.slice(0, 1).map(s => cleanSettings({ ...s, rewardsEnabled: !!s.rewardsEnabled })),
   }

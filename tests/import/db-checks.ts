@@ -54,6 +54,16 @@ export async function run(check: Check) {
     }
   }
 
+  // A restored backup's descriptions are cleaned like typed ones: control and format characters out, and one made only of them dropped (security-v0.6 3.2).
+  await reset(true)
+  const raw = JSON.parse(JSON.stringify(await exportBackup()))
+  const catId = raw.categories.find((c: { parentId: number | null }) => c.parentId != null).id
+  const rawItem = { categoryId: catId, amount: 5, date: '2026-01-02', createdAt: 1, updatedAt: 1 }
+  const rtlOverride = String.fromCharCode(0x202e), zeroWidth = String.fromCharCode(0x200b), nul = String.fromCharCode(0)
+  raw.budgetItems = [{ id: 1, ...rawItem, description: `a${rtlOverride}b${zeroWidth}c${nul} d` }, { id: 2, ...rawItem, description: rtlOverride + zeroWidth }]
+  const cleaned = checkBackup(raw).budgetItems
+  check(cleaned[0].description === 'abc d' && cleaned[1].description === undefined, 'restore cleans descriptions: format and control characters removed, an empty result is dropped')
+
   // Day sheet times are kept and order the Day table (Q10).
   await reset(true)
   await applyImport(await preview('day.csv', readTestFile('test_csv_day.csv')))

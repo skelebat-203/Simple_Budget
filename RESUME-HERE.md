@@ -104,11 +104,11 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
     - Files: `src/screens/Onboarding.tsx`, import components
     - Verify: skipping works; imported data replaces the preset choice cleanly
     - Deps: 11, 14
-17. **UI/UX review** (v0.6/17) — human approval, `0005` checklist, all widths and themes.
+17. **UI/UX review** (v0.6/17) ✅ (human approved 2026-11-21) — human approval, `0005` checklist, all widths and themes.
     - Deps: 1–16
-18. **Accessibility pass** (v0.6/18) — `docs/audits/a11y/a11y-v0.6.md`.
+18. **Accessibility pass** (v0.6/18) ⏳ (written 2026-11-21, fixes in v0.6.37) — `docs/audits/a11y/a11y-v0.6.md`. Lighthouse 100 in every state at 1280, 375 and 320px. Six findings fixed (A1 to A6; A6 is the wizard step 3 group row, rebuilt as a checkbox plus an Expander button 2px apart, no focus trap). Human screen reader test: pass. **Waiting on the human:** re-check of the A6 change, then approval; commits are held until the pass is approved.
     - Deps: 17
-19. **Security review** (v0.6/19) — `docs/audits/security/security-v0.6.md`; import is the main new surface (file parsing, size limits, injection into stored text); confirm fast-xml-parser is 5.12.0 or later (step 14). On approval bump to v0.7.0.
+19. **Security review** (v0.6/19) ⏳ (written 2026-11-21, fixes in v0.6.37; awaiting approval) — `docs/audits/security/security-v0.6.md`; import is the main new surface. One Low fixed (XLSX notes loop, 3.1), one Info fixed (restore descriptions, 3.2). 7.1 (Medium, fast-xml-parser installed 5.11.2 vs pinned 5.12.0) fixed by a targeted install; tests and build pass. Severity ratings (3.1 Low, 7.1 Medium) still need the human's confirmation: the matrix file is unreadable from this session. On approval bump to v0.7.0.
     - Deps: 18
 
 ### Execution
@@ -119,7 +119,7 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
 - ✅ **E — Wizard** (step 11; Onboarding): after A; design settled, so it can run any time after A (before C or D if wanted).
 - **F — Import** (steps 13, 13a, 14, 15, 16; import, Backup, BudgetSetup, Onboarding): after E.
 - **Reviews** (steps 17–19): main session with the user.
-- Status: ✅ A · ✅ B · ✅ C · — D dropped · ✅ E · ✅ F (13, 13a, 14, 15, 16 all ✅) · ☐ reviews (17–19, with the human)
+- Status: ✅ A · ✅ B · ✅ C · — D dropped · ✅ E · ✅ F (13, 13a, 14, 15, 16 all ✅) · ⏳ reviews (17 ✅; 18 and 19 written; A6 and 7.1 fixed, screen reader pass; waiting on the human: re-check of A6, severity confirmation, approval)
 - **Group F order (changed 2026-11-11):** 15 (without Import section) → 14 (mockups, approval, build) → 16 → 13a when an ODS file exists. Steps 15 and 14 were merged to `main` on 2026-11-21 (v0.6.21 to v0.6.29). Session model: Sonnet; Opus only for 13a and the security review if needed. Command style for agents: no `cd`, no chained commands, use the git-broker tools for git, and no mockups or screenshot sets unless the human asks for a specific change.
 
 ### Session process

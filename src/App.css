@@ -59,6 +59,7 @@
 }
 .banner-title { font-size: var(--font-size-base); font-weight: var(--font-weight-bold); }
 .banner a { color: var(--color-alert); }
+.banner li a { display: inline-block; min-height: var(--size-target-min); } /* error links: 24px target (WCAG 2.5.8) */
 .banner ul { margin: var(--space-xs) 0 0; padding-left: var(--space-lg); }
 .banner > ul + ul { margin-top: calc(-1 * var(--space-sm)); } /* a list continued after a Show more button: no gap */
 
@@ -123,7 +124,7 @@
   border-bottom: 1px solid var(--color-border); font-weight: var(--font-weight-bold); font-size: var(--font-size-sm);
 }
 .option { padding: var(--space-sm) var(--space-md) var(--space-sm) calc(var(--space-md) * 2); min-height: 44px; cursor: pointer; }
-.option[aria-selected="true"], .option:hover { background: var(--color-border); }
+.option[aria-selected="true"], .option:hover { background: var(--color-border); color: var(--color-foreground-page); } /* the lighter category colors fall to about 4:1 on this grey */
 .listbox-empty { padding: var(--space-sm) var(--space-md); color: var(--color-text); }
 
 /* --- Tables (docs/design/0004-table-design.md) --- */
@@ -231,8 +232,7 @@
 .banner-info { border-color: var(--color-info); background: color-mix(in srgb, var(--color-info), white 92%); }
 .banner-warn { border-color: var(--color-warn); background: color-mix(in srgb, var(--color-warn), white 90%); }
 .banner-success { border-color: var(--color-success); background: color-mix(in srgb, var(--color-success), white 90%); }
-.banner-success .banner-title { color: var(--color-success); }
-.banner-warn .banner-title, .banner-info .banner-title { color: var(--color-foreground-page); }
+.banner-success .banner-title, .banner-warn .banner-title, .banner-info .banner-title { color: var(--color-foreground-page); } /* the icon carries the color; green text on the tint was 4.38:1 */
 
 /* --- Budget setup treegrid (0007 §10) --- */
 .dialog-body, .dialog-body > .table-box { min-width: 0; max-width: 100%; }
@@ -428,8 +428,11 @@ nav .btn.icon:hover:not(:disabled) { background: var(--color-border); }
 .wizard-layout { display: grid; grid-template-columns: 1fr auto; gap: var(--space-md); align-items: start; }
 @media (max-width: 600px) { .wizard-layout { grid-template-columns: 1fr; } }
 .wizard-list { border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-sm) var(--space-md); max-height: 20rem; overflow: auto; }
-.wizard-list summary { cursor: pointer; font-weight: var(--font-weight-bold); min-height: 2.75rem; display: flex; align-items: center; }
-.wizard-list summary:has(:focus-visible), .wizard-list label:has(:focus-visible) { outline: 3px solid var(--color-info); outline-offset: 2px; }
+/* Group row: checkbox target and name button side by side, a hairline gap apart (owner exception to the control-margin rule). */
+.wizard-group { display: flex; align-items: stretch; gap: var(--space-hairline); }
+.wizard-group .wizard-group-check { justify-content: center; min-width: var(--size-touch); }
+.wizard-group .expander { flex: 1; font-weight: var(--font-weight-bold); }
+.wizard-list label:has(:focus-visible), .wizard-list .expander:focus-visible { outline: 3px solid var(--color-info); outline-offset: 2px; }
 .wizard-list ul { margin: 0 0 var(--space-sm) var(--space-lg); }
 .wizard-list label { display: flex; align-items: center; gap: var(--space-sm); min-height: 2.75rem; cursor: pointer; }
 .wizard-list input[type=checkbox] { width: 1.375rem; height: 1.375rem; flex: none; accent-color: var(--color-primary-background); }
@@ -464,12 +467,13 @@ nav .btn.icon:hover:not(:disabled) { background: var(--color-border); }
 .tab:hover { background: var(--color-border); }
 .chevron:hover, .name-link:hover, .expander:hover { background: var(--color-border); }
 .name-link:hover { text-decoration-thickness: 3px; }
+.name-link:hover, .expander:hover { color: var(--color-foreground-page); } /* same reason as .option:hover */
 .help-btn:not(:disabled):hover { border-color: var(--color-primary-hover); }
 .choice-card:hover { background: var(--color-border); border-color: var(--color-primary-background); }
 .choice-card:has(:checked):hover { background: color-mix(in srgb, var(--color-primary-background), white 84%); }
 .choice-button:hover { background: var(--color-border); }
 .choice-button:has(:checked):hover { background: var(--color-primary-hover); }
-.details summary:hover, .wizard-list summary:hover { background: var(--color-border); }
+.details summary:hover { background: var(--color-border); }
 .check:hover { background: var(--color-border); }
 .banner a:hover, .error-summary a:hover { text-decoration-thickness: 3px; }
 

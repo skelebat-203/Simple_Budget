@@ -8,7 +8,7 @@ import { buildPlan, type ImportOptions, type ImportPlan } from '../../src/import
 import { detect, sourceRows } from '../../src/import/sheets'
 import { LOST_VALUES_TITLE, lostValuesText } from '../../src/components/import/text'
 import { dateBounds } from '../../src/budget/validate'
-import { badFiles, formulaFiles, ods, odsDoc, odsRow, odsStr, odsTable, readTestFile, seededCategories, SHEET_YEAR, TEST_FILES, TODAY, UNKNOWN_TOP_CSV } from './fixtures'
+import { badFiles, formulaFiles, manyNotesXlsx, ods, odsDoc, odsRow, odsStr, odsTable, readTestFile, seededCategories, SHEET_YEAR, TEST_FILES, TODAY, UNKNOWN_TOP_CSV } from './fixtures'
 
 /**
  * Sheet totals that differ from the import because the anonymized sheet itself doesn't add up
@@ -27,6 +27,10 @@ const ODS_LOST_CELLS: Record<string, number> = {
 /** Empty covered cells the lost-values check finds in the amount area of the ODS test file (Oct finds 101 of its 102 lost cells). */
 const ODS_LOST_IN_DATA = 1110
 const ODS_LOST_SHEETS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Annual']
+/** Many-notes regression file: the old reader took 28 s on this size; the fixed one takes well under a second. */
+const MANY_NOTES = 40_000
+const MANY_NOTES_ROWS = 5000
+const MANY_NOTES_MAX_MS = 5000
 const purchaseList = (p: ImportPlan) => p.purchases.map(x => `${x.date} ${x.amount} ${x.description ?? ''}`).join('|')
 
 type Check = (ok: boolean, msg: string) => void
@@ -207,5 +211,10 @@ export async function run(check: Check) {
     try { plan(await read(name, bytes), seeded) } catch (e) { msg = e instanceof ImportError ? `Invalid: ${e.message}` : `OTHER ${String(e)}` }
     check(msg.startsWith('Invalid: '), `${name}: ${msg} (${Math.round(performance.now() - t0)} ms)`)
   }
+  // Many cell notes on a tall sheet read in time proportional to their number (was rows × notes: 28 s for 40,000 notes).
+  const notesAt = performance.now()
+  const notesBook = await read('manynotes.xlsx', manyNotesXlsx(MANY_NOTES_ROWS, MANY_NOTES))
+  const notesMs = Math.round(performance.now() - notesAt)
+  check(notesBook.sheets[0].rows.length === MANY_NOTES_ROWS && notesMs < MANY_NOTES_MAX_MS, `${MANY_NOTES} notes on ${MANY_NOTES_ROWS} rows read in ${notesMs} ms (limit ${MANY_NOTES_MAX_MS} ms)`)
   return { totals: Object.fromEntries(totals) }
 }
