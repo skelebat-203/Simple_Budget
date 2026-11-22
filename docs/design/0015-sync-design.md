@@ -1,6 +1,6 @@
 # 0015 — Sync to a Google Sheet (v0.7 step 2)
 
-Status: **draft, not authoritative.** Open questions are marked **Q**. Nothing here is built until the human answers them and approves this doc. Scope lives in the roadmap (v0.7, "Sync to a Google Sheet"); this doc holds the spec.
+Status: **approved 2026-11-21.** Decisions are marked with the question number (Q1 to Q10) they answer. Scope lives in the roadmap (v0.7, "Sync to a Google Sheet"); this doc holds the spec.
 
 ## 1. Goal
 
@@ -13,64 +13,74 @@ The same budget can be used and updated on several devices. A Google Sheet in th
 - **StorageAdapter interface** in `src/storage/`: the Dexie store stays the local source of truth. A Google Sheets adapter pulls and pushes changes. Later adapters (another provider) plug into the same interface.
 - **Human setup task:** a Google Cloud project with an OAuth client ID (web application, the app's origins as allowed origins), and the OAuth consent screen. Only the human can create this. The client ID is public by design; there is no client secret in a browser app.
 
-**Q1.** Is browser-only (no server of ours) acceptable? It decides how v0.2 5.4 is re-rated (see §7).
+**Q1 — decided 2026-11-21:** browser-only, no server of ours. Several people can share one budget: each signs in with their own Google account, and the owner shares the sheet with them in Google Drive.
 
-**Q2.** Which OAuth scope? Options:
-
-| Scope | What the app can reach | Notes |
-|---|---|---|
-| `drive.file` (recommended) | Only sheets the app created or the user picked with the Google Picker | Least access. "Link an existing sheet" then goes through the Picker. Non-sensitive scope: no Google verification review. |
-| `spreadsheets` | Every sheet in the user's Drive | Sensitive scope: Google verification needed before the public can use it. |
+**Q2 — decided 2026-11-21:** scope `drive.file` with the Google Picker. The app reaches only sheets it created or the user picked. To share, user A creates the sheet in the app and shares it with user B in Google Drive; B picks it once per device with "Link a sheet". Google sign-in tokens expire after about an hour.
 
 ## 3. Sheet layout and data shape
 
 The roadmap leaves this open: the earlier JSON-doc shape (version and `updatedAt` per record) has to fit a sheet that people can read.
 
-**Q3.** Which layout?
+**Q3 — decided 2026-11-21:** no readable layout; encryption (Q8) comes first. The sheet holds data tabs (`Categories`, `Purchases`, `Settings`), one row per record: plain `id`, `updatedAt` and `deleted` columns for matching and merging, and one encrypted column with the record's content. Mockups of the options considered: `images/v0.7-sync-layout/` (A was the base of this choice; B and C were dropped).
 
-| Option | Layout | Readable by people | Sync reliability |
-|---|---|---|---|
-| A. Data tabs (recommended) | One tab per table (`Categories`, `Purchases`, `Settings`), one row per record, a header row, hidden columns `id`, `updatedAt`, `deleted` | Yes, as plain lists | High: one row = one record |
-| B. Budget-like tab | Tabs that look like the app's Month or Annual table | Most readable | Low: hard to map edits back to records; human edits break sync |
-| C. A + B | Option A for sync, plus a read-only summary tab the app rewrites | Yes | High; the summary tab is ignored on pull |
+**Q4 — decided 2026-11-21:** the sheet can't be locked (everyone who syncs is an editor), so hand edits flow back into the app, mostly silently, through the same checks the import uses (`0013`). The sheet gets "warning only" protection. While a sync runs, the tables take no changes (no adding or editing in them). The Add purchase screen still works, but its saves are held and written once the sync completes or fails, so a save never collides with a sync.
 
-**Q4.** May people edit the sheet by hand, and should the app pick those edits up? If yes, every pulled cell is untrusted input and goes through the same checks as an import (`0013`). If no, the app overwrites hand edits.
-
-**Q5.** "Seed categories and table layout from the sheet's current layout" (roadmap): does this mean that linking a sheet made by the app on another device copies its categories here? Or does it mean reading a sheet the human made by hand, like the import does? The second one is the import flow with a live sheet, a much larger job.
+**Q5 — decided 2026-11-21:** "Seed categories and table layout from the sheet's layout" is dropped. Linking a synced sheet already brings its categories, because categories sync like any other record.
 
 ## 4. Sync rules (decided in the roadmap; details proposed)
 
-- **Sync-on-open:** pull, merge, then push. Also after each save while online (**Q6:** or only on open, plus a "Sync now" button?).
+- **When sync runs (Q6 — decided 2026-11-21):** on open, after each save, every 1 minute while the app is open, and a Sync now button. Each run pulls, merges, then pushes. Live push is not possible without a server of our own.
 - **Last-write-wins** per record, by `updatedAt` (device clock). Ties go to the remote copy.
-- **Tombstones:** a deleted record keeps its row with `deleted` set, so other devices learn of the delete (v0.3 6.2). **Q7:** how long are tombstones kept before they're purged (proposed: 90 days)?
+- **Tombstones:** a deleted record keeps its row with `deleted` set, so other devices learn of the delete (v0.3 6.2). **Q7 — decided 2026-11-21:** tombstones are kept 90 days, then purged.
 - **Ids:** records need ids that are unique across devices (v0.2 8.8). Dexie's auto-increment ids clash between devices, so synced records get a random UUID. This means a Dexie migration (v9).
 - **Merge checks inside the write transaction** (v0.5 3.2): re-check sibling names on merge. A clash gets a suffix and a note, so a name is never dropped silently.
 
 ## 5. Encryption (open in the roadmap)
 
-**Q8.** Do you want optional passphrase encryption?
-- **On:** cells hold encrypted text (AES-GCM, key from the passphrase via PBKDF2 or Argon2). The sheet is then unreadable to people, which removes the point of a readable layout (§3). A lost passphrase means lost remote data.
-- **Off (proposed for v0.7):** the sheet is plain and protected by the Google account. Encryption is then deferred.
+**Q8 — decided 2026-11-21:** a passcode encrypts the sheet; it is required, not optional.
+- Each record's content is encrypted with AES-GCM (Web Crypto). The key comes from the passcode via PBKDF2 (Web Crypto) with a random salt stored in the sheet's `Settings` tab.
+- User A sets the passcode when creating the sheet and gives it to user B outside the app. B needs both the shared sheet and the passcode.
+- A lost passcode means the sheet can't be read; the local data on each device is unaffected.
+- The passcode is never written to the sheet or sent anywhere. Each device remembers it (decided 2026-11-21) as a non-extractable `CryptoKey` in IndexedDB, so the key can be used but not read out; anyone with the unlocked device can sync. Unlink removes the key.
+- Hand edits (Q4) to encrypted cells fail to decrypt and are skipped with a note; edits to the plain columns go through the import checks.
 
 ## 6. UI (proposed)
 
 - A **Sync** entry next to Backup that opens a `Dialog`: sign in with Google, then create a new sheet or link one (Picker), plus last sync time, Sync now, and Unlink.
 - Status messages go through the single live region. A sync error says what failed and that the local data is safe.
 
-**Q9.** Should sync be offered in onboarding (the wizard) too, or only from the Sync button?
+**Q9 — decided 2026-11-21:** sync setup starts once onboarding is complete.
 
 ## 7. Security items to settle (from `security-v0.6.md`)
 
 | Item | What it needs | With the §2 proposal |
 |---|---|---|
-| v0.2 5.4 (Medium) ⚠ | Network review: auth, CORS, rate and body limits, error leakage | No server of ours: Google handles auth, CORS and limits. Remaining: the CSP `connect-src` and `script-src` additions for Google, token kept in memory only (not in storage), errors shown without raw API text. To re-rate after Q1. |
-| v0.2 2.3 | Formula injection into cells | Write with `valueInputOption=RAW`, and prefix a `'` when text starts with `=`, `+`, `-` or `@` |
+| v0.2 5.4 (Medium) ⚠ | Network review: auth, CORS, rate and body limits, error leakage | Reviewed 2026-11-21, see §7.1; proposed re-rating Low |
+| v0.2 2.3 | Formula injection into cells | Write with `valueInputOption=RAW`; encrypted text (base64) can start with `+`, so still prefix a `'` when a cell starts with `=`, `+`, `-` or `@` |
 | v0.3 6.2 | Tombstones | §4 |
 | v0.2 8.8 | Ids across devices | §4, UUIDs |
 | v0.5 3.2 | Two-tab and multi-device name clashes | §4 merge checks |
-| v0.2 1.3, 2.4, 3.7, 4.3, 4.4, 6.6, 6.7, 7.7 | File checks, synced-value allowlists, read checks, service worker takeover, frame-ancestors, encryption, logging | Each mapped to a build check in step 3 once Q1 to Q8 are answered |
+| v0.2 1.3, 2.4, 3.7, 4.3, 4.4, 6.6, 6.7, 7.7 | File checks, synced-value allowlists, read checks, service worker takeover, frame-ancestors, encryption, logging | Each mapped to a build check in step 3 |
+
+### 7.1 Network review (v0.2 5.4)
+
+v0.2 5.4 was written for a sync server of our own. Q1 removed that server, so most of it no longer applies; what remains is the browser's traffic to Google.
+
+| Part of 5.4 | With browser-only sync |
+|---|---|
+| Auth (CWE-306) | Google sign-in (Identity Services token flow). The access token is kept in memory only, never in storage, and expires after about an hour. The app asks only for `drive.file`. |
+| CORS (CWE-942) | No server of ours, so no CORS policy to get wrong. Google's APIs allow browser calls with a token. |
+| Rate and body limits (CWE-770) | Google enforces them. **Risk:** the Sheets API allows a fixed number of reads per minute per Cloud project (shared by every user) and per user. With 1-minute sync, each open app makes about one read a minute, so the project quota caps how many apps can be open at once. Mitigations: one batched read per sync; back off on a quota error (HTTP 429) and retry later; sync only while the app is visible; ask Google for a higher quota (free) before a wider release. |
+| Error leakage (CWE-209) | Errors are shown as plain messages ("Sync failed, your data on this device is safe"); raw API responses are not shown or logged. |
+
+New points the review adds:
+- **CSP:** sign-in and the Picker load Google scripts and frames. Needed: `script-src` `https://accounts.google.com/gsi/client` and `https://apis.google.com`; `connect-src` `https://sheets.googleapis.com` and `https://www.googleapis.com`; `frame-src` `https://accounts.google.com` and `https://docs.google.com`. Each is an exact host, never a wildcard. `frame-ancestors` (v0.2 6.7) stays `'none'`.
+- **Untrusted pulls:** every pulled row is untrusted (another device or a hand edit): it must decrypt (AES-GCM fails on any change), then pass the import checks (`0013`) before it reaches Dexie.
+- **Stored key:** the remembered passcode key is non-extractable (above).
+
+**Proposed re-rating: Medium → Low**, held open until step 3 is built and the v0.7 security review confirms each mitigation.
 
 ## 8. Testing (proposed)
 
 - Adapter logic (merge, tombstones, formula neutralizing) tested against an in-memory fake sheet in a `tests/sync/` harness, like `tests/import/`.
-- **Q10.** A real end-to-end test needs a test Google account and the OAuth client from §2. Will you provide a test account, or do you want to run those checks yourself? (Google sign-in can't run in the sandbox.)
+- **Q10 — decided 2026-11-21:** the human provides a test Google account when the end-to-end test is reached, and creates the OAuth client (§2) with step-by-step instructions at step 3.

@@ -1,10 +1,10 @@
 # RESUME-HERE
 
 Tracking file for current work status. Roadmap authority: `docs/design/0003-roadmap.md`.
-Design: `0015-sync-design.md` (sync, draft), `0004-table-design.md` (table), `0006-prototype.html` (v0.2 UI), `0007-v0.3-design-updates.md` (v0.3 changes), `0008-v0.5-design-updates.md` (v0.5 changes), `0009-v0.6-design-updates.md` (v0.6), `0012-design-standards.md` (standards), `0014` (Annual Misc breakdown). Higher-numbered doc wins on conflict.
+Design: `0015-sync-design.md` (sync), `0004-table-design.md` (table), `0006-prototype.html` (v0.2 UI), `0007-v0.3-design-updates.md` (v0.3 changes), `0008-v0.5-design-updates.md` (v0.5 changes), `0009-v0.6-design-updates.md` (v0.6), `0012-design-standards.md` (standards), `0014` (Annual Misc breakdown). Higher-numbered doc wins on conflict.
 
 ## Current version
-v0.7.0 (v0.6 complete 2026-11-21, v0.6.0 to v0.6.37; reports: `docs/audits/a11y/a11y-v0.6.md`, `docs/audits/security/security-v0.6.md`). Step 1 ✅ (v0.7.1 to v0.7.3). Step 2: `0015-sync-design.md` draft waiting for human answers.
+v0.7.0 (v0.6 complete 2026-11-21, v0.6.0 to v0.6.37; reports: `docs/audits/a11y/a11y-v0.6.md`, `docs/audits/security/security-v0.6.md`). Step 1 ✅ (v0.7.1 to v0.7.3). Step 2 ✅ (v0.7.4). Step 3 (sync build) in progress on `worktree-v0.7-group-a`; merge to `main` after sync is built and approved.
 
 ## v0.7 plan of action
 Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per completed-work commit; trailer `Plan-Step: v0.7/N`). The final step bumps to the next minor version (v0.8.0). UI steps need human approval (`0005-ui-ux-review-checklist.md`). Baseline: v0.7.0. Data: Dexie v8 (`src/storage/structure.ts`). Testing: headless Chromium (`tools/browsers/`, `lighthouse-sandbox.md`); import harness `npm run test:import` (`tests/import/README.md`).
@@ -20,9 +20,10 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
    - Deps: none (do first: later steps add dialogs)
 2. **Sync design and network review** (v0.7/2) — new design doc for sync to a Google Sheet; the sheet layout, data shape and encryption questions settled; the v0.2 5.4 network review done first.
    - Source: roadmap v0.7; `security-v0.6.md` held items (v0.2 5.4 ⚠ REQUIRES REVIEW BEFORE PROCEEDING, v0.2 2.3, v0.3 6.2, v0.2 1.3, 2.4, 3.7, 4.3, 4.4, 6.6, 6.7, 7.7, 8.8, v0.5 3.2)
-   - Files: `docs/design/0015-sync-design.md` (draft, questions Q1 to Q10); roadmap update
+   - Files: `docs/design/0015-sync-design.md`; roadmap update
    - Verify: human approves the design doc; 5.4 re-rated
-   - Deps: none; blocks 3; **needs human decision**: sheet layout, data shape, encryption
+   - Deps: none; blocks 3
+   - ✅ (v0.7.4, `0015` approved 2026-11-21; v0.2 5.4 reviewed, proposed Low)
 3. **Sync to a Google Sheet** (v0.7/3) — StorageAdapter interface, Google Sheets adapter, sync-on-open (pull then push, last-write-wins, tombstones), optional passphrase encryption (open), seed from the sheet's layout.
    - Source: roadmap v0.7; the step 2 design doc
    - Files: `src/storage/`, new adapter, settings UI (built on the step 1 `Dialog`)
@@ -104,7 +105,7 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
 - **D — Import** (step 14; `tests/import/`): any time.
 - **E — Charts** (step 15): after step 5.
 - **Reviews** (steps 16–18): main session with the user.
-- Status: ✅ A · ⏳ F (step 2: `0015` waiting for human answers) · ☐ A2 · ☐ B · ☐ C · ☐ D · ☐ E · ☐ reviews
+- Status: ✅ A · ⏳ F (step 2 ✅; step 3 in progress) · ☐ A2 · ☐ B · ☐ C · ☐ D · ☐ E · ☐ reviews
 
 ### Session process
 Run option 1: one session per group, fresh start at each group boundary. A session starts by reading this file and the roadmap, then:

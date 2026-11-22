@@ -140,7 +140,7 @@ tracked as a later-version item.
   - Sheet layout and data shape: open. The earlier JSON-doc shape (version + updatedAt per record) must be reconciled with a sheet that people can read, decided in the design doc
   - Sync-on-open: pull then push, last-write-wins, tombstones
   - Optional passphrase client-side encryption (open: whether encrypted content in a shared sheet is acceptable)
-  - Seed categories/table layout from the sheet's current layout (OnlyOffice's role for testing: open)
+  - ~~Seed categories/table layout from the sheet's current layout~~ dropped 2026-11-21: categories already sync as records (`0015` Q5)
 - UI/UX review (human approval)
 - Accessibility pass for charts (alt text, keyboard nav, screen reader)
 - Security review (covers sync)
@@ -170,4 +170,5 @@ tracked as a later-version item.
 ## Unscoped ideas (not in any version; each needs review before it can be scoped)
 - Subscriptions table: a view of recurring subscriptions with state, billing day and cost (the human's spreadsheet has a " Subscriptions " sheet; logged 2026-11-11)
 - Search purchases by name, date or amount (logged 2026-11-11, from the import review)
+- Undo: up to 50 steps; the list of changes lasts until the app is closed (logged 2026-11-21, from the sync design)
 - Popup listing all purchases of an item, to find a specific purchase in the Week and Month tables (a design question, logged 2026-11-11; see the highlight dialog in `0009` §3)

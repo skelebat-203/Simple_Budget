@@ -1,0 +1,62 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Sync sheet layout options (0015 Q3)</title>
+<style>
+:root{--grid:#c8ccd2;--head:#eef1f5;--tab:#e3e7ec;--tab-on:#fff;--hidden:#fbe9e9;--ink:#1d2430;--note:#555d6b;--accent:#1a5fb4;--font:system-ui,sans-serif;--mono:ui-monospace,monospace;--gap:16px}
+body{font-family:var(--font);color:var(--ink);margin:0;padding:var(--gap);background:#fff}
+section{width:860px;padding:var(--gap);border:2px solid var(--accent);border-radius:8px;margin-bottom:32px}
+h2{margin:0 0 4px;color:var(--accent)} p{margin:4px 0 12px;color:var(--note)}
+table{border-collapse:collapse;font-size:13px;margin-bottom:6px}
+td,th{border:1px solid var(--grid);padding:3px 8px;text-align:left;white-space:nowrap}
+th{background:var(--head)} .rowno{background:var(--head);color:var(--note);text-align:center}
+.hid{background:var(--hidden);font-family:var(--mono);font-size:12px}
+.tabs{display:flex;gap:2px;margin-top:4px} .tabs span{background:var(--tab);padding:4px 12px;border:1px solid var(--grid);border-top:0;font-size:12px}
+.tabs .on{background:var(--tab-on);font-weight:bold}
+.legend{font-size:12px;color:var(--note)} .legend b{background:var(--hidden);padding:0 4px;font-weight:normal}
+.cat{font-weight:bold;background:#f6f7f9} .i1{padding-left:20px} .i2{padding-left:36px} .num{text-align:right}
+.ro{font-size:12px;color:#8a4b00}
+</style></head><body>
+
+<section id="option-a">
+<h2>Option A — Data tabs (recommended)</h2>
+<p>One tab per kind of record. One row = one record. People can read it as plain lists; the app reads and writes it reliably.</p>
+<table>
+<tr><th></th><th>A</th><th>B</th><th>C</th><th>D</th><th>E</th><th>F</th><th>G</th></tr>
+<tr><td class="rowno">1</td><th>Date</th><th>Category</th><th>Item</th><th>Amount</th><th>Description</th><th class="hid">id</th><th class="hid">updatedAt</th></tr>
+<tr><td class="rowno">2</td><td>2026-11-20</td><td>Expenses › Food</td><td>Groceries</td><td class="num">54.20</td><td>Weekly shop</td><td class="hid">7f3a…</td><td class="hid">2026-11-20 18:02</td></tr>
+<tr><td class="rowno">3</td><td>2026-11-21</td><td>Expenses › Car</td><td>Fuel</td><td class="num">40.00</td><td></td><td class="hid">c91e…</td><td class="hid">2026-11-21 08:15</td></tr>
+<tr><td class="rowno">4</td><td>2026-11-21</td><td>Income</td><td>Paycheck</td><td class="num">1,250.00</td><td></td><td class="hid">a02b…</td><td class="hid">2026-11-21 09:00</td></tr>
+</table>
+<div class="tabs"><span class="on">Purchases</span><span>Categories</span><span>Settings</span></div>
+<p class="legend"><b>pink columns</b> are hidden in the sheet; the app uses them to match rows. A deleted row stays with a hidden "deleted" mark until it is cleared.</p>
+</section>
+
+<section id="option-b">
+<h2>Option B — Budget-like tab</h2>
+<p>Looks like the app's Month table. Easiest for people to read, but hard for the app to turn edits back into records, and hand edits can break sync.</p>
+<table>
+<tr><th></th><th>A</th><th>B</th><th>C</th><th>D</th><th>E</th></tr>
+<tr><td class="rowno">1</td><th>Item</th><th>Sep est.</th><th>Sep actual</th><th>Oct est.</th><th>Oct actual</th></tr>
+<tr><td class="rowno">2</td><td class="cat">Income</td><td class="num">2,500.00</td><td class="num">2,500.00</td><td class="num">2,500.00</td><td class="num">2,480.00</td></tr>
+<tr><td class="rowno">3</td><td class="cat">Expenses</td><td class="num">1,600.00</td><td class="num">1,712.40</td><td class="num">1,600.00</td><td class="num">1,544.10</td></tr>
+<tr><td class="rowno">4</td><td class="i1">Food</td><td class="num">400.00</td><td class="num">431.20</td><td class="num">400.00</td><td class="num">388.75</td></tr>
+<tr><td class="rowno">5</td><td class="i2">Groceries</td><td class="num">350.00</td><td class="num">402.10</td><td class="num">350.00</td><td class="num">360.00</td></tr>
+<tr><td class="rowno">6</td><td class="i1">Car</td><td class="num">200.00</td><td class="num">180.00</td><td class="num">200.00</td><td class="num">215.35</td></tr>
+</table>
+<div class="tabs"><span class="on">2026</span></div>
+<p class="legend">Single purchases aren't in the sheet, only totals, so another device can't rebuild the Day table from it.</p>
+</section>
+
+<section id="option-c">
+<h2>Option C — A + B</h2>
+<p>The data tabs from A carry the sync. The app also rewrites a read-only Summary tab, like B, for people to read. Edits to Summary are ignored.</p>
+<table>
+<tr><th></th><th>A</th><th>B</th><th>C</th></tr>
+<tr><td class="rowno">1</td><th>Item</th><th>Nov est.</th><th>Nov actual</th></tr>
+<tr><td class="rowno">2</td><td class="cat">Income</td><td class="num">2,500.00</td><td class="num">1,250.00</td></tr>
+<tr><td class="rowno">3</td><td class="cat">Expenses</td><td class="num">1,600.00</td><td class="num">94.20</td></tr>
+<tr><td class="rowno">4</td><td class="i1">Food</td><td class="num">400.00</td><td class="num">54.20</td></tr>
+<tr><td class="rowno">5</td><td class="i1">Car</td><td class="num">200.00</td><td class="num">40.00</td></tr>
+</table>
+<div class="tabs"><span class="on">Summary</span><span>Purchases</span><span>Categories</span><span>Settings</span></div>
+<p class="ro">Summary: rewritten by the app on each sync; protected with a warning if someone edits it.</p>
+</section>
+</body></html>
