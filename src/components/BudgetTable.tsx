@@ -428,7 +428,8 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
   return (
     <div className="table-wrap">
       {/* Only the table scrolls sideways (v0.4 review); no help text under it (v0.7 step 8). */}
-      <div className="table-box">
+      {/* A read-only table has no controls, so its scroll box takes focus to scroll by keyboard in every browser (v0.7 step 12). */}
+      <div className="table-box" {...(preview ? { tabIndex: 0, role: 'region', 'aria-labelledby': `${idBase}-heading` } : {})}>
         <table className={`table budget-table${range === 'day' ? ' day-table' : ''}`} aria-labelledby={highlight ? `${idBase}-caption` : `${idBase}-heading ${idBase}-caption`}
           ref={gridRef} role={plain ? undefined : 'treegrid'}>
           <caption id={`${idBase}-caption`}>{title}</caption>
