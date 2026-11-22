@@ -18,6 +18,8 @@ function tabStops(root: HTMLElement): HTMLElement[] {
 export interface ConfirmMode {
   label?: string
   onConfirm: () => void
+  /** A Delete: the confirm button is danger red (0012 G3). */
+  danger?: boolean
 }
 
 /** A form: Cancel left, the submit button right; Enter in a field submits (0009 §4). */
@@ -64,7 +66,7 @@ export function Dialog({ id, title, children, buttons, confirm, form, onClose, c
   const cancel = <Button type="button" className="secondary" onClick={onClose}>Cancel</Button>
   const formId = `${id}-form`
   const submit = form && <Button type="submit" form={formId} disabled={form.busy}>{form.submitLabel}</Button>
-  const footer = confirm ? <>{cancel}<Button type="button" className="confirm-ok" onClick={confirm.onConfirm}>{confirm.label ?? 'Confirm'}</Button></>
+  const footer = confirm ? <>{cancel}<Button type="button" className={confirm.danger ? 'confirm-ok danger' : 'confirm-ok'} onClick={confirm.onConfirm}>{confirm.label ?? 'Confirm'}</Button></>
     : form ? (form.endButton ? <><span className="actions">{cancel}{submit}</span>{form.endButton}</> : <>{cancel}{submit}</>)
     : buttons
   const kind = confirm ? 'confirm-dialog' : form ? 'form-dialog' : ''

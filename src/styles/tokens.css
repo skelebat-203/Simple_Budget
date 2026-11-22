@@ -54,14 +54,24 @@
   /* Layout */
   --size-app-max: 1440px; /* whole page, centered (0012 G2); wide tables scroll inside it. Media queries can't read it: keep `min-width: 1440px` in App.css in step. */
 
-  /* Dialog widths (0012 G6: small 32rem for one or two fields) */
+  /* Dialog widths (0012 G6): small for one or two fields, medium for forms with 4+ fields and the wizard, large for tables */
   --size-dialog-small: 32rem;
-  --size-dialog-large: 64rem; /* review dialogs */
-  --size-field-wide: 40rem; /* widest readable field in a large dialog */
+  --size-dialog-medium: 40rem;
+  --size-dialog-large: 64rem;
+  --size-dialog-setup: 1100px; /* Budget setup above 1280px (full screen below) */
+  --size-field-wide: 40rem; /* widest readable field in the import review dialog (0013) */
+
+  /* Surfaces */
+  --shadow-popup: 0 6px 18px rgb(0 0 0 / 0.15); /* menus and listboxes */
+  --color-backdrop: rgb(0 0 0 / 0.5); /* behind a modal dialog */
+  --tint-banner: 90%; /* white mixed into a banner's kind colour, the same for every kind (0012 G1) */
 
   /* Controls */
   --size-touch: 44px; /* smallest touch target (WCAG 2.5.8 and the app standard) */
   --size-target-min: 24px; /* WCAG 2.5.8 minimum for small buttons and links in lists */
+  --space-control: 5px; /* least margin around a control (components.md) */
+  --space-control-gap: calc(2 * var(--space-control)); /* least gap between neighbouring controls */
+  --size-edit-button: 5rem; /* one minimum width for every Edit button in the tables (0012 G10) */
   --size-banner-icon: 24px;
   --size-tip-mark: 1.25rem; /* the "i" beside a name that has a tooltip */
   --size-toggle-option: 8.5rem; /* one Toggle option, desktop */

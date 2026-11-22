@@ -10,13 +10,13 @@ import { cleanDescription, cleanName, DESCRIPTION_MAX, moneyError, NAME_MAX, par
 /** What a dialog's save returns: an error message to show in the dialog, or nothing when it worked (the caller closes it). */
 export type SaveResult = string | void
 
-/** A text field with its label above and its error below. */
-function Field({ id, label, error, help, children }: { id: string; label: string; error?: string; help?: string; children: ReactNode }) {
+/** A field: label, help, control, error, in that order (0012 §4). Required fields show `*` (G5). */
+function Field({ id, label, error, help, required, children }: { id: string; label: string; error?: string; help?: string; required?: boolean; children: ReactNode }) {
   return (
     <div className="field">
-      <label className="label" htmlFor={id}>{label}</label>
-      {children}
+      <label className="label" htmlFor={id}>{label}{required && <span aria-hidden="true"> *</span>}</label>
       {help && <p id={`${id}-help`} className="help">{help}</p>}
+      {children}
       {error && <p id={`${id}-error_msg`} className="error">{error}</p>}
     </div>
   )
@@ -71,8 +71,8 @@ export function RenameDialog({ id, spoken, name, parentId, parents, level, onSav
       <div className="banner banner-warn" role="note">
         <p className="banner-title">This changes ALL historic records.</p>
       </div>
-      <Field id={fieldId} label="New name" error={fieldError}>
-        <Input id={fieldId} ref={input} maxLength={NAME_MAX} value={value} autoComplete="off"
+      <Field id={fieldId} label="New name" error={fieldError} required>
+        <Input id={fieldId} ref={input} maxLength={NAME_MAX} value={value} autoComplete="off" aria-required="true"
           aria-invalid={!!fieldError || undefined} aria-describedby={describe(fieldId, fieldError)}
           onChange={e => setValue(e.target.value)} />
       </Field>
@@ -97,7 +97,7 @@ export function AmountDialog({ id, title, spoken, intro, initial, initialDescrip
   id: string
   title: string
   spoken: string
-  /** One line of help above the amount. */
+  /** Help for the Amount field, shown between its label and the box. */
   intro: string
   initial?: string
   initialDescription?: string
@@ -139,23 +139,22 @@ export function AmountDialog({ id, title, spoken, intro, initial, initialDescrip
   return (
     <Dialog id={id} title={title} className="amount-dialog" onClose={onCancel}
       form={{ submitLabel, onSubmit: submit, error: saver.error, busy: saver.busy, endButton: onDelete && <Button type="button" className="danger" onClick={onDelete}>Delete</Button> }}>
-      <p id={`${id}-intro`} className="help">{intro}</p>
-      <Field id={fieldId} label="Amount" error={fieldError}>
-        <AmountField id={fieldId} className="amount" allowNegative value={value}
-          aria-invalid={!!fieldError || undefined} aria-describedby={[describe(fieldId, fieldError), `${id}-intro`].filter(Boolean).join(' ')}
+      <Field id={fieldId} label="Amount" error={fieldError} help={intro} required>
+        <AmountField id={fieldId} className="amount" allowNegative value={value} aria-required="true"
+          aria-invalid={!!fieldError || undefined} aria-describedby={describe(fieldId, fieldError, true)}
           onFocus={e => { if (initial) e.target.select() }}
           onChange={e => setValue(e.target.value)} />
       </Field>
       {dateField && (
-        <Field id={dateId} label="Date" error={dateError} help={`From ${dateField.min} to ${dateField.max}.`}>
-          <DatePicker id={dateId} value={date} min={dateField.min} max={dateField.max}
+        <Field id={dateId} label="Date" error={dateError} help={dateField.min === dateField.max ? `${dateField.min}.` : `From ${dateField.min} to ${dateField.max}.`} required>
+          <DatePicker id={dateId} value={date} min={dateField.min} max={dateField.max} aria-required="true"
             aria-invalid={!!dateError || undefined} aria-describedby={[dateError && `${dateId}-error_msg`, `${dateId}-help`].filter(Boolean).join(' ')}
             onChange={e => setDate(e.target.value)} />
         </Field>
       )}
       {withDescription && (
-        <Field id={`${id}-description`} label="Description (optional)">
-          <Input id={`${id}-description`} maxLength={DESCRIPTION_MAX} value={description} autoComplete="off"
+        <Field id={`${id}-description`} label="Description" help={`Up to ${DESCRIPTION_MAX} characters.`}>
+          <Input id={`${id}-description`} maxLength={DESCRIPTION_MAX} value={description} autoComplete="off" aria-describedby={`${id}-description-help`}
             onChange={e => setDescription(e.target.value)} />
         </Field>
       )}

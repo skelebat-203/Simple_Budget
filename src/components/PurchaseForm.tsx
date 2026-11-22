@@ -145,13 +145,13 @@ export function usePurchaseForm(roots: CatNode[], init: { target?: CatNode; amou
       </div>
       <div className="field">
         <label className="label" htmlFor={id('description')}>Description</label>
-        <p id={id('description-help')} className="help">Optional. Up to {DESCRIPTION_MAX} characters.</p>
+        <p id={id('description-help')} className="help">Up to {DESCRIPTION_MAX} characters.</p>
         <Input id={id('description')} maxLength={DESCRIPTION_MAX} autoComplete="off" value={description}
           onChange={e => setDescription(e.target.value)} aria-describedby={id('description-help')} />
       </div>
       <div className="field">
-        <label className="label" htmlFor={id('date')}>Date</label>
-        <DatePicker id={id('date')} value={date} min={bounds.min} max={bounds.max} aria-invalid={!!errors.date || undefined}
+        <label className="label" htmlFor={id('date')}>Date <span aria-hidden="true">*</span></label>
+        <DatePicker id={id('date')} aria-required="true" value={date} min={bounds.min} max={bounds.max} aria-invalid={!!errors.date || undefined}
           aria-describedby={describe('date')} onChange={e => setDate(e.target.value)} />
         {errors.date && <p id={id('date-error_msg')} className="error">{errors.date}</p>}
       </div>
