@@ -7,6 +7,7 @@ import { isSyncBusy } from '../storage/sync/controller'
 import { useAnnounce } from './ui/announcer'
 import { Button } from './ui'
 import { SYNC_BUSY } from './BudgetTable'
+import { useStickyHead } from './ui/useStickyHead'
 
 /** A row bought in more than this many months is marked for review in December (0014 §3, M1, M4). */
 export const REVIEW_MONTHS = 6
@@ -36,6 +37,8 @@ export function MiscBreakdown({ roots, items, calendar, date, onChanged }: {
   const [todayIso] = useState(() => isoDate(new Date()))
   useAnnounce(status)
   useAnnounce(error)
+  const tableRef = useRef<HTMLTableElement>(null)
+  useStickyHead(tableRef, true)
   const focusAfter = useRef<string | null>(null)
   useEffect(() => {
     if (!focusAfter.current) return
@@ -88,8 +91,8 @@ export function MiscBreakdown({ roots, items, calendar, date, onChanged }: {
     <section className="misc-breakdown" aria-labelledby="misc-heading">
       <h3 id="misc-heading" className="misc-heading" tabIndex={-1}>Misc. Breakdown</h3>
       <p className="help">Rows bought in more than {REVIEW_MONTHS} months of the year are marked Review in December. Consider adding them to the table.</p>
-      <div className="table-box">
-        <table className="table budget-table misc-table" aria-labelledby="misc-heading misc-caption">
+      <div className="table-box page-head">
+        <table ref={tableRef} className="table budget-table misc-table" aria-labelledby="misc-heading misc-caption">
           <caption id="misc-caption">{title}</caption>
           <thead>
             <tr>

@@ -98,7 +98,7 @@ export function Budget({ roots, items, range, onRangeChange, calendar, onChanged
         </nav>
         {wide && syncButton}
       </div>
-      <BudgetTable date={anchor} roots={roots} items={items} range={range} showEstimates={showEstimates} calendar={calendar} onChanged={onChanged} />
+      <BudgetTable date={anchor} roots={roots} items={items} range={range} showEstimates={showEstimates} calendar={calendar} onChanged={onChanged} pageHead />
       {range === 'annual' && <MiscBreakdown roots={roots} items={items} calendar={calendar} date={anchor} onChanged={onChanged} />}
     </section>
   )

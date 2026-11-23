@@ -286,6 +286,11 @@
    and their sideways scrollbar stays in view (0007 §10). */
 .table-box { max-height: calc(100dvh - var(--space-lg)); overflow: auto; }
 .table thead th { position: sticky; top: 0; z-index: 1; }
+/* Tables on the page (v0.7 step 6): no fixed height; the page scrolls and useStickyHead keeps the header row in view. */
+.table-box.page-head { max-height: none; }
+.page-head .table thead { position: relative; z-index: 2; }
+.page-head .table thead th { position: static; }
+.page-head .table thead.stuck th { box-shadow: 0 var(--border-medium) 0 var(--color-secondary-background); }
 @media (max-width: 639.98px) {
   .ranges { display: grid; grid-template-columns: 1fr 1fr; }
 }

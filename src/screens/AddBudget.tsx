@@ -90,7 +90,7 @@ export function AddBudget({ roots, items, calendar, onSaved }: {
       {saveError && <p className="error">{saveError}</p>}
       {/* Read-only copy of today's Day table (v0.7 step 12): no Edit buttons or highlight dialogs, no status line of its own. */}
       <h3 id="add-day-heading" className="add-day-heading">Today’s purchases</h3>
-      <BudgetTable idBase="add-day" roots={roots} items={items} range="day" showEstimates={false} calendar={calendar} preview />
+      <BudgetTable idBase="add-day" roots={roots} items={items} range="day" showEstimates={false} calendar={calendar} preview pageHead />
     </section>
   )
 }

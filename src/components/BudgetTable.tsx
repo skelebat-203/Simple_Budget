@@ -7,6 +7,8 @@ import { PurchaseDialog } from './PurchaseDialog'
 import type { PurchaseSave } from './PurchaseForm'
 import { AmountDialog, Banner, Button, Dialog, RenameDialog, Tip, type SaveResult } from './ui'
 import { useCollapsed } from './ui/useCollapsed'
+import { useWide } from './ui/useWide'
+import { useStickyHead } from './ui/useStickyHead'
 import { fireReward } from '../rewards/rewards'
 import { useAnnounce } from './ui/announcer'
 import { isSyncBusy } from '../storage/sync/controller'
@@ -36,8 +38,10 @@ const PENCIL_SIZE = 18
  * 0/1/2, category colors, computed rows, only rows with an amount, and
  * expand/collapse state kept across range changes and restarts.
  */
-export function BudgetTable({ roots, items, range, showEstimates: wantEstimates, calendar, date, idBase = 'budget', preview = false, highlight = false, allRoots, onChanged }: {
+export function BudgetTable({ roots, items, range, showEstimates: wantEstimates, calendar, date, idBase = 'budget', preview = false, highlight = false, allRoots, onChanged, pageHead = false }: {
   roots: CatNode[]
+  /** On the page (not in a dialog): no fixed-height box; the header row stays in view while the page scrolls (v0.7 step 6). */
+  pageHead?: boolean
   /** A day in the range to show (0007 §9.5 date nav). Default: today. */
   date?: Date
   /** Data changed from a table action (0007 §9); reload. */
@@ -60,8 +64,11 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
   /** Plain rows: no expand or name buttons (preview and highlight dialog). */
   const plain = preview || highlight
   const showEstimates = wantEstimates && rangeHasEstimates(range)
-  const [collapsed, toggle, openRows] = useCollapsed()
+  const wide = useWide()
+  // Below 640px the categories start closed until the user opens or closes a row (v0.7 step 6).
+  const [collapsed, toggle, openRows] = useCollapsed(wide ? [] : roots.map(r => r.cat.id))
   const gridRef = useRef<HTMLTableElement>(null)
+  useStickyHead(gridRef, pageHead)
   const [today] = useState(() => new Date())
   const { columns, total, title } = periodsFor(range, date ?? today, calendar)
   const periods = total ? [...columns, total] : columns
@@ -434,7 +441,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
     <div className="table-wrap">
       {/* Only the table scrolls sideways (v0.4 review); no help text under it (v0.7 step 8). */}
       {/* A read-only table has no controls, so its scroll box takes focus to scroll by keyboard in every browser (v0.7 step 12). */}
-      <div className="table-box" {...(preview ? { tabIndex: 0, role: 'region', 'aria-labelledby': `${idBase}-heading` } : {})}>
+      <div className={`table-box${pageHead ? ' page-head' : ''}`} {...(preview ? { tabIndex: 0, role: 'region', 'aria-labelledby': `${idBase}-heading` } : {})}>
         <table className={`table budget-table${range === 'day' ? ' day-table' : ''}`} aria-labelledby={highlight ? `${idBase}-caption` : `${idBase}-heading ${idBase}-caption`}
           ref={gridRef} role={plain ? undefined : 'treegrid'}>
           <caption id={`${idBase}-caption`}>{title}</caption>

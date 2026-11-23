@@ -64,6 +64,7 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
    - The Day table's Actual column is not pinned either (`0012` G11 pinning dropped, human 2026-11-22).
    - Deps: 5
    - Progress (v0.7.27): built (Item column min 250px, names don't wrap, Day table auto layout); no wrapped names or page-level sideways scroll at 1280/640/320px, highlight dialog included. Waiting on: UI approval.
+   - Added (human, 2026-11-22): every control in a data table is described by its row header and has a unique name (v0.7.36; checked in `test:dialogs`). Long tables on phones (v0.7.37): page tables (Budget, Misc. Breakdown, Add purchase) have no fixed-height box; their header row stays at the top of the viewport while the page scrolls past (moves with the sideways scroll; a focused control under it is scrolled clear; off when the viewport is 480px tall or less). Below 640px the categories start closed until the user saves an expand/collapse state. Waiting on: the human's phone test.
 7. **Form field alignment class** (v0.7/7) — same label-to-control space as fields with help text, so side-by-side fields line up.
    - Source: roadmap v0.7 (decided 2026-11-04)
    - Files: `src/App.css`, form screens
