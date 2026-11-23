@@ -4,7 +4,7 @@ Tracking file for current work status. Roadmap authority: `docs/design/0003-road
 Design: `0015-sync-design.md` (sync), `0004-table-design.md` (table), `0006-prototype.html` (v0.2 UI), `0007-v0.3-design-updates.md` (v0.3 changes), `0008-v0.5-design-updates.md` (v0.5 changes), `0009-v0.6-design-updates.md` (v0.6), `0012-design-standards.md` (standards), `0014` (Annual Misc breakdown). Higher-numbered doc wins on conflict.
 
 ## Current version
-v0.7.0 (v0.6 complete 2026-11-21, v0.6.0 to v0.6.37; reports: `docs/audits/a11y/a11y-v0.6.md`, `docs/audits/security/security-v0.6.md`). Step 1 ✅ (v0.7.1 to v0.7.3). Step 2 ✅ (v0.7.4). Step 3 ✅ (v0.7.5 to v0.7.10). Step 3b ✅ (v0.7.12 to v0.7.17). Group A2 (steps 4, 5, 7) ✅ (v0.7.19 to v0.7.25). Group B (steps 6, 8, 9, 12, 13) ✅ (v0.7.27 to v0.7.39). Mobile testing to check: long tables (sticky header, collapsed start; `0007` §10 change). Next: group C (names and moves).
+v0.7.0 (v0.6 complete 2026-11-21, v0.6.0 to v0.6.37; reports: `docs/audits/a11y/a11y-v0.6.md`, `docs/audits/security/security-v0.6.md`). Step 1 ✅ (v0.7.1 to v0.7.3). Step 2 ✅ (v0.7.4). Step 3 ✅ (v0.7.5 to v0.7.10). Step 3b ✅ (v0.7.12 to v0.7.17). Group A2 (steps 4, 5, 7) ✅ (v0.7.19 to v0.7.25). Group B (steps 6, 8, 9, 12, 13) ✅ (v0.7.27 to v0.7.39). Mobile testing to check: long tables (sticky header, collapsed start; `0007` §10 change). Group C (steps 10, 11b, 11) ✅ (v0.7.40 to v0.7.44). Next: group D (import regression, step 14).
 
 ## v0.7 plan of action
 Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per completed-work commit; trailer `Plan-Step: v0.7/N`). The final step bumps to the next minor version (v0.8.0). UI steps need human approval (`0005-ui-ux-review-checklist.md`). Baseline: v0.7.0. Data: Dexie v8 (`src/storage/structure.ts`). Testing: headless Chromium (`tools/browsers/`, `lighthouse-sandbox.md`); import harness `npm run test:import` (`tests/import/README.md`).
@@ -96,6 +96,7 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
     - Files: `src/budget/validate.ts`, name fields
     - Verify: abbreviation cases; import names unaffected unless chosen
     - Deps: none
+    - ✅ (v0.7.40 to v0.7.44; UI approved 2026-11-23)
     - Progress (v0.7.40): `expandName` in `validate.ts` runs on Add purchase new item and new subcategory, Budget setup Create, and Rename. Whole words, any case; a form listed with a dot needs it, the others may have one. Rename rule: an abbreviation is kept when the stored name had its full form as a whole word (the user shortened it); otherwise it is expanded. Spell check on, checks in `test:import`. Waiting on: UI approval.
 11. **Move subcategories and items between parents** (v0.7/11) — a subcategory moved into another becomes an item; an item moved out becomes a subcategory; a subcategory with items cannot move into another (error).
     - Source: roadmap v0.7 (decided 2026-11-04)
@@ -104,12 +105,14 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
     - Design (human, 2026-11-22; based on option C in `docs/design/images/v0.7-move-rows/`): when a row is highlighted (the highlight dialog shows it with only its child rows), the dialog shows a Move column. Up and Down buttons move a row among the highlighted rows. "Move to" is a menu listing categories and subcategories; any category may be chosen. When the user closes the highlight, the tables show the row in its new place. A row moved to a new parent becomes its last child.
     - Purchases and the estimate move with the row.
     - Deps: 1, 3, 11b
+    - ✅ (v0.7.40 to v0.7.44; UI approved 2026-11-23)
     - Progress (v0.7.42): Move column in the highlight dialog (any range with actions): Up/Down for rows under the highlighted row (swap with the next shown sibling), and a "Move to" menu (ActionsMenu, `floating` so the table box does not clip it). Each move is one transaction (`categoryRepo.reorder`, `categoryRepo.moveTo`): sync-busy rule, name clash (Invalid), a row with items into a subcategory (Error), a destination with nothing under it that holds its own estimate or purchases first hands them to a new Miscellaneous row under it (as Budget setup; announced). v0.7.43: the main table opens the rows above a moved row (saved expand state). Sync (noted in `0015` §4): a never-synced default row moved on another device is matched by a unique name when linking (no duplicates). Checks in `test:dialogs` and `test:sync`. Waiting on: UI approval.
 11b. **Quarterly and Annual in every recurrence list** (v0.7/11b) — every Recurrence drop-down offers Quarterly and Annual, not only Debt, Utilities and Subscriptions (human, 2026-11-22). This also means a moved row's recurrence is always allowed in its new category (step 11).
     - Source: human, 2026-11-22; replaces the `0007` §3 limit
     - Files: `src/budget/` (`frequenciesFor`), `src/screens/BudgetSetup.tsx`, estimate scaling checks
     - Verify: every Recurrence list; estimate scaling for Quarterly and Annual on the other categories; build + lint
     - Deps: none
+    - ✅ (v0.7.40 to v0.7.44; UI approved 2026-11-23)
     - Progress (v0.7.41): one `FREQUENCIES` list for every row; `frequenciesFor` removed; `0007` §3 note updated; scaling checks in `test:import`.
 12. **Read-only Day table under Add purchase** (v0.7/12) — a copy of the Day table below the form.
     - Source: roadmap v0.7 (decided 2026-11-08)
@@ -154,7 +157,7 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
 - **E — Charts**: moved to v0.8.
 - **D004** (step 15b): after F, before the reviews.
 - **Reviews** (steps 16–18): main session with the user.
-- Status: ✅ A · ✅ F · ✅ A2 · ✅ B · ☐ C · ☐ D · ~~E~~ · ☐ reviews
+- Status: ✅ A · ✅ F · ✅ A2 · ✅ B · ✅ C · ☐ D · ~~E~~ · ☐ reviews
 
 ### Session process
 Run option 1: one session per group, fresh start at each group boundary. A session starts by reading this file and the roadmap, then:
