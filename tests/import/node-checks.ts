@@ -7,7 +7,8 @@ import { ImportError, type Workbook } from '../../src/import/grid'
 import { buildPlan, type ImportOptions, type ImportPlan } from '../../src/import/plan'
 import { detect, sourceRows } from '../../src/import/sheets'
 import { LOST_VALUES_TITLE, lostValuesText } from '../../src/components/import/text'
-import { dateBounds } from '../../src/budget/validate'
+import { dateBounds, expandName } from '../../src/budget/validate'
+import { importName } from '../../src/import/cells'
 import { badFiles, formulaFiles, manyNotesXlsx, ods, odsDoc, odsRow, odsStr, odsTable, readTestFile, seededCategories, SHEET_YEAR, TEST_FILES, TODAY, UNKNOWN_TOP_CSV } from './fixtures'
 
 /**
@@ -204,6 +205,21 @@ export async function run(check: Check) {
   const fc = plan(await read('formula.csv', ff['formula.csv']), seeded)
   check(fc.purchases.every(x => typeof x.amount === 'number') && fc.rows.some(r => r.warnings.some(w => w.includes('+5'))), 'CSV formula text is skipped with a warning')
 
+  // Typed-name abbreviations (v0.7 step 10): whole words, any case, rest of the name kept; a rename that shortens a full name keeps the edit.
+  const names: [string, string | undefined, string][] = [
+    ['Misc', undefined, 'Miscellaneous'], ['misc. stuff', undefined, 'Miscellaneous stuff'], ['Car Ins.', undefined, 'Car Insurance'],
+    ['Home Mtg', undefined, 'Home Mortgage'], ['Util.', undefined, 'Utilities'], ['utils', undefined, 'Utilities'], ['Subs', undefined, 'Subscriptions'],
+    ['Sub', undefined, 'Subscriptions'], ['Groc.', undefined, 'Groceries'], ['Med. bills', undefined, 'Medical bills'], ['Ent.', undefined, 'Entertainment'],
+    ['Car Pmt', undefined, 'Car Payment'], ['Acct fee', undefined, 'Account fee'], ['Dept store', undefined, 'Department store'], ['Govt fees', undefined, 'Government fees'],
+    ['Miscible', undefined, 'Miscible'], ['Subway', undefined, 'Subway'], ['Insurance', undefined, 'Insurance'], ['Ins', undefined, 'Ins'],
+    ['Car Ins.', 'Car Insurance', 'Car Ins.'], ['Car Ins.', 'Car', 'Car Insurance'], ['Misc', 'Misc', 'Miscellaneous'], ['Misc Pmt', 'Miscellaneous Payment', 'Misc Pmt'],
+    ['Misc Pmt', 'Miscellaneous', 'Misc Payment'],
+  ]
+  for (const [typed, prev, want] of names) {
+    const got = expandName(typed, prev)
+    check(got === want, `expandName("${typed}"${prev ? `, was "${prev}"` : ''}) = "${got}" (want "${want}")`)
+  }
+  check(importName("Car Pmt") === "Car Pmt", 'import names are not expanded ("Car Pmt" stays)')
   // Hostile and malformed files fail with a plain message.
   for (const [name, bytes] of Object.entries(badFiles())) {
     const t0 = performance.now()

@@ -13,6 +13,33 @@ export function cleanName(s: string): string {
   return s.normalize('NFC').replace(/[\p{Cc}\p{Cf}]/gu, '').replace(/\s+/g, ' ').trim().slice(0, NAME_MAX)
 }
 
+/** Common abbreviations in typed names and their full form (v0.7 step 10). A form ending in "." needs the dot; the others may have one. */
+const ABBREVIATIONS: [string[], string][] = [
+  [['Misc', 'Misc.'], 'Miscellaneous'], [['Ins.'], 'Insurance'], [['Mtg'], 'Mortgage'], [['Util.', 'Utils'], 'Utilities'],
+  [['Sub', 'Subs'], 'Subscriptions'], [['Groc.'], 'Groceries'], [['Med.'], 'Medical'], [['Ent.'], 'Entertainment'],
+  [['Pmt'], 'Payment'], [['Acct'], 'Account'], [['Dept'], 'Department'], [['Govt'], 'Government'],
+]
+const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+const wordRe = (forms: string[]) =>
+  new RegExp(`(?<![\\p{L}\\p{N}])(?:${forms.map(f => f.endsWith('.') ? esc(f) : `${esc(f)}\\.?`).sort((a, b) => b.length - a.length).join('|')})(?![\\p{L}\\p{N}])`, 'giu')
+const ABBR_RES = ABBREVIATIONS.map(([forms, full]) => ({ re: wordRe(forms), fullRe: wordRe([full]), full }))
+
+/**
+ * Expand common abbreviations in a typed name: whole words, any case; the rest of the
+ * name is kept. `previous` is the stored name when renaming: an abbreviation is kept
+ * as typed when the previous name had its full form (the user shortened it on purpose).
+ * Not used for imports.
+ */
+export function expandName(typed: string, previous?: string): string {
+  let s = cleanName(typed)
+  for (const { re, fullRe, full } of ABBR_RES) {
+    fullRe.lastIndex = 0
+    if (previous && fullRe.test(previous)) continue
+    s = s.replace(re, full)
+  }
+  return cleanName(s)
+}
+
 /** Clean an optional description: same rules as a name, up to DESCRIPTION_MAX; '' when nothing is left. */
 export function cleanDescription(s: string): string {
   return s.normalize('NFC').replace(/[\p{Cc}\p{Cf}]/gu, '').replace(/\s+/g, ' ').trim().slice(0, DESCRIPTION_MAX)

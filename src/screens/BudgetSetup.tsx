@@ -6,7 +6,7 @@ import { announce, useAnnounce } from '../components/ui/announcer'
 import { fireReward } from '../rewards/rewards'
 import { requestNotifications } from '../notifications'
 import { saveSetup } from '../storage/repository'
-import { cleanName, dateBounds, moneyError, NAME_MAX, parseAmount, slug } from '../budget/validate'
+import { dateBounds, expandName, moneyError, NAME_MAX, parseAmount, slug } from '../budget/validate'
 import type { BudgetItem, Category, DefaultRange, DueDay, Frequency, MonthBoundary } from '../storage/db'
 import {
   buildTree, ancestors, dayChoices, domId, estimateTotal, flatten, formatAmount, frequenciesFor, isTotal, repeatedNames, scheduleClears,
@@ -115,7 +115,7 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, rewardsEnable
   function addRow(root: CatNode) {
     const key = `create-${slug(root.cat.name)}`
     const c = create[root.cat.id] ?? { name: '', parent: root.cat.id }
-    const name = cleanName(c.name)
+    const name = expandName(c.name)
     if (!name) return
     const parent = flatten([root]).find(n => n.cat.id === c.parent) ?? root
     if (edit.nameTaken(work, parent.cat.id, name)) {
@@ -347,7 +347,7 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, rewardsEnable
             {open && <div className="create-fields">
             <div className="create-field">
               <label className="label" htmlFor={base}>Create in {root.cat.name}</label>
-              <input id={base} className="input" maxLength={NAME_MAX} value={c.name}
+              <input id={base} className="input" maxLength={NAME_MAX} spellCheck autoComplete="off" value={c.name}
                 aria-invalid={!!err || undefined} aria-describedby={err ? `${key} ${base}-error_msg` : key}
                 onChange={e => set({ name: e.target.value })}
                 onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addRow(root) } }} />

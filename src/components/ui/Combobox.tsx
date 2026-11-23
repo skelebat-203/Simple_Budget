@@ -96,7 +96,7 @@ export function Combobox({ id, label, groups, query, onQueryChange, onPick, init
       <input id={id} className="input" role="combobox" aria-label={inputLabel} aria-expanded={open} aria-controls={listId} aria-autocomplete="list"
         aria-activedescendant={open && active >= 0 && flat[active] ? optId(flat[active]) : undefined}
         aria-required={required || undefined} aria-invalid={invalid || undefined} aria-describedby={describedBy}
-        autoComplete="off" value={query}
+        autoComplete="off" spellCheck value={query}
         onChange={e => { onQueryChange(e.target.value); setOpen(true); setActive(-1) }}
         onFocus={() => setOpen(true)}
         onBlur={() => setOpen(false)}

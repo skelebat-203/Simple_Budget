@@ -5,7 +5,7 @@ import { AmountField } from './AmountField'
 import { DatePicker } from './DatePicker'
 import { Input } from './Input'
 import { useAnnounce } from './announcer'
-import { cleanDescription, cleanName, DESCRIPTION_MAX, moneyError, NAME_MAX, parseAmount } from '../../budget/validate'
+import { cleanDescription, expandName, DESCRIPTION_MAX, moneyError, NAME_MAX, parseAmount } from '../../budget/validate'
 
 /** What a dialog's save returns: an error message to show in the dialog, or nothing when it worked (the caller closes it). */
 export type SaveResult = string | void
@@ -59,7 +59,7 @@ export function RenameDialog({ id, spoken, name, parentId, parents, level, onSav
   const input = useRef<HTMLInputElement>(null)
   const fieldId = `${id}-name`
   async function submit() {
-    const clean = cleanName(value)
+    const clean = expandName(value, name)
     if (!clean) { setFieldError(`Error: Name for ${spoken} cannot be empty`); input.current?.focus(); return }
     setFieldError('')
     if (clean === name && parent === parentId) return onCancel()
@@ -72,7 +72,7 @@ export function RenameDialog({ id, spoken, name, parentId, parents, level, onSav
         <p className="banner-title">This changes ALL historic records.</p>
       </div>
       <Field id={fieldId} label="New name" error={fieldError} required>
-        <Input id={fieldId} ref={input} maxLength={NAME_MAX} value={value} autoComplete="off" aria-required="true"
+        <Input id={fieldId} ref={input} maxLength={NAME_MAX} value={value} autoComplete="off" spellCheck aria-required="true"
           aria-invalid={!!fieldError || undefined} aria-describedby={describe(fieldId, fieldError)}
           onChange={e => setValue(e.target.value)} />
       </Field>

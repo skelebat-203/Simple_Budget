@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { AmountField, DatePicker, Input, ItemSelector, type FieldError } from './ui'
 import { childColor, isoDate, type CatNode } from '../budget/tree'
-import { cleanDescription, cleanName, DESCRIPTION_MAX, dateBounds, moneyError, parseAmount } from '../budget/validate'
+import { cleanDescription, expandName, DESCRIPTION_MAX, dateBounds, moneyError, parseAmount } from '../budget/validate'
 import type { addNewItem } from '../storage/repository'
 
 const FIELDS = ['item', 'category', 'where', 'amount', 'description', 'date'] as const
@@ -69,7 +69,7 @@ export function usePurchaseForm(roots: CatNode[], init: { target?: CatNode; amou
     const value = amt.ok ? amt.value : 0
     const note = cleanDescription(description) || undefined
     if (target) return { kind: 'existing', target, amount: value, date, description: note }
-    const name = cleanName(itemText.text)
+    const name = expandName(itemText.text)
     const root = groups.find(g => g.cat.name === where)
     return {
       kind: 'new', name,
@@ -77,7 +77,7 @@ export function usePurchaseForm(roots: CatNode[], init: { target?: CatNode; amou
         name,
         parent: category
           ? { id: category.cat.id, name: category.cat.name }
-          : { newSub: categoryText.text, root: { id: root!.cat.id, name: root!.cat.name }, color: childColor(root!) },
+          : { newSub: expandName(categoryText.text), root: { id: root!.cat.id, name: root!.cat.name }, color: childColor(root!) },
         color: category ? childColor(category) : itemColorUnder(root!),
         selected: useInFuture,
         amount: value, date, description: note,
