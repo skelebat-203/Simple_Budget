@@ -205,6 +205,51 @@ export const categoryRepo = {
   },
   async remove(id: number) { return db.categories.delete(id) },
   /**
+   * Up or Down in the highlight dialog (v0.7 step 11): put a subcategory or item just before
+   * (`after` false) or after `besideId`, the sibling next to it in the table, and renumber the
+   * siblings. One transaction; the rows are checked inside it (security-v0.4 3.1).
+   */
+  async reorder(id: number, besideId: number, after: boolean) {
+    await db.transaction('rw', db.categories, async () => {
+      const [c, b] = await Promise.all([db.categories.get(id), db.categories.get(besideId)])
+      if (!c || !b || c.parentId == null || b.parentId !== c.parentId) throw new RowInUseError('the rows changed. Try again.')
+      const rank = (x: Category) => x.order ?? Number.MAX_SAFE_INTEGER
+      const sibs = (await db.categories.where('parentId').equals(c.parentId).toArray())
+        .sort((x, y) => rank(x) - rank(y) || x.id! - y.id!).filter(s => s.id !== id)
+      sibs.splice(sibs.findIndex(s => s.id === besideId) + (after ? 1 : 0), 0, c)
+      for (const [i, s] of sibs.entries()) if (s.order !== i) await db.categories.update(s.id!, { order: i })
+    })
+  },
+  /**
+   * "Move to" in the highlight dialog (v0.7 step 11): a subcategory or item becomes the last
+   * child of a category (it is then a subcategory) or of a subcategory (it is then an item).
+   * Its id stays, so its purchases and estimate go with it. Refused, inside the transaction,
+   * when: a row with items would go inside a subcategory (too deep), the destination is the row
+   * or under it, a sibling there has the name (NameTakenError), or the destination holds its
+   * own amounts. `recolor` sets the moved rows' colors. Runs the Charity rule; returns purchases moved.
+   */
+  async moveTo(id: number, parentId: number, recolor: { id: number; color: string }[]): Promise<number> {
+    return db.transaction('rw', db.categories, db.budgetItems, async () => {
+      const c = await db.categories.get(id)
+      if (!c || c.parentId == null) throw new RowInUseError('it no longer exists.')
+      const target = await db.categories.get(parentId)
+      if (!target) throw new RowInUseError('the category it was moving to no longer exists.')
+      if (target.id === id || target.parentId === id) throw new RowInUseError('a row can’t go inside itself.')
+      if (target.parentId != null) {
+        if ((await db.categories.get(target.parentId))?.parentId != null) throw new RowInUseError(`${target.name} is an item, so nothing can go inside it.`)
+        if (await db.categories.where('parentId').equals(id).count()) throw new RowInUseError('it has items, so it can’t go inside another subcategory. Move its items out first.')
+      }
+      const sibs = await db.categories.where('parentId').equals(target.id!).toArray()
+      if (sibs.some(s => s.id !== id && slug(s.name) === slug(c.name))) throw new NameTakenError(`“${c.name}” already exists in ${target.name}`)
+      if (sibs.length === 0 && !target.computed && (target.estimate != null || await db.budgetItems.where('categoryId').equals(target.id!).count()))
+        throw new RowInUseError(`${target.name} holds its own amounts, so nothing can be moved into it.`)
+      const order = sibs.reduce((m, s) => Math.max(m, (s.order ?? -1) + 1), 0)
+      await db.categories.update(id, { parentId: target.id!, order })
+      for (const r of recolor) await db.categories.update(r.id, { color: r.color })
+      return settleCharity()
+    })
+  },
+  /**
    * Delete a subcategory or item (0007 §9.2, §10). Refused for top-level rows,
    * rows with items, and rows with more than one purchase, checked inside the
    * transaction; a single purchase is deleted with the row.

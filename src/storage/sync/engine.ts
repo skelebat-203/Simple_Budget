@@ -219,21 +219,36 @@ async function mergeLocal(remote: Record<SyncTab, Map<string, Remote>>, now: num
   // categories: a local row never synced takes the id of the sheet's row with the same
   // name under the same parent, instead of becoming a second "Income" (parents first).
   const adopted = new Set<string>()
+  const unsynced = (v: V) => !catKnown.has(v.uid) && !rCats.has(v.uid)
+  const adopt = (match: V, uid: string) => {
+    tree.delete(match.uid)
+    for (const v of tree.values()) if (v.parentUid === match.uid) v.parentUid = uid
+    match.uid = uid // orig keeps the old uid, so the write below stores the new one
+    tree.set(uid, match)
+    adopted.add(uid)
+  }
+  const openRemote = () => [...rCats].flatMap(([uid, r]) => {
+    if (tree.has(uid) || catDead.has(uid) || catKnown.has(uid) || r.deleted || r.error) return []
+    const rc = readCat(r.data)
+    return rc && (rc.parentUid == null || tree.has(rc.parentUid)) ? [{ uid, rc }] : []
+  })
   for (let changed = true; changed;) {
     changed = false
-    for (const [uid, r] of rCats) {
-      if (tree.has(uid) || catDead.has(uid) || catKnown.has(uid) || r.deleted || r.error) continue
-      const rc = readCat(r.data)
-      if (!rc || (rc.parentUid != null && !tree.has(rc.parentUid))) continue
-      const match = [...tree.values()].find(v => !catKnown.has(v.uid) && !rCats.has(v.uid) && v.parentUid === rc.parentUid && slug(v.cat.name) === slug(rc.cat.name))
-      if (!match) continue
-      tree.delete(match.uid)
-      for (const v of tree.values()) if (v.parentUid === match.uid) v.parentUid = uid
-      match.uid = uid // orig keeps the old uid, so the write below stores the new one
-      tree.set(uid, match)
-      adopted.add(uid)
-      changed = true
+    for (const { uid, rc } of openRemote()) {
+      const match = [...tree.values()].find(v => unsynced(v) && v.parentUid === rc.parentUid && slug(v.cat.name) === slug(rc.cat.name))
+      if (match) { adopt(match, uid); changed = true }
     }
+  }
+  // A default row moved on another device (v0.7 step 11) sits under another parent in the sheet:
+  // match it by name alone when that name is used once on each side, so it is not doubled.
+  const remoteLeft = openRemote()
+  const localLeft = [...tree.values()].filter(v => unsynced(v) && v.parentUid != null)
+  const once = <T,>(list: T[], key: (x: T) => string, k: string) => list.filter(x => key(x) === k).length === 1
+  for (const { uid, rc } of remoteLeft) {
+    const k = slug(rc.cat.name)
+    if (rc.parentUid == null || !once(remoteLeft, x => slug(x.rc.cat.name), k) || !once(localLeft, v => slug(v.cat.name), k)) continue
+    const match = localLeft.find(v => slug(v.cat.name) === k)!
+    if (tree.get(match.uid) === match) adopt(match, uid)
   }
 
   const catDeletes = new Set<string>()

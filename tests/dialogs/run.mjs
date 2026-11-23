@@ -252,6 +252,64 @@ try {
     check('highlight: Escape closes it', (await openIds()).length === 0)
     check('highlight: focus returns to the row name', (await activeId()) === nameId, `active: ${await activeId()}`)
   }
+
+  // Move column (v0.7 step 11), keyboard only, in the Incidentals highlight (Week).
+  const incId = await page.evaluate(() => [...document.querySelectorAll('button.name-link')].find(b => b.textContent.trim() === 'Incidentals')?.id ?? '')
+  check('Move: Incidentals row name exists', !!incId)
+  if (incId) {
+    await page.focus(`[id="${incId}"]`); await press('Enter')
+    const hl = (await openIds()).at(-1)
+    const q = sel => `#${hl} ${sel}`
+    const kids = () => page.evaluate(s => [...document.querySelectorAll(s)].map(t => t.textContent.trim()), q('tbody tr.depth-1 th .name-line > span:first-child'))
+    const said = () => page.evaluate(() => document.getElementById('live-region')?.textContent ?? '')
+    const errorText = () => page.evaluate(s => document.querySelector(s)?.textContent ?? '', q('.error'))
+    const idOf = label => page.evaluate(s => document.querySelector(s)?.id ?? '', q(`[aria-label="${label}"]`))
+    /** Open a row's Move to menu from the keyboard and pick the item with this label. */
+    async function moveVia(row, label) {
+      await page.focus(`[id="${await idOf(`Move ${row} to`)}"]`); await press('ArrowDown')
+      const at = await page.evaluate((s, l) => [...document.querySelectorAll(s)].findIndex(m => m.textContent.trim() === l), q('[role=menuitem]'), label)
+      for (let i = 0; i < at; i++) await press('ArrowDown')
+      await press('Enter'); await sleep(500)
+      return at >= 0
+    }
+    await tableRules('highlight with Move column')
+    await page.focus(`[id="${await idOf(`Move ${(await kids())[0]} to`)}"]`); await press('ArrowDown')
+    await tableRules('highlight, Move to menu open')
+    await press('Escape')
+    const before = await kids()
+    check('Move: at least two rows to reorder', before.length >= 2, before.join())
+    const upId = await idOf(`Move ${before[1]} up`)
+    await page.focus(`[id="${upId}"]`); await press('Enter'); await sleep(500)
+    const up = await kids()
+    check('Move: Up swaps the row with the one above', up[0] === before[1] && up[1] === before[0], up.join())
+    check('Move: focus stays on the Up button', (await activeId()) === upId, `active: ${await activeId()}`)
+    check('Move: Up is announced', (await said()) === `Moved ${before[1]} up.`, await said())
+    const downId = await idOf(`Move ${before[1]} down`)
+    await page.focus(`[id="${downId}"]`); await press('Enter'); await sleep(500)
+    check('Move: Down moves it back', (await kids()).join() === before.join(), (await kids()).join())
+    // A name a sibling at the destination already uses is refused.
+    check('Move: Miscellaneous offered Expenses › Maintenance', await moveVia('Miscellaneous', 'Expenses › Maintenance'))
+    check('Move: a name clash is refused with an Invalid message', /^Invalid: .*“Miscellaneous” already exists in Maintenance/.test(await errorText()), await errorText())
+    check('Move: the refused row stays', (await kids()).includes('Miscellaneous'))
+    // An item into another subcategory: it leaves this highlight; focus goes to the highlighted row's Move to.
+    await moveVia('Coffee Shops', 'Expenses › Maintenance')
+    check('Move to: an item moves into another subcategory', !(await kids()).includes('Coffee Shops'), (await kids()).join())
+    check('Move to: the move is announced', (await said()) === 'Moved Coffee Shops to Expenses › Maintenance as an item.', await said())
+    check('Move to: focus goes to the highlighted row’s Move to', (await activeId()) === await idOf('Move Incidentals to'), `active: ${await activeId()}`)
+    // A subcategory with items can't go inside another subcategory.
+    await moveVia('Incidentals', 'Expenses › Medical')
+    check('Move to: a subcategory with items is refused', /^Error: Incidentals has \d+ items, so it cannot go inside another subcategory\. Move its items out first\.$/.test(await errorText()), await errorText())
+    // An item moved to a category becomes a subcategory.
+    await moveVia('Car wash', 'Expenses')
+    check('Move to: an item moved to a category becomes a subcategory', (await said()) === 'Moved Car wash to Expenses as a subcategory.', await said())
+    await press('Escape')
+    const tree = await page.evaluate(() => [...document.querySelectorAll('#tabpanel-budget .budget-table:not(.misc-table) tbody tr[aria-level]')]
+      .map(r => `${r.getAttribute('aria-level')}:${r.querySelector('th .name-link')?.textContent.trim()}`))
+    const coffee = tree.indexOf('3:Coffee Shops')
+    const parentRow = tree.slice(0, coffee).reverse().find(r => r.startsWith('2:'))
+    check('Move: the table shows Coffee Shops under Maintenance after the highlight closes', coffee > 0 && parentRow === '2:Maintenance', tree.join(' | '))
+    check('Move: the table shows Car wash as a subcategory', tree.includes('2:Car wash'), tree.join(' | '))
+  }
 } catch (e) {
   console.error(e)
   failed++

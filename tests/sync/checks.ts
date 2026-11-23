@@ -1,7 +1,7 @@
 // Sync checks against the database and an in-memory sheet (0015 §8). IndexedDB is
 // fake-indexeddb, installed by run.mjs before Dexie loads.
 import { db, markTx, type SyncTab } from '../../src/storage/db'
-import { budgetItemRepo, categoryRepo, settingsRepo } from '../../src/storage/repository'
+import { badTreeRows, budgetItemRepo, categoryRepo, checkBackup, exportBackup, settingsRepo } from '../../src/storage/repository'
 import { seedCategories } from '../../src/storage/seed'
 import { RateLimitError } from '../../src/storage/sync/adapter'
 import { neutralize, toCells, unneutralize } from '../../src/storage/sync/cells'
@@ -106,6 +106,35 @@ export async function run(check: Check) {
   await categoryRepo.update((await catByName('Food'))!.id!, { name: 'Groceries' })
   await syncNow()
   check((await remoteRecord('Categories', gUid)).data.name === 'Groceries', 'newer local edit is pushed')
+
+  // ----- moves (v0.7 step 11) -----
+  await tick()
+  const savings = (await catByName('Savings'))!
+  const ins = (await catByName('Insurance'))!
+  const ira = (await catByName('IRA', 'Savings'))!
+  await categoryRepo.moveTo(groceries.id!, savings.id!, [])
+  await categoryRepo.moveTo(ira.id!, ins.id!, [])
+  const insKids = (await categoryRepo.list()).filter(c => c.parentId === ins.id).sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+  check(insKids.at(-1)?.id === ira.id, 'a moved row becomes its new parent’s last child')
+  const vision = insKids.find(c => c.name === 'Vision')!
+  await categoryRepo.reorder(ira.id!, vision.id!, false)
+  const reordered = (await categoryRepo.list()).filter(c => c.parentId === ins.id).sort((a, b) => (a.order ?? 0) - (b.order ?? 0)).map(c => c.name)
+  check(reordered.indexOf('IRA') === reordered.indexOf('Vision') - 1, `reorder puts a row before its neighbour (${reordered.join(', ')})`)
+  check((await budgetItemRepo.list()).every(i => i.categoryId === groceries.id), 'purchases stay with the moved row')
+  const refuse = async (f: () => Promise<unknown>) => { try { await f(); return '' } catch (e) { return String((e as Error).message) } }
+  const utilities = (await catByName('Utilities'))!, insCar = (await catByName('Car', 'Insurance'))!, maint = (await catByName('Maintenance'))!
+  check((await refuse(() => categoryRepo.moveTo(ins.id!, utilities.id!, []))).includes('has items'), 'a subcategory with items can’t go inside another subcategory')
+  check((await refuse(() => categoryRepo.moveTo(insCar.id!, maint.id!, []))).includes('already exists'), 'a name used at the destination is refused')
+  check(badTreeRows(await db.categories.toArray()).size === 0, 'the tree check accepts the moved rows')
+  await syncNow()
+  check((await remoteRecord('Categories', gUid)).data.parentUid === savings.uid && (await remoteRecord('Categories', ira.uid!)).data.parentUid === ins.uid, 'sync pushes the moves (new parent)')
+  const expenses = (await catByName('Expenses'))!
+  const gRemote = await remoteRecord('Categories', gUid)
+  await remoteWrite('Categories', gUid, now(), false, { ...gRemote.data, parentUid: expenses.uid })
+  await syncNow()
+  check((await db.categories.get(groceries.id!))?.parentId === expenses.id, 'a move on another device is pulled')
+  const backup = checkBackup(JSON.parse(JSON.stringify(await exportBackup())))
+  check(backup.categories.some(c => c.id === ira.id && c.parentId === ins.id), 'backup restore check accepts the moved rows')
 
   const local = (await catByName('Groceries'))!
   await remoteWrite('Categories', gUid, local.updatedAt!, false, { ...(await remoteRecord('Categories', gUid)).data, name: 'Tie Name' })

@@ -384,6 +384,9 @@
 /* --- Row actions menu (v0.4 step 7): opens leftward so it stays inside the table box. --- */
 .actions-menu { display: inline-block; }
 .actions-menu .menu { inset: 100% 0 auto auto; min-width: var(--size-menu-row-min); text-align: left; }
+/* Move to lists every category and subcategory (v0.7 step 11): it scrolls; long names wrap on narrow screens. */
+.move-menu .menu { max-height: var(--size-menu-max-h); overflow-y: auto; white-space: normal; overflow-wrap: anywhere; }
+.move-controls { flex-wrap: nowrap; }
 
 /* --- Confirm dialog (v0.4 step 8): Cancel left, Confirm right (0007 §4.2). --- */
 .dialog-actions { justify-content: space-between; }

@@ -96,6 +96,7 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
     - Files: `src/budget/validate.ts`, name fields
     - Verify: abbreviation cases; import names unaffected unless chosen
     - Deps: none
+    - Progress (v0.7.40): `expandName` in `validate.ts` runs on Add purchase new item and new subcategory, Budget setup Create, and Rename. Whole words, any case; a form listed with a dot needs it, the others may have one. Rename rule: an abbreviation is kept when the stored name had its full form as a whole word (the user shortened it); otherwise it is expanded. Spell check on, checks in `test:import`. Waiting on: UI approval.
 11. **Move subcategories and items between parents** (v0.7/11) — a subcategory moved into another becomes an item; an item moved out becomes a subcategory; a subcategory with items cannot move into another (error).
     - Source: roadmap v0.7 (decided 2026-11-04)
     - Files: `src/budget/setupEdits.ts`, `src/storage/repository.ts`, dialog component, `src/components/BudgetTable.tsx`
@@ -103,11 +104,13 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
     - Design (human, 2026-11-22; based on option C in `docs/design/images/v0.7-move-rows/`): when a row is highlighted (the highlight dialog shows it with only its child rows), the dialog shows a Move column. Up and Down buttons move a row among the highlighted rows. "Move to" is a menu listing categories and subcategories; any category may be chosen. When the user closes the highlight, the tables show the row in its new place. A row moved to a new parent becomes its last child.
     - Purchases and the estimate move with the row.
     - Deps: 1, 3, 11b
+    - Progress (v0.7.42): Move column in the highlight dialog (any range with actions): Up/Down for rows under the highlighted row (swap with the next shown sibling), and a "Move to" menu (ActionsMenu, `floating` so the table box does not clip it). Each move is one transaction (`categoryRepo.reorder`, `categoryRepo.moveTo`): sync-busy rule, name clash (Invalid), a row with items into a subcategory (Error), a leaf destination that holds its own amounts (as Rename). Sync: a never-synced default row moved on another device is matched by a unique name when linking (no duplicates). Checks in `test:dialogs` and `test:sync`. Waiting on: UI approval.
 11b. **Quarterly and Annual in every recurrence list** (v0.7/11b) — every Recurrence drop-down offers Quarterly and Annual, not only Debt, Utilities and Subscriptions (human, 2026-11-22). This also means a moved row's recurrence is always allowed in its new category (step 11).
     - Source: human, 2026-11-22; replaces the `0007` §3 limit
     - Files: `src/budget/` (`frequenciesFor`), `src/screens/BudgetSetup.tsx`, estimate scaling checks
     - Verify: every Recurrence list; estimate scaling for Quarterly and Annual on the other categories; build + lint
     - Deps: none
+    - Progress (v0.7.41): one `FREQUENCIES` list for every row; `frequenciesFor` removed; `0007` §3 note updated; scaling checks in `test:import`.
 12. **Read-only Day table under Add purchase** (v0.7/12) — a copy of the Day table below the form.
     - Source: roadmap v0.7 (decided 2026-11-08)
     - Files: `src/screens/AddBudget.tsx`, table component

@@ -10,7 +10,7 @@ import { useCollapsed } from './ui/useCollapsed'
 import { useWide } from './ui/useWide'
 import { useStickyHead } from './ui/useStickyHead'
 import { fireReward } from '../rewards/rewards'
-import { useAnnounce } from './ui/announcer'
+import { announce, useAnnounce } from './ui/announcer'
 import { isSyncBusy } from '../storage/sync/controller'
 
 /** While a sync runs the tables take no changes (0015 Q4). */
@@ -78,6 +78,8 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
   const hasEdit = actions && range !== 'annual'
   const editInName = hasEdit && highlight
   const actionCol = hasEdit && !highlight
+  /** The highlight dialog's Move column (v0.7 step 11): Up, Down and Move to. */
+  const moveCol = actions && highlight
   const repeated = repeatedNames(roots)
   const say = (n: CatNode) => spokenName(n, repeated)
   const payWord = (n: CatNode) => (ancestors(n)[0] ?? n).cat.name === 'Income' ? 'Pay' : 'Due'
@@ -278,7 +280,89 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
     return list.length > 0 && <ActionsMenu id={did('edit', n)} label={`Edit ${say(n)}`} describedBy={rowId(n)} buttonLabel="Edit" items={list} onSelect={k => act(n, k)} />
   }
   function rowActions(n: CatNode): ReactNode {
-    return actionCol && <td className="row-actions">{editMenu(n)}</td>
+    return <>{actionCol && <td className="row-actions">{editMenu(n)}</td>}{moveCol && moveCell(n)}</>
+  }
+
+  const pathLabel = (d: CatNode) => d.parent ? `${d.parent.cat.name} › ${d.cat.name}` : d.cat.name
+  /** Where Move to may put a row: any category or subcategory but its own parent, itself and its subcategories (v0.7 step 11). */
+  function moveChoices(n: CatNode): MenuAction[] {
+    return flatten(tree)
+      .filter(d => d.depth <= 1 && d.cat.name !== 'Net Income' && d.cat.id !== n.cat.id && d.cat.id !== n.parent?.cat.id && d.parent?.cat.id !== n.cat.id)
+      .map(d => ({ value: String(d.cat.id), label: pathLabel(d), id: `${did('move_to', n)}-${d.cat.id}` }))
+  }
+  /** Shown rows a row can swap with: its siblings in this highlight (none for the highlighted row itself). */
+  const shownSiblings = (n: CatNode) => n.parent && n.depth > base ? n.parent.children.filter(hasAmount) : []
+  function report(msg: string) { setStatus(msg); announce(msg) }
+  function moveFailed(n: CatNode, err: unknown) {
+    setStatus('')
+    setError(err instanceof RowInUseError ? `Error: ${n.cat.name} wasn’t moved because ${err.message}` : `Error: ${n.cat.name} wasn’t moved. Try again.`)
+    onChanged?.()
+  }
+
+  /** Up or Down: swap with the next shown sibling; saved at once (v0.7 step 11). */
+  async function reorder(n: CatNode, delta: -1 | 1) {
+    const sibs = shownSiblings(n)
+    const j = sibs.indexOf(n) + delta
+    if (j < 0 || j >= sibs.length) return
+    setError(''); setNotice('')
+    if (isSyncBusy()) { setError(SYNC_BUSY); return }
+    try {
+      await categoryRepo.reorder(n.cat.id, sibs[j].cat.id, delta > 0)
+    } catch (err) { moveFailed(n, err); return }
+    report(`Moved ${say(n)} ${delta < 0 ? 'up' : 'down'}.`)
+    focusAfter.current = did(delta < 0 ? 'move_up' : 'move_down', n)
+    onChanged?.()
+  }
+
+  /** Move to: the row becomes the last child of the chosen category (a subcategory) or subcategory (an item); saved at once (v0.7 step 11). */
+  async function moveTo(n: CatNode, destId: number) {
+    const dest = flatten(tree).find(x => x.cat.id === destId)
+    if (!dest) return
+    setError(''); setNotice('')
+    if (isSyncBusy()) { setError(SYNC_BUSY); return }
+    const kids = n.children.length
+    if (dest.depth === 1 && kids) {
+      setStatus('')
+      setError(`Error: ${say(n)} has ${kids} item${kids === 1 ? '' : 's'}, so it cannot go inside another subcategory. Move its items out first.`)
+      return
+    }
+    const moved = { ...n, parent: dest }
+    const recolor = [{ id: n.cat.id, color: childColor(dest) }, ...n.children.map(c => ({ id: c.cat.id, color: childColor(moved) }))]
+    let charity = 0
+    try {
+      charity = await categoryRepo.moveTo(n.cat.id, destId, recolor)
+    } catch (err) {
+      if (err instanceof NameTakenError) { setStatus(''); setError(`Invalid: Move to for ${say(n)}: ${err.message}. Rename one of them first.`); return }
+      moveFailed(n, err); return
+    }
+    report(`Moved ${say(n)} to ${pathLabel(dest)} as ${dest.depth === 0 ? 'a subcategory' : 'an item'}.${charity ? ` Your ${charity} Charity purchase${charity === 1 ? '' : 's'} moved to Charity › Miscellaneous.` : ''}`)
+    // Focus stays on the moved row's Move to button when it is still in this highlight; otherwise on the highlighted row's.
+    const top = roots[0]
+    const stays = top.cat.id === n.cat.id || flatten([top]).some(x => x.cat.id === destId)
+    focusAfter.current = stays ? ['hl_move_to', slug(dest.cat.name), slug(n.cat.name), n.cat.id].join('-') : top.parent ? did('move_to', top) : GRID
+    onChanged?.()
+  }
+
+  /** The Move cell: Up and Down (rows under the highlighted one), then Move to (v0.7 step 11). */
+  function moveCell(n: CatNode): ReactNode {
+    if (!n.parent) return <td className="row-actions" />
+    const sibs = shownSiblings(n)
+    const i = sibs.indexOf(n)
+    const choices = moveChoices(n)
+    return (
+      <td className="row-actions">
+        <span className="reorder move-controls">
+          {sibs.length > 0 && <>
+            <Button type="button" className="secondary small" id={did('move_up', n)} aria-label={`Move ${say(n)} up`} aria-describedby={rowId(n)}
+              aria-disabled={i === 0 || undefined} onClick={() => reorder(n, -1)}><span aria-hidden="true">↑</span></Button>
+            <Button type="button" className="secondary small" id={did('move_down', n)} aria-label={`Move ${say(n)} down`} aria-describedby={rowId(n)}
+              aria-disabled={i === sibs.length - 1 || undefined} onClick={() => reorder(n, 1)}><span aria-hidden="true">↓</span></Button>
+          </>}
+          {choices.length > 0 && <span className="move-menu"><ActionsMenu id={did('move_to', n)} label={`Move ${say(n)} to`} describedBy={rowId(n)} buttonLabel="Move to" floating
+            items={choices} onSelect={k => moveTo(n, Number(k))} /></span>}
+        </span>
+      </td>
+    )
   }
   const purchaseEdit = (n: CatNode, i: BudgetItem) => (
     <Button type="button" className="secondary small" id={editId(n, i)}
@@ -366,6 +450,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
           {actionCol && (
             <td className="row-actions">{purchaseEdit(n, i)}</td>
           )}
+          {moveCol && <td />}
         </tr>,
       )
     })
@@ -451,6 +536,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
                 <td />
                 {periods.map(p => <th key={p.label} scope="colgroup" className={start.trim()} colSpan={colSpan} aria-label={p.fullLabel}>{p.label}</th>)}
                 {actionCol && <td />}
+                {moveCol && <td />}
               </tr>
             )}
             <tr>
@@ -465,10 +551,11 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
                   </Fragment>
                 ))}
               {actionCol && <th scope="col" className="name">Edit</th>}
+              {moveCol && <th scope="col" className="name">Move</th>}
             </tr>
           </thead>
           <tbody>
-            {rows.length ? rows : <tr aria-level={1}><td className="empty" colSpan={1 + periods.length * colSpan + (actionCol ? 1 : 0)}>Nothing recorded for this range yet.</td></tr>}
+            {rows.length ? rows : <tr aria-level={1}><td className="empty" colSpan={1 + periods.length * colSpan + (actionCol ? 1 : 0) + (moveCol ? 1 : 0)}>Nothing recorded for this range yet.</td></tr>}
           </tbody>
         </table>
       </div>

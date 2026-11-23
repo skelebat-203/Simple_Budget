@@ -1,4 +1,7 @@
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react'
+
+/** Space kept between a floating menu and the window edge. */
+const VIEWPORT_GAP_PX = 8
 
 /** A menu item: `id` is its DOM id; `value` is passed to onSelect. */
 export type MenuAction<T extends string = string> = { id: string; label: string; value: T }
@@ -12,7 +15,9 @@ export type MenuAction<T extends string = string> = { id: string; label: string;
  *   Tab closes. Focus returns to the button, then the picked action may move it.
  * - Keys it handles don't reach a surrounding treegrid.
  */
-export function ActionsMenu<T extends string>({ id, label, buttonLabel = 'Actions', items, onSelect, describedBy }: {
+export function ActionsMenu<T extends string>({ id, label, buttonLabel = 'Actions', items, onSelect, describedBy, floating = false }: {
+  /** Long menus inside a scrolling table box (Move to, v0.7 step 11): the menu is placed against the window, so the box doesn't clip it. */
+  floating?: boolean
   /** In a data table: the row header's id, on the button and each item (digital_accessibility.md, Tables). */
   describedBy?: string
   /** Button id; the menu is `{id}-menu`. */
@@ -29,7 +34,26 @@ export function ActionsMenu<T extends string>({ id, label, buttonLabel = 'Action
   const button = useRef<HTMLButtonElement>(null)
   const refs = useRef<(HTMLLIElement | null)[]>([])
 
-  useEffect(() => { if (open) refs.current[active]?.focus() }, [open, active])
+  const [place, setPlace] = useState<CSSProperties | undefined>()
+  // Floating: below the button, or above it when there is more room there; right edges line up.
+  useLayoutEffect(() => {
+    if (!open || !floating || !button.current) { setPlace(undefined); return }
+    const b = button.current.getBoundingClientRect()
+    const below = innerHeight - b.bottom - VIEWPORT_GAP_PX, above = b.top - VIEWPORT_GAP_PX
+    const down = below >= above
+    // Right edges line up unless there is more room to the right; the menu never leaves the window.
+    const roomLeft = b.right - VIEWPORT_GAP_PX, roomRight = innerWidth - b.left - VIEWPORT_GAP_PX
+    setPlace({
+      position: 'fixed', boxSizing: 'border-box',
+      ...(roomLeft >= roomRight
+        ? { right: Math.max(VIEWPORT_GAP_PX, innerWidth - b.right), left: 'auto', maxWidth: roomLeft }
+        : { left: Math.max(VIEWPORT_GAP_PX, b.left), right: 'auto', maxWidth: roomRight }),
+      minWidth: `min(var(--size-menu-row-min), ${Math.max(roomLeft, roomRight)}px)`,
+      ...(down ? { top: b.bottom, bottom: 'auto' } : { bottom: innerHeight - b.top, top: 'auto' }),
+      maxHeight: `min(var(--size-menu-max-h), ${Math.max(down ? below : above, 0)}px)`,
+    })
+  }, [open, floating])
+  useEffect(() => { if (open && (!floating || place)) refs.current[active]?.focus() }, [open, active, floating, place])
 
   function show(at: number) { setActive(at); setOpen(true) }
   function close(focusButton = true) { setOpen(false); if (focusButton) button.current?.focus() }
@@ -59,7 +83,7 @@ export function ActionsMenu<T extends string>({ id, label, buttonLabel = 'Action
         {buttonLabel} <span aria-hidden="true">▾</span>
       </button>
       {open && (
-        <ul id={`${id}-menu`} role="menu" aria-labelledby={id} className="menu" onKeyDown={onMenuKey}>
+        <ul id={`${id}-menu`} role="menu" aria-labelledby={id} className="menu" style={place} onKeyDown={onMenuKey}>
           {items.map((a, i) => (
             <li key={a.id} id={a.id} role="menuitem" tabIndex={-1} className="menu-item" aria-describedby={describedBy}
               ref={el => { refs.current[i] = el }}
