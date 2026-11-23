@@ -309,6 +309,21 @@ try {
     const parentRow = tree.slice(0, coffee).reverse().find(r => r.startsWith('2:'))
     check('Move: the table shows Coffee Shops under Maintenance after the highlight closes', coffee > 0 && parentRow === '2:Maintenance', tree.join(' | '))
     check('Move: the table shows Car wash as a subcategory', tree.includes('2:Car wash'), tree.join(' | '))
+    // A row moved into a closed row: the main table opens it, so the row shows after the highlight closes.
+    const rowsNow = () => page.evaluate(() => [...document.querySelectorAll('#tabpanel-budget .budget-table:not(.misc-table) tbody tr[aria-level]')]
+      .map(r => `${r.getAttribute('aria-level')}:${r.querySelector('th .name-link')?.textContent.trim()}`))
+    await page.evaluate(() => [...document.querySelectorAll('#tabpanel-budget [id^=expand-]')].find(x => x.closest('tr')?.querySelector('.name-link')?.textContent.trim() === 'Maintenance')?.click()); await settle()
+    check('Move: Maintenance closed before the move', !(await rowsNow()).includes('3:Coffee Shops'), (await rowsNow()).join(' | '))
+    const carId = await page.evaluate(() => [...document.querySelectorAll('button.name-link')].find(b => b.textContent.trim() === 'Car wash')?.id ?? '')
+    await page.focus(`[id="${carId}"]`); await press('Enter')
+    const hl2 = (await openIds()).at(-1)
+    await page.focus(`#${hl2} [aria-label="Move Car wash to"]`); await press('ArrowDown')
+    const at2 = await page.evaluate(h => [...document.querySelectorAll(`#${h} [role=menuitem]`)].findIndex(m => m.textContent.trim() === 'Expenses › Maintenance'), hl2)
+    for (let i = 0; i < at2; i++) await press('ArrowDown')
+    await press('Enter'); await sleep(500)
+    await press('Escape')
+    const opened = await rowsNow()
+    check('Move: the destination opens so the moved row shows', opened.includes('3:Car wash') && opened.includes('3:Coffee Shops'), opened.join(' | '))
   }
 } catch (e) {
   console.error(e)

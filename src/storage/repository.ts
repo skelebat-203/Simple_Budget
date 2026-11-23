@@ -225,10 +225,11 @@ export const categoryRepo = {
    * child of a category (it is then a subcategory) or of a subcategory (it is then an item).
    * Its id stays, so its purchases and estimate go with it. Refused, inside the transaction,
    * when: a row with items would go inside a subcategory (too deep), the destination is the row
-   * or under it, a sibling there has the name (NameTakenError), or the destination holds its
-   * own amounts. `recolor` sets the moved rows' colors. Runs the Charity rule; returns purchases moved.
+   * or under it, or a sibling there has the name (NameTakenError). A destination with nothing under it that
+   * holds its own estimate or purchases first hands them to a new Miscellaneous row (`movedFrom` names it).
+   * `recolor` sets the moved rows' colors. Runs the Charity rule (`charity`: purchases it moved).
    */
-  async moveTo(id: number, parentId: number, recolor: { id: number; color: string }[]): Promise<number> {
+  async moveTo(id: number, parentId: number, recolor: { id: number; color: string }[]): Promise<{ charity: number; movedFrom?: string }> {
     return db.transaction('rw', db.categories, db.budgetItems, async () => {
       const c = await db.categories.get(id)
       if (!c || c.parentId == null) throw new RowInUseError('it no longer exists.')
@@ -241,12 +242,22 @@ export const categoryRepo = {
       }
       const sibs = await db.categories.where('parentId').equals(target.id!).toArray()
       if (sibs.some(s => s.id !== id && slug(s.name) === slug(c.name))) throw new NameTakenError(`“${c.name}” already exists in ${target.name}`)
-      if (sibs.length === 0 && !target.computed && (target.estimate != null || await db.budgetItems.where('categoryId').equals(target.id!).count()))
-        throw new RowInUseError(`${target.name} holds its own amounts, so nothing can be moved into it.`)
-      const order = sibs.reduce((m, s) => Math.max(m, (s.order ?? -1) + 1), 0)
+      let order = sibs.reduce((m, s) => Math.max(m, (s.order ?? -1) + 1), 0)
+      // A destination with no rows under it that holds its own amounts: they move to a new
+      // Miscellaneous row under it first, as in Budget setup (0007 §2.1).
+      const own = db.budgetItems.where('categoryId').equals(target.id!)
+      let movedFrom: string | undefined
+      if (sibs.length === 0 && !target.computed && (target.estimate != null || await own.count())) {
+        if (slug(c.name) === 'miscellaneous') throw new NameTakenError(`“${c.name}” is the name used for ${target.name}’s own amounts`)
+        const held = { estimate: target.estimate, frequency: target.frequency, autopay: target.autopay, selected: target.selected || undefined }
+        await db.categories.update(target.id!, { estimate: undefined, frequency: undefined, autopay: undefined })
+        const misc = await db.categories.add({ name: 'Miscellaneous', color: recolor[0]?.color ?? c.color, parentId: target.id!, order: order++, ...held })
+        await own.modify({ categoryId: misc })
+        movedFrom = target.name
+      }
       await db.categories.update(id, { parentId: target.id!, order })
       for (const r of recolor) await db.categories.update(r.id, { color: r.color })
-      return settleCharity()
+      return { charity: await settleCharity(), movedFrom }
     })
   },
   /**

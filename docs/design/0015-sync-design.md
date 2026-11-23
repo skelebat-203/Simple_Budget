@@ -36,6 +36,7 @@ The roadmap leaves this open: the earlier JSON-doc shape (version and `updatedAt
 - **Tombstones:** a deleted record keeps its row with `deleted` set, so other devices learn of the delete (v0.3 6.2). **Q7 — decided 2026-11-21:** tombstones are kept 90 days, then purged.
 - **Ids:** records need ids that are unique across devices (v0.2 8.8). Dexie's auto-increment ids clash between devices, so synced records get a random UUID. This means a Dexie migration (v9).
 - **Merge checks inside the write transaction** (v0.5 3.2): re-check sibling names on merge. A clash gets a suffix and a note, so a name is never dropped silently.
+- **Linking a device with default rows (approved 2026-11-22, v0.7 step 11):** a local row never synced takes the sheet row with the same name under the same parent. If none matches (the row was moved on another device), it takes the sheet row with the same name under any parent, but only when that name is used once among the unmatched rows on each side. The sheet's version wins, so the move is kept and the row is not doubled.
 
 ## 5. Encryption (open in the roadmap)
 

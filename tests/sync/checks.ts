@@ -135,6 +135,21 @@ export async function run(check: Check) {
   check((await db.categories.get(groceries.id!))?.parentId === expenses.id, 'a move on another device is pulled')
   const backup = checkBackup(JSON.parse(JSON.stringify(await exportBackup())))
   check(backup.categories.some(c => c.id === ira.id && c.parentId === ins.id), 'backup restore check accepts the moved rows')
+  // A destination holding its own amounts hands them to a new Miscellaneous row first (as Budget setup does).
+  await tick()
+  const taxes = (await catByName('Taxes'))!
+  await categoryRepo.update(taxes.id!, { estimate: 50, frequency: 'month' })
+  const taxBuy = await budgetItemRepo.add({ categoryId: taxes.id!, amount: 7, date: '2026-11-02' })
+  const hsa = (await catByName('HSA'))!
+  const handed = await categoryRepo.moveTo(hsa.id!, taxes.id!, [{ id: hsa.id!, color: 'red' }])
+  const taxKids = (await categoryRepo.list()).filter(c => c.parentId === taxes.id).sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+  const taxMisc = taxKids.find(c => c.name === 'Miscellaneous')
+  check(handed.movedFrom === 'Taxes' && taxKids.map(c => c.name).join() === 'Miscellaneous,HSA' && taxMisc?.estimate === 50 && taxMisc.frequency === 'month'
+    && (await db.categories.get(taxes.id!))?.estimate === undefined && (await db.budgetItems.get(taxBuy))?.categoryId === taxMisc.id,
+    `the destination’s own estimate and purchase move to Taxes › Miscellaneous; the moved row is last (${taxKids.map(c => c.name).join(', ')})`)
+  await syncNow()
+  check(!!taxMisc?.uid && (await remoteRecord('Categories', taxMisc.uid)).data.parentUid === taxes.uid && (await remoteRecord('Purchases', (await db.budgetItems.get(taxBuy))!.uid!)).data.categoryUid === taxMisc.uid,
+    'sync pushes the new Miscellaneous row and the purchase on it')
 
   const local = (await catByName('Groceries'))!
   await remoteWrite('Categories', gUid, local.updatedAt!, false, { ...(await remoteRecord('Categories', gUid)).data, name: 'Tie Name' })

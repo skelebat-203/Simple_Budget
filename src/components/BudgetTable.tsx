@@ -38,7 +38,9 @@ const PENCIL_SIZE = 18
  * 0/1/2, category colors, computed rows, only rows with an amount, and
  * expand/collapse state kept across range changes and restarts.
  */
-export function BudgetTable({ roots, items, range, showEstimates: wantEstimates, calendar, date, idBase = 'budget', preview = false, highlight = false, allRoots, onChanged, pageHead = false }: {
+export function BudgetTable({ roots, items, range, showEstimates: wantEstimates, calendar, date, idBase = 'budget', preview = false, highlight = false, allRoots, onChanged, onMoved, pageHead = false }: {
+  /** Highlight dialog: a row moved under these rows; the main table opens them (v0.7 step 11). */
+  onMoved?: (ids: number[]) => void
   roots: CatNode[]
   /** On the page (not in a dialog): no fixed-height box; the header row stays in view while the page scrolls (v0.7 step 6). */
   pageHead?: boolean
@@ -328,14 +330,16 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
     }
     const moved = { ...n, parent: dest }
     const recolor = [{ id: n.cat.id, color: childColor(dest) }, ...n.children.map(c => ({ id: c.cat.id, color: childColor(moved) }))]
-    let charity = 0
+    let charity = 0, movedFrom: string | undefined
     try {
-      charity = await categoryRepo.moveTo(n.cat.id, destId, recolor)
+      ;({ charity, movedFrom } = await categoryRepo.moveTo(n.cat.id, destId, recolor))
     } catch (err) {
       if (err instanceof NameTakenError) { setStatus(''); setError(`Invalid: Move to for ${say(n)}: ${err.message}. Rename one of them first.`); return }
       moveFailed(n, err); return
     }
-    report(`Moved ${say(n)} to ${pathLabel(dest)} as ${dest.depth === 0 ? 'a subcategory' : 'an item'}.${charity ? ` Your ${charity} Charity purchase${charity === 1 ? '' : 's'} moved to Charity › Miscellaneous.` : ''}`)
+    report(`Moved ${say(n)} to ${pathLabel(dest)} as ${dest.depth === 0 ? 'a subcategory' : 'an item'}.${movedFrom ? ` ${movedFrom}’s own amounts moved to ${movedFrom} › Miscellaneous.` : ''}${charity ? ` Your ${charity} Charity purchase${charity === 1 ? '' : 's'} moved to Charity › Miscellaneous.` : ''}`)
+    // The main table opens the rows above the moved row so it shows when the highlight closes (saved expand state).
+    onMoved?.([...ancestors(dest).map(a => a.cat.id), dest.cat.id])
     // Focus stays on the moved row's Move to button when it is still in this highlight; otherwise on the highlighted row's.
     const top = roots[0]
     const stays = top.cat.id === n.cat.id || flatten([top]).some(x => x.cat.id === destId)
@@ -480,7 +484,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
         buttons={<><span /><Button type="button" className="secondary" onClick={close}>Close</Button></>}>
         <p className="help">{hlNode.children.length || (range === 'day' && purchasesOf(hlNode).length) ? `${say(hlNode)} and the rows under it.` : `${say(hlNode)} has nothing under it.`}</p>
         <BudgetTable roots={[hlNode]} items={items} range={range} showEstimates={wantEstimates} calendar={calendar} date={date}
-          idBase={`${idBase}-hl`} highlight allRoots={tree} onChanged={onChanged} />
+          idBase={`${idBase}-hl`} highlight allRoots={tree} onChanged={onChanged} onMoved={openRows} />
       </Dialog>
     )
   }
