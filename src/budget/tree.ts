@@ -48,26 +48,22 @@ export const isSoloCharity = (n: CatNode) =>
   n.cat.name === 'Charity' && n.parent?.cat.name === 'Expenses' && !n.parent.parent && !n.cat.rollup
   && n.children.every(c => c.cat.name === 'Miscellaneous' || !c.cat.selected)
 
-const BILL_GROUPS = new Set(['Debt', 'Utilities', 'Subscriptions'])
 const rootOf = (n: CatNode): CatNode => (n.parent ? rootOf(n.parent) : n)
-const inBillGroup = (n: CatNode) => ancestors(n).some(a => BILL_GROUPS.has(a.cat.name))
 
 /** Recurrence and autopay belong to every row that holds a manual estimate: any non-total row (0007 §3). */
 export const recurrenceApplies = (n: CatNode) => !isTotal(n)
 export const autopayApplies = recurrenceApplies
 
+/** Every Recurrence list offers all of these, in every category (v0.7 step 11b; replaces the 0007 §3 limit). */
 export const FREQUENCIES: { value: Frequency; label: string }[] = [
   { value: 'day', label: 'Daily' },
   { value: 'week', label: 'Weekly' },
   { value: 'biweek', label: 'Every 2 weeks' },
   { value: 'bimonthly', label: 'Bi-monthly (twice a month)' },
   { value: 'month', label: 'Monthly' },
+  { value: 'quarter', label: 'Quarterly' },
+  { value: 'annual', label: 'Annual' },
 ]
-
-/** Debt, Utilities and Subscriptions items also get Quarterly and Annual (0007 §3). */
-export const frequenciesFor = (n: CatNode) => inBillGroup(n)
-  ? [...FREQUENCIES, { value: 'quarter' as const, label: 'Quarterly' }, { value: 'annual' as const, label: 'Annual' }]
-  : FREQUENCIES
 
 /** Occurrences per month (security-v0.2 3.4: a month is one month, never days ÷ 30.44). */
 export const PER_MONTH: Record<Frequency, number> = { day: 365 / 12, week: 52 / 12, biweek: 26 / 12, bimonthly: 2, month: 1, quarter: 1 / 3, annual: 1 / 12 }

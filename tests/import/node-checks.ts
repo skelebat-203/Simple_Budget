@@ -9,6 +9,7 @@ import { detect, sourceRows } from '../../src/import/sheets'
 import { LOST_VALUES_TITLE, lostValuesText } from '../../src/components/import/text'
 import { dateBounds, expandName } from '../../src/budget/validate'
 import { importName } from '../../src/import/cells'
+import { estimateFor, FREQUENCIES, WEEK_MONTHS } from '../../src/budget/tree'
 import { badFiles, formulaFiles, manyNotesXlsx, ods, odsDoc, odsRow, odsStr, odsTable, readTestFile, seededCategories, SHEET_YEAR, TEST_FILES, TODAY, UNKNOWN_TOP_CSV } from './fixtures'
 
 /**
@@ -220,6 +221,16 @@ export async function run(check: Check) {
     check(got === want, `expandName("${typed}"${prev ? `, was "${prev}"` : ''}) = "${got}" (want "${want}")`)
   }
   check(importName("Car Pmt") === "Car Pmt", 'import names are not expanded ("Car Pmt" stays)')
+  // Quarterly and Annual in every category (v0.7 step 11b): the list is the same everywhere and the estimate scales by frequency only.
+  check(['quarter', 'annual'].every(f => FREQUENCIES.some(x => x.value === f)), 'every Recurrence list offers Quarterly and Annual')
+  for (const [frequency, estimate] of [['quarter', 300], ['annual', 1200]] as const) {
+    const groceries: Category = { id: 1, name: 'Groceries', color: '', parentId: 2, selected: true, estimate, frequency }
+    const month = estimateFor(groceries, { from: '', to: '' })
+    const week = estimateFor(groceries, { from: '', to: '', months: WEEK_MONTHS })
+    const year = estimateFor(groceries, { from: '', to: '', months: 12 })
+    check(Math.abs(month - 100) < 1e-9 && Math.abs(week - 1200 / 52) < 1e-9 && Math.abs(year - 1200) < 1e-9,
+      `${frequency} ${estimate} on Groceries: ${month.toFixed(2)} a month, ${week.toFixed(2)} a week, ${year.toFixed(2)} a year`)
+  }
   // Hostile and malformed files fail with a plain message.
   for (const [name, bytes] of Object.entries(badFiles())) {
     const t0 = performance.now()

@@ -9,7 +9,7 @@ import { saveSetup } from '../storage/repository'
 import { dateBounds, expandName, moneyError, NAME_MAX, parseAmount, slug } from '../budget/validate'
 import type { BudgetItem, Category, DefaultRange, DueDay, Frequency, MonthBoundary } from '../storage/db'
 import {
-  buildTree, ancestors, dayChoices, domId, estimateTotal, flatten, formatAmount, frequenciesFor, isTotal, repeatedNames, scheduleClears,
+  buildTree, ancestors, dayChoices, domId, estimateTotal, flatten, formatAmount, FREQUENCIES, isTotal, repeatedNames, scheduleClears,
   scheduleKind, spokenName, subtree, WEEKDAYS, type Calendar, type Cat, type CatNode,
 } from '../budget/tree'
 import * as edit from '../budget/setupEdits'
@@ -239,7 +239,7 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, rewardsEnable
               <select className="input" id={domId('recurrence', n)} aria-label={`Recurrence for ${say(n)}`} aria-describedby={nameId}
                 value={n.cat.frequency ?? 'month'}
                 onChange={e => setWork(edit.patch(work, n.cat.id, { frequency: e.target.value as Frequency, ...scheduleClears(n.cat, e.target.value as Frequency) }))}>
-                {frequenciesFor(n).map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
+                {FREQUENCIES.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
               </select>
             </span>
           )}
