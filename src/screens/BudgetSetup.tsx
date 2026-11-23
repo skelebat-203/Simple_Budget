@@ -210,13 +210,14 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, rewardsEnable
             {(n.parent || !n.cat.computed) && (
               <label className="hit">
                 <input type="checkbox" className="checkbox" id={domId('select', n)}
-                  aria-label={n.children.length ? `Select all ${say(n)} items` : `Select ${say(n)}`}
+                  aria-label={n.children.length ? `Select all ${say(n)} items` : `Select ${say(n)}`} aria-describedby={nameId}
                   checked={isChecked(n)} ref={el => { if (el) el.indeterminate = isMixed(n) }}
                   onChange={e => setWork(edit.setSelected(work, n.cat.id, e.target.checked))} />
               </label>
             )}
             {expandable
-              ? <Expander open={expanded.has(n.cat.id)} onToggle={() => toggleRow(n.cat.id)} id={domId('setup_expand', n)}>{label}</Expander>
+              ? <Expander open={expanded.has(n.cat.id)} onToggle={() => toggleRow(n.cat.id)} id={domId('setup_expand', n)}
+                label={say(n) === label ? undefined : say(n)} describedBy={nameId}>{label}</Expander>
               : <span>{label}</span>}
           </span>
         </th>
@@ -225,7 +226,7 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, rewardsEnable
             ? n.parent && <span>{formatAmount(estimateTotal(n, MONTH)) || '0.00'} <span className="help">per month</span></span>
             : <>
               <AmountField id={estId} className="amount" allowNegative={false} value={estText(n.cat)}
-                aria-labelledby="setup-est-col" aria-describedby={errors[estId] ? `${nameId} ${estId}-error_msg` : nameId}
+                aria-label={`Estimated amount for ${say(n)}`} aria-describedby={errors[estId] ? `${nameId} ${estId}-error_msg` : nameId}
                 aria-invalid={!!errors[estId] || undefined}
                 onChange={e => setEst(x => ({ ...x, [n.cat.id]: e.target.value }))} />
               {errors[estId] && <p id={`${estId}-error_msg`} className="error">{errors[estId]}</p>}
@@ -235,7 +236,7 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, rewardsEnable
           {!total && (
             <span className="pre">
               <span aria-hidden="true">per</span>
-              <select className="input" id={domId('recurrence', n)} aria-label={`Recurrence for ${say(n)}`}
+              <select className="input" id={domId('recurrence', n)} aria-label={`Recurrence for ${say(n)}`} aria-describedby={nameId}
                 value={n.cat.frequency ?? 'month'}
                 onChange={e => setWork(edit.patch(work, n.cat.id, { frequency: e.target.value as Frequency, ...scheduleClears(n.cat, e.target.value as Frequency) }))}>
                 {frequenciesFor(n).map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
@@ -246,7 +247,7 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, rewardsEnable
         <td>
           {!total && (
 <label className="hit">
-            <input type="checkbox" className="checkbox" id={domId('autopay', n)} aria-label={`Autopay for ${say(n)}`}
+            <input type="checkbox" className="checkbox" id={domId('autopay', n)} aria-label={`Autopay for ${say(n)}`} aria-describedby={nameId}
               checked={!!n.cat.autopay} onChange={e => setWork(edit.patch(work, n.cat.id, { autopay: e.target.checked }))} />
             </label>
           )}
@@ -255,9 +256,9 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, rewardsEnable
         <td>
           {n.parent && (
             <span className="reorder">
-              <Button type="button" className="secondary small" id={domId('move_up', n)} aria-label={`Move ${say(n)} up`}
+              <Button type="button" className="secondary small" id={domId('move_up', n)} aria-label={`Move ${say(n)} up`} aria-describedby={nameId}
                 aria-disabled={i === 0 || undefined} onClick={() => moveRow(n, -1)}><span aria-hidden="true">↑</span></Button>
-              <Button type="button" className="secondary small" id={domId('move_down', n)} aria-label={`Move ${say(n)} down`}
+              <Button type="button" className="secondary small" id={domId('move_down', n)} aria-label={`Move ${say(n)} down`} aria-describedby={nameId}
                 aria-disabled={i === sibs.length - 1 || undefined} onClick={() => moveRow(n, 1)}><span aria-hidden="true">↓</span></Button>
             </span>
           )}
@@ -283,7 +284,7 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, rewardsEnable
     const daySelect = (key: 'dueDay' | 'dueDay2', label: string, choices: DueDay[]) => {
       const id = domId(key === 'dueDay' ? 'due_day' : 'due_day2', n)
       return field(label,
-        <select className="input" id={id} aria-label={`${label} for ${say(n)}`} value={String(n.cat[key] ?? '')}
+        <select className="input" id={id} aria-label={`${label} for ${say(n)}`} aria-describedby={domId('setup_name', n)} value={String(n.cat[key] ?? '')}
           onChange={e => set({ [key]: toDay(e.target.value) })}>
           <option value="">Not set</option>
           {choices.map(dayOpt)}
@@ -292,7 +293,7 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, rewardsEnable
     if (kind === 'weekday') {
       const id = domId('due_weekday', n)
       return field(`${word} day of week`,
-        <select className="input" id={id} aria-label={`${word} day of week for ${say(n)}`} value={n.cat.dueWeekday ?? ''}
+        <select className="input" id={id} aria-label={`${word} day of week for ${say(n)}`} aria-describedby={domId('setup_name', n)} value={n.cat.dueWeekday ?? ''}
           onChange={e => set({ dueWeekday: e.target.value === '' ? undefined : Number(e.target.value) })}>
           <option value="">Not set</option>
           {WEEKDAYS.map((d, i) => <option key={d} value={i}>{d}</option>)}
@@ -311,7 +312,7 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, rewardsEnable
     return field(dateLabel(n), <>
       <input type="date" className="input" id={dueId} min={bounds.min} max={bounds.max} value={n.cat.dueDate ?? ''}
         aria-label={`${dateLabel(n)} for ${say(n)}`} aria-invalid={!!errors[dueId] || undefined}
-        aria-describedby={errors[dueId] ? `${dueId}-error_msg` : undefined}
+        aria-describedby={errors[dueId] ? `${domId('setup_name', n)} ${dueId}-error_msg` : domId('setup_name', n)}
         onChange={e => set({ dueDate: e.target.value || undefined })} />
       {errors[dueId] && <p id={`${dueId}-error_msg`} className="error">{errors[dueId]}</p>}
     </>)
@@ -337,6 +338,8 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, rewardsEnable
       announce('Fields removed.')
     }
     const set = (p: Partial<typeof c>) => setCreate(x => ({ ...x, [root.cat.id]: { ...c, ...p } }))
+    /** The Create row has no row header of its own: its controls are described by the category's (digital_accessibility.md, Tables). */
+    const key = domId('setup_name', root)
     return (
       <tr key={`create-${root.cat.id}`} className={`row create depth-1 clr-${root.cat.color}`} aria-level={2}>
         <td colSpan={6}>
@@ -345,13 +348,13 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, rewardsEnable
             <div className="create-field">
               <label className="label" htmlFor={base}>Create in {root.cat.name}</label>
               <input id={base} className="input" maxLength={NAME_MAX} value={c.name}
-                aria-invalid={!!err || undefined} aria-describedby={err ? `${base}-error_msg` : undefined}
+                aria-invalid={!!err || undefined} aria-describedby={err ? `${key} ${base}-error_msg` : key}
                 onChange={e => set({ name: e.target.value })}
                 onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addRow(root) } }} />
             </div>
             <div className="create-field">
-              <label className="label" htmlFor={`${base}-parent`}>Add to</label>
-              <select id={`${base}-parent`} className="input" value={c.parent} onChange={e => set({ parent: Number(e.target.value) })}>
+              <label className="label" htmlFor={`${base}-parent`}>Add to<span className="sr-only"> in {root.cat.name}</span></label>
+              <select id={`${base}-parent`} className="input" aria-describedby={key} value={c.parent} onChange={e => set({ parent: Number(e.target.value) })}>
                 {[root, ...root.children].map(t => <option key={t.cat.id} value={t.cat.id}>{t.cat.name}</option>)}
               </select>
             </div>
@@ -360,12 +363,12 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, rewardsEnable
               onMouseLeave={() => setTipOff(t => t === base ? null : t)} onBlur={() => setTipOff(t => t === base ? null : t)}>
               <Button type="button" className="secondary" id={`${base}-save`} aria-disabled={empty || undefined}
                 aria-label={`Save new item in ${root.cat.name}`}
-                aria-describedby={empty ? `${base}-tooltip` : base} onClick={() => addRow(root)}>Save</Button>
+                aria-describedby={empty ? `${key} ${base}-tooltip` : `${key} ${base}`} onClick={() => addRow(root)}>Save</Button>
               {empty && <span id={`${base}-tooltip`} role="tooltip" className="tooltip">First enter a value in ‘Create in {root.cat.name}’</span>}
             </span>
             </div>}
             {err && open && <p id={`${base}-error_msg`} className="error">{err}</p>}
-            <Button type="button" className="secondary" id={`${base}-add`} aria-label={open ? `Cancel adding to ${root.cat.name}` : `Add to ${root.cat.name}`}
+            <Button type="button" className="secondary" id={`${base}-add`} aria-label={open ? `Cancel adding to ${root.cat.name}` : `Add to ${root.cat.name}`} aria-describedby={key}
               onClick={open ? cancel : reveal}>{open ? 'Cancel' : 'Add'}</Button>
           </div>
         </td>
@@ -391,7 +394,7 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, rewardsEnable
             <thead>
               <tr>
                 <th scope="col">Item</th>
-                <th scope="col" id="setup-est-col">Estimated amount</th>
+                <th scope="col">Estimated amount</th>
                 <th scope="col">Recurrence</th>
                 <th scope="col">Autopay</th>
                 <th scope="col">Schedule</th>

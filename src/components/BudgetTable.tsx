@@ -107,11 +107,15 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
   /** A Day purchase's name opens its Edit dialog; an imported undated one also carries a tooltip (`describedBy`). */
   const nameButton = (n: CatNode, i: BudgetItem, describedBy?: string) => (
     <button type="button" className="name-link" id={`${editId(n, i)}-name`.replace('edit_purchase', 'name_purchase')} aria-haspopup="dialog"
-      aria-describedby={describedBy} onClick={() => act(n, 'editPurchase', i)}>
+      aria-label={`${purchaseLabel(i)}, ${say(n)}, ${purchaseAmount(i)}${i.description ? `, ${i.description}` : ''}`}
+      aria-describedby={[purchaseRowId(n, i), describedBy].filter(Boolean).join(' ')} onClick={() => act(n, 'editPurchase', i)}>
       {purchaseLabel(i)}{describedBy && <span className="tip-mark" aria-hidden="true">i</span>}
     </button>
   )
   const editId = (n: CatNode, i: BudgetItem) => [highlight ? 'hl_edit_purchase' : 'edit_purchase', n.parent && slug(n.parent.cat.name), slug(n.cat.name), i.id].filter(Boolean).join('-')
+  /** Row header ids: every control in a row is described by its row header (digital_accessibility.md, Tables). */
+  const rowId = (n: CatNode) => did(`${idBase}_row`, n)
+  const purchaseRowId = (n: CatNode, i: BudgetItem) => editId(n, i).replace('edit_purchase', `${idBase}_row_purchase`)
 
   async function removePurchase(n: CatNode, i: BudgetItem, next: string): Promise<SaveResult> {
     if (isSyncBusy()) return SYNC_BUSY
@@ -252,7 +256,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
   function renameControls(n: CatNode): ReactNode {
     if (!actions || range !== 'annual' || !n.parent) return null
     return (
-      <Button type="button" className="secondary icon" id={did('rename', n)} aria-label={`Rename ${say(n)}`} aria-haspopup="dialog"
+      <Button type="button" className="secondary icon" id={did('rename', n)} aria-label={`Rename ${say(n)}`} aria-describedby={rowId(n)} aria-haspopup="dialog"
         onClick={() => act(n, 'rename')}>
         <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" width={PENCIL_SIZE} height={PENCIL_SIZE}>
           <path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zm17.71-10.21a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
@@ -264,14 +268,14 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
   /** Edit cell for a Day, Week or Month category row (0009 §4); Annual edits names in the name cell. */
   function editMenu(n: CatNode): ReactNode {
     const list = menuActions(n)
-    return list.length > 0 && <ActionsMenu id={did('edit', n)} label={`Edit ${say(n)}`} buttonLabel="Edit" items={list} onSelect={k => act(n, k)} />
+    return list.length > 0 && <ActionsMenu id={did('edit', n)} label={`Edit ${say(n)}`} describedBy={rowId(n)} buttonLabel="Edit" items={list} onSelect={k => act(n, k)} />
   }
   function rowActions(n: CatNode): ReactNode {
     return actionCol && <td className="row-actions">{editMenu(n)}</td>
   }
   const purchaseEdit = (n: CatNode, i: BudgetItem) => (
     <Button type="button" className="secondary small" id={editId(n, i)}
-      aria-label={`Edit ${say(n)} ${purchaseNoun(i)}`} onClick={() => act(n, 'editPurchase', i)}>Edit</Button>
+      aria-label={`Edit ${say(n)} ${purchaseNoun(i)}, ${purchaseLabel(i).split(', ')[1]}${i.description ? `, ${i.description}` : ''}`} aria-describedby={purchaseRowId(n, i)} onClick={() => act(n, 'editPurchase', i)}>Edit</Button>
   )
 
   const values = (n: CatNode, p: Period) => ({ est: estimateTotal(n, p), act: actualFor(n, p, items) })
@@ -310,14 +314,15 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
     rows.push(
       <tr key={n.cat.id} className={`row depth-${n.depth - base}${n.children.length ? ' group' : ''}`}
         {...(plain ? {} : { 'data-id': n.cat.id, 'aria-level': n.depth + 1, 'aria-expanded': expandable(n) ? open : undefined })}>
-        <th scope="row" className={`name clr-${n.cat.color}`}>
+        <th scope="row" id={rowId(n)} className={`name clr-${n.cat.color}`}>
           <span className="name-line">
             {(() => {
               if (plain) return <span>{label}</span>
               return (
                 <>
-                  {expandable(n) && <Chevron open={open} onToggle={() => toggle(n.cat.id)} id={did('expand', n)} label={say(n)} />}
+                  {expandable(n) && <Chevron open={open} onToggle={() => toggle(n.cat.id)} id={did('expand', n)} label={say(n)} describedBy={rowId(n)} />}
                   <button type="button" className="name-link" id={did('name', n)} aria-haspopup="dialog"
+                    aria-label={say(n) === label ? undefined : say(n)} aria-describedby={rowId(n)}
                     onClick={() => setHl({ id: n.cat.id })}>{label}</button>
                 </>
               )
@@ -340,7 +345,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
     bought.forEach(i => {
       rows.push(
         <tr key={`p${i.id}`} className={`row purchase depth-${n.depth + 1 - base}`} {...(plain ? {} : { "aria-level": n.depth + 2 })}>
-          <th scope="row" className="name">
+          <th scope="row" id={purchaseRowId(n, i)} className="name">
             <span className="name-line">
               {plain ? purchaseLabel(i) : i.undated
                 ? <Tip text={UNDATED_NOTE}>{tip => nameButton(n, i, tip)}</Tip>

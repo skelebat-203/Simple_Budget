@@ -12,7 +12,9 @@ export type MenuAction<T extends string = string> = { id: string; label: string;
  *   Tab closes. Focus returns to the button, then the picked action may move it.
  * - Keys it handles don't reach a surrounding treegrid.
  */
-export function ActionsMenu<T extends string>({ id, label, buttonLabel = 'Actions', items, onSelect }: {
+export function ActionsMenu<T extends string>({ id, label, buttonLabel = 'Actions', items, onSelect, describedBy }: {
+  /** In a data table: the row header's id, on the button and each item (digital_accessibility.md, Tables). */
+  describedBy?: string
   /** Button id; the menu is `{id}-menu`. */
   id: string
   /** Accessible name of the button, e.g. "Actions for Rent". */
@@ -52,14 +54,14 @@ export function ActionsMenu<T extends string>({ id, label, buttonLabel = 'Action
     <div className="menu-wrap actions-menu"
       onBlur={e => { if (open && !e.currentTarget.contains(e.relatedTarget as Node | null)) close(false) }}>
       <button ref={button} type="button" id={id} className="btn secondary small menu-button"
-        aria-label={label} aria-haspopup="menu" aria-expanded={open} aria-controls={open ? `${id}-menu` : undefined}
+        aria-label={label} aria-describedby={describedBy} aria-haspopup="menu" aria-expanded={open} aria-controls={open ? `${id}-menu` : undefined}
         onClick={() => (open ? close() : show(0))} onKeyDown={onButtonKey}>
         {buttonLabel} <span aria-hidden="true">▾</span>
       </button>
       {open && (
         <ul id={`${id}-menu`} role="menu" aria-labelledby={id} className="menu" onKeyDown={onMenuKey}>
           {items.map((a, i) => (
-            <li key={a.id} id={a.id} role="menuitem" tabIndex={-1} className="menu-item"
+            <li key={a.id} id={a.id} role="menuitem" tabIndex={-1} className="menu-item" aria-describedby={describedBy}
               ref={el => { refs.current[i] = el }}
               onClick={() => pick(i)} onMouseEnter={() => setActive(i)}>
               {a.label}

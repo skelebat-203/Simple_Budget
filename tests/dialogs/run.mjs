@@ -57,6 +57,43 @@ async function standard(name, id, openerId, { returns = true, selfFocus = true }
   if (returns && openerId) check(`${name}: focus returns to the opener`, (await activeId()) === openerId, `active: ${await activeId()}`)
 }
 
+/**
+ * Table controls (digital_accessibility.md, Tables; v0.7 group B audit): every interactive control inside a
+ * visible data table has a name unique in that table and an aria-describedby that includes its row header's id
+ * (a row with no header of its own, such as Budget setup's Create row, points at a row header in the same table).
+ */
+async function tableRules(label) {
+  const r = await page.evaluate(() => {
+    const textOf = id => document.getElementById(id)?.textContent.trim() ?? ''
+    const nameOf = el => {
+      const by = el.getAttribute('aria-labelledby')
+      if (by) return by.split(/\s+/).map(textOf).join(' ')
+      if (el.getAttribute('aria-label')) return el.getAttribute('aria-label')
+      const lab = (el.id && document.querySelector(`label[for="${CSS.escape(el.id)}"]`)) || el.closest('label')
+      return (lab ?? el).textContent.replace(/\s+/g, ' ').trim()
+    }
+    const out = { tables: 0, controls: 0, noKey: [], dupes: [] }
+    for (const t of document.querySelectorAll('table')) {
+      if (!t.getClientRects().length) continue
+      out.tables++
+      const seen = new Map()
+      for (const el of t.querySelectorAll('button, input, select, textarea, a[href], [role=menuitem]')) {
+        if (!el.getClientRects().length) continue
+        out.controls++
+        const ids = (el.getAttribute('aria-describedby') ?? '').split(/\s+/).filter(Boolean)
+        const own = el.closest('tr')?.querySelector('th[scope=row]')
+        const ok = own ? ids.includes(own.id) && !!own.id : ids.some(i => document.getElementById(i)?.matches('th[scope=row]') && t.contains(document.getElementById(i)))
+        if (!ok) out.noKey.push(el.id || nameOf(el))
+        const n = nameOf(el)
+        if (seen.has(n)) out.dupes.push(n); else seen.set(n, 1)
+      }
+    }
+    return out
+  })
+  check(`${label}: ${r.controls} table controls in ${r.tables} table(s) are described by their row header`, r.controls > 0 && r.noKey.length === 0, r.noKey.slice(0, 5).join(', '))
+  check(`${label}: table control names are unique`, r.dupes.length === 0, r.dupes.slice(0, 5).join(', '))
+}
+
 try {
   await page.goto(URL, { waitUntil: 'networkidle0' })
   await settle()
@@ -117,6 +154,12 @@ try {
   const named = await page.evaluate(() => document.getElementById('setup')?.getAttribute('aria-labelledby') === 'setup-title' && !!document.getElementById('setup-title'))
   check('Budget setup: named by its heading', named)
   await standard('Budget setup', 'setup', '', { returns: false })
+  // Table controls, with each category's Create row open so its fields are checked too.
+  await clickId('help-button')
+  await clickId('onboarding-advanced-options')
+  await page.evaluate(() => document.querySelectorAll('#setup button[id^=create-][id$=-add]').forEach(b => b.click())); await settle()
+  await tableRules('Budget setup')
+  await press('Escape')
 
   // Seed a row: add a Groceries purchase, then show the Week table.
   await clickId('tab-add')
@@ -129,9 +172,31 @@ try {
   await page.keyboard.type('12.50')
   await page.evaluate(() => [...document.querySelectorAll('button')].find(b => b.textContent.trim() === 'Save')?.click())
   await sleep(500)
+  // Two Incidentals › Miscellaneous purchases with descriptions for the Misc. Breakdown (0014).
+  for (const desc of ['Car wash', 'Stamps']) {
+    await page.click('#item'); await page.keyboard.type('Misc'); await settle()
+    await press('ArrowDown'); await press('Enter') // the first Miscellaneous offered is Incidentals'
+    await page.click('#amount'); await page.keyboard.type('4')
+    await page.click('#description'); await page.keyboard.type(desc)
+    await page.evaluate(() => [...document.querySelectorAll('button')].find(b => b.textContent.trim() === 'Save')?.click())
+    await sleep(500)
+  }
   await clickId('tab-budget')
-  await page.evaluate(() => [...document.querySelectorAll('[role=group][aria-label=Range] button')].find(b => b.textContent.trim() === 'Week')?.click())
-  await settle()
+  const range = async r => { await page.evaluate(r => [...document.querySelectorAll('[role=group][aria-label=Range] button')].find(b => b.textContent.trim() === r)?.click(), r); await settle() }
+  await range('Day')
+  await tableRules('Day table')
+  await range('Annual')
+  await tableRules('Annual and Misc. Breakdown tables')
+  check('Misc. Breakdown: rows in alphabetical order', await page.evaluate(() => [...document.querySelectorAll('.misc-table tbody th')].map(t => t.textContent).join() === 'Car wash,Stamps'))
+  await clickId('misc-save-car-wash'); await sleep(500)
+  check('Misc. Breakdown: Save for future moves the row out', await page.evaluate(() => [...document.querySelectorAll('.misc-table tbody th')].map(t => t.textContent).join() === 'Stamps'))
+  check('Misc. Breakdown: Save for future is announced', /Saved Car wash for future/.test(await page.evaluate(() => document.getElementById('live-region')?.textContent ?? '')))
+  check('Misc. Breakdown: Car wash is now an Annual row', await page.evaluate(() => [...document.querySelectorAll('.budget-table:not(.misc-table) tbody th')].some(t => t.textContent.includes('Car wash'))))
+  await range('Week')
+  await tableRules('Week table')
+  await page.click('[aria-haspopup="menu"][aria-label="Edit Groceries"]'); await settle()
+  await tableRules('Week table, Edit menu open')
+  await press('Escape')
 
   // Confirm mode: Delete on the Groceries row (one purchase, no items).
   const rowMenu = await page.evaluate(() => document.querySelector('[aria-haspopup="menu"][aria-label="Edit Groceries"]')?.id ?? '')
@@ -157,6 +222,7 @@ try {
     await clickId(nameId)
     const hl = (await openIds()).at(-1)
     check('highlight: opens', !!hl && hl.endsWith('-highlight'), JSON.stringify(await openIds()))
+    await tableRules('highlight')
     const editBtn = await page.evaluate(h => document.querySelector(`#${CSS.escape(h)} [aria-haspopup="menu"]`)?.id ?? '', hl)
     check('highlight: has an Edit menu button', !!editBtn)
     if (editBtn) {

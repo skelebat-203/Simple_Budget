@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { money, type ImportOptions, type PlanRow } from '../../import'
 import type { ComboOption } from '../ui'
 import { choiceValue } from './choices'
+import { slug } from '../../budget/validate'
 
 const HOW_NOTE: Partial<Record<NonNullable<PlanRow['target']>['how'], (name: string) => string>> = {
   misc: name => `The app has no item with this name, and the row has no estimate. It becomes a Miscellaneous purchase described “${name}”.`,
@@ -21,6 +22,8 @@ export function ImportRows({ sheetName, rows, targets, existing, showAll, onTarg
   onTarget: (key: string, value: string) => void
 }) {
   const shown = useMemo(() => rows.filter(r => rowShown(r, showAll)), [rows, showAll])
+  /** Row header id ({field}-{sheet}-{name}-{row}): the row's select is described by it (digital_accessibility.md, Tables). */
+  const rowId = (r: PlanRow) => ['review_row', slug(sheetName), slug(r.name), r.row].filter(Boolean).join('-')
   return (
     <div className="table-box">
       <table className="table review-table">
@@ -34,7 +37,7 @@ export function ImportRows({ sheetName, rows, targets, existing, showAll, onTarg
             const label = r.target ? `${r.target.path}${r.target.isNew ? ' (new row)' : ''}` : 'Not imported'
             return (
               <tr key={r.key} className={`depth-${Math.min(r.level, 2)}${r.skipped ? ' is-skipped' : ''}`}>
-                <th scope="row" className="name">
+                <th scope="row" className="name" id={rowId(r)}>
                   <span className="row-name">{r.name}</span>
                   {r.target?.isNew && <span className="badge new">New row</span>}
                   {r.target?.how === 'misc' && <span className="badge">Miscellaneous</span>}
@@ -43,7 +46,7 @@ export function ImportRows({ sheetName, rows, targets, existing, showAll, onTarg
                 <td className="target" data-label="Goes to">
                   <span className="target-path">{r.skipped && !r.target ? 'Not imported' : label}</span>
                   {canChange && (
-                    <select className="input" aria-label={`Change where ${r.name} goes`} value={choiceValue(choice)} onChange={e => onTarget(r.key, e.target.value)}>
+                    <select className="input" aria-label={`Change where ${r.name} goes, ${sheetName} row ${r.row}`} aria-describedby={rowId(r)} value={choiceValue(choice)} onChange={e => onTarget(r.key, e.target.value)}>
                       <option value="auto">Automatic</option>
                       <option value="skip">Skip</option>
                       <option value="misc">Miscellaneous</option>
