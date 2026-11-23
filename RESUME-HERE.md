@@ -4,7 +4,7 @@ Tracking file for current work status. Roadmap authority: `docs/design/0003-road
 Design: `0015-sync-design.md` (sync), `0004-table-design.md` (table), `0006-prototype.html` (v0.2 UI), `0007-v0.3-design-updates.md` (v0.3 changes), `0008-v0.5-design-updates.md` (v0.5 changes), `0009-v0.6-design-updates.md` (v0.6), `0012-design-standards.md` (standards), `0014` (Annual Misc breakdown). Higher-numbered doc wins on conflict.
 
 ## Current version
-v0.7.0 (v0.6 complete 2026-11-21, v0.6.0 to v0.6.37; reports: `docs/audits/a11y/a11y-v0.6.md`, `docs/audits/security/security-v0.6.md`). Step 1 ✅ (v0.7.1 to v0.7.3). Step 2 ✅ (v0.7.4). Step 3 ✅ (v0.7.5 to v0.7.10). Step 3b ✅ (v0.7.12 to v0.7.17). Group A2 (steps 4, 5, 7) ✅ (v0.7.19 to v0.7.25). Next: group B (tables).
+v0.7.0 (v0.6 complete 2026-11-21, v0.6.0 to v0.6.37; reports: `docs/audits/a11y/a11y-v0.6.md`, `docs/audits/security/security-v0.6.md`). Step 1 ✅ (v0.7.1 to v0.7.3). Step 2 ✅ (v0.7.4). Step 3 ✅ (v0.7.5 to v0.7.10). Step 3b ✅ (v0.7.12 to v0.7.17). Group A2 (steps 4, 5, 7) ✅ (v0.7.19 to v0.7.25). Group B (steps 6, 8, 9, 12, 13) ✅ (v0.7.27 to v0.7.39). Mobile testing to check: long tables (sticky header, collapsed start; `0007` §10 change). Next: group C (names and moves).
 
 ## v0.7 plan of action
 Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per completed-work commit; trailer `Plan-Step: v0.7/N`). The final step bumps to the next minor version (v0.8.0). UI steps need human approval (`0005-ui-ux-review-checklist.md`). Baseline: v0.7.0. Data: Dexie v8 (`src/storage/structure.ts`). Testing: headless Chromium (`tools/browsers/`, `lighthouse-sandbox.md`); import harness `npm run test:import` (`tests/import/README.md`).
@@ -63,6 +63,7 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
    - Verify: no wrapped names at 1280/640/320px, highlight dialog included; keyboard scroll; no page-level sideways scroll
    - The Day table's Actual column is not pinned either (`0012` G11 pinning dropped, human 2026-11-22).
    - Deps: 5
+   - ✅ (v0.7.27 to v0.7.39; UI approved 2026-11-22)
    - Progress (v0.7.27): built (Item column min 250px, names don't wrap, Day table auto layout); no wrapped names or page-level sideways scroll at 1280/640/320px, highlight dialog included. Waiting on: UI approval.
    - Added (human, 2026-11-22): every control in a data table is described by its row header and has a unique name (v0.7.36; checked in `test:dialogs`). Long tables on phones (v0.7.37): page tables (Budget, Misc. Breakdown, Add purchase) have no fixed-height box; their header row stays at the top of the viewport while the page scrolls past (moves with the sideways scroll; a focused control under it is scrolled clear; off when the viewport is 480px tall or less). Below 640px the categories start closed until the user saves an expand/collapse state. Waiting on: the human's phone test.
 7. **Form field alignment class** (v0.7/7) — same label-to-control space as fields with help text, so side-by-side fields line up.
@@ -77,12 +78,14 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
    - Files: `src/screens/`, table components
    - Verify: no dangling `aria-describedby` ids; accessible names unchanged
    - Deps: none
+   - ✅ (v0.7.27 to v0.7.39; UI approved 2026-11-22)
    - Progress (v0.7.28): removed both help lines under the Budget tables and the table's `aria-describedby`; no dangling ids. v0.7.32: the Budget setup table's line under it (`setup-key`) removed too (human, 2026-11-22). Waiting on: UI approval.
 9. **Negative purchases as returns** (v0.7/9) — listed in the Day table as a return, formatted "(-$n.nn)" (human, 2026-11-22).
    - Source: roadmap v0.7 (decided 2026-11-04); `0007` §9
    - Files: `src/components/BudgetTable.tsx`
    - Verify: refund and credit rows; totals unchanged; screen reader names
    - Deps: none
+   - ✅ (v0.7.27 to v0.7.39; UI approved 2026-11-22)
    - Progress (v0.7.29): a negative Day purchase is named "Return, {time}", its amount shows "(-$n.nn)" in red; Edit button, delete dialog and status say "return of $n.nn"; totals unchanged. Waiting on: UI approval.
 10. **Typed-name parsing** (v0.7/10) — spell check and common abbreviations (decided 2026-11-22):
     - List: Misc / Misc. → Miscellaneous; Ins. → Insurance; Mtg → Mortgage; Util. / Utils → Utilities; Sub / Subs → Subscriptions; Groc. → Groceries; Med. → Medical; Ent. → Entertainment; Pmt → Payment; Acct → Account; Dept → Department; Govt → Government.
@@ -110,6 +113,7 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
     - Files: `src/screens/AddBudget.tsx`, table component
     - Verify: updates after a save; read-only; one live region
     - Deps: 9
+    - ✅ (v0.7.27 to v0.7.39; UI approved 2026-11-22)
     - Progress (v0.7.30): today's Day table under the form, heading "Today’s purchases" (h3, names the table with its date caption); every row open, no buttons or dialogs; updates after a save; one live region. Heading approved (human, 2026-11-22). v0.7.33: the read-only scroll box is a named region (tabindex 0, named by the heading) with a focus ring, so it scrolls by keyboard in every browser; the Budget setup Preview table gets the same. Waiting on: UI approval.
 13. **Annual Misc row and breakdown** (v0.7/13) — a Misc row under Incidentals, a Misc. Breakdown table under the Annual table, December review highlight.
     - Source: roadmap v0.7; `0014`
@@ -118,6 +122,7 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
     - Decided 2026-11-22 (`0014`): two stacked tables (M5 A); count months, not purchases (M1); only Incidentals › Miscellaneous counts, added to the seed and presets with a migration (M3); threshold fixed at 6 (M4; a setting is in v0.8); a "Save for future" button on every breakdown row creates the item under Incidentals and moves its purchases (M2, M6).
     - Also: the Add purchase "Use in future" checkbox is relabelled "Save for future" (human, 2026-11-22).
     - Deps: 6
+    - ✅ (v0.7.27 to v0.7.39; UI approved 2026-11-22)
     - Progress (v0.7.35): `MiscBreakdown` under the Annual table (heading "Misc. Breakdown", year caption); grouped by description, alphabetical, "No description" last group by name; Review icon, bold italic and hover background on rows bought in more than 6 months once the year reaches December; "Save for future" (sync-busy rule, one live region) moves every Miscellaneous purchase with that description (all years) into a new selected item. Dexie v10 makes sure Incidentals › Miscellaneous exists and is preselected. Waiting on: UI approval.
 14. **Week and Day import regression** (v0.7/14) — regression test the import of Week and Day sheets, then fill the gaps (e.g. a week sheet and a day sheet covering the same day are not cross-checked).
     - Source: roadmap v0.7 (decided 2026-11-11)
@@ -146,7 +151,7 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
 - **E — Charts**: moved to v0.8.
 - **D004** (step 15b): after F, before the reviews.
 - **Reviews** (steps 16–18): main session with the user.
-- Status: ✅ A · ✅ F · ✅ A2 · ☐ B · ☐ C · ☐ D · ~~E~~ · ☐ reviews
+- Status: ✅ A · ✅ F · ✅ A2 · ✅ B · ☐ C · ☐ D · ~~E~~ · ☐ reviews
 
 ### Session process
 Run option 1: one session per group, fresh start at each group boundary. A session starts by reading this file and the roadmap, then:
