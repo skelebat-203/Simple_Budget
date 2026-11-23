@@ -277,16 +277,20 @@ export async function addNewItem(o: {
  * (trimmed, case-insensitive; '' = no description) moves into it. All or nothing;
  * returns how many purchases moved.
  */
-export async function saveMiscForFuture(miscId: number, name: string, key: string): Promise<number> {
+export async function saveMiscForFuture(miscId: number, name: string, key: string): Promise<{ moved: number; mergedInto?: string }> {
   return db.transaction('rw', db.categories, db.budgetItems, async () => {
     const misc = await db.categories.get(miscId)
     if (!misc || misc.parentId == null) throw new RowInUseError('Miscellaneous no longer exists.')
     const parent = await db.categories.get(misc.parentId)
-    await assertFree(misc.parentId, name, parent?.name ?? 'this category')
-    const { id } = await categoryRepo.add({ name, parentId: misc.parentId, color: misc.color, selected: true })
+    // A sibling with the same name takes the purchases (merge, 0014 M2), unless it is a total row with items.
+    const sibs = await db.categories.where('parentId').equals(misc.parentId).toArray()
+    const same = sibs.find(s => s.id !== miscId && slug(s.name) === slug(name))
+    if (same && await db.categories.where('parentId').equals(same.id!).count())
+      throw new NameTakenError(`“${same.name}” in ${parent?.name ?? 'this category'} has items of its own, so purchases can’t move into it`)
+    const id = same ? same.id! : (await categoryRepo.add({ name, parentId: misc.parentId, color: misc.color, selected: true })).id
     const bought = await db.budgetItems.where('categoryId').equals(miscId).filter(i => miscKey(i.description) === key).toArray()
     for (const i of bought) await db.budgetItems.update(i.id!, { categoryId: id })
-    return bought.length
+    return { moved: bought.length, mergedInto: same?.name }
   })
 }
 

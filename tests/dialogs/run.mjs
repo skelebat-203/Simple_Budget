@@ -173,7 +173,7 @@ try {
   await page.evaluate(() => [...document.querySelectorAll('button')].find(b => b.textContent.trim() === 'Save')?.click())
   await sleep(500)
   // Two Incidentals › Miscellaneous purchases with descriptions for the Misc. Breakdown (0014).
-  for (const desc of ['Car wash', 'Stamps']) {
+  for (const desc of ['Car wash', 'Stamps', 'coffee shops']) {
     await page.click('#item'); await page.keyboard.type('Misc'); await settle()
     await press('ArrowDown'); await press('Enter') // the first Miscellaneous offered is Incidentals'
     await page.click('#amount'); await page.keyboard.type('4')
@@ -187,11 +187,19 @@ try {
   await tableRules('Day table')
   await range('Annual')
   await tableRules('Annual and Misc. Breakdown tables')
-  check('Misc. Breakdown: rows in alphabetical order', await page.evaluate(() => [...document.querySelectorAll('.misc-table tbody th')].map(t => t.textContent).join() === 'Car wash,Stamps'))
+  check('Misc. Breakdown: rows in alphabetical order', await page.evaluate(() => [...document.querySelectorAll('.misc-table tbody th')].map(t => t.textContent).join() === 'Car wash,coffee shops,Stamps'))
   await clickId('misc-save-car-wash'); await sleep(500)
-  check('Misc. Breakdown: Save for future moves the row out', await page.evaluate(() => [...document.querySelectorAll('.misc-table tbody th')].map(t => t.textContent).join() === 'Stamps'))
+  check('Misc. Breakdown: Save for future moves the row out', await page.evaluate(() => [...document.querySelectorAll('.misc-table tbody th')].map(t => t.textContent).join() === 'coffee shops,Stamps'))
   check('Misc. Breakdown: Save for future is announced', /Saved Car wash for future/.test(await page.evaluate(() => document.getElementById('live-region')?.textContent ?? '')))
   check('Misc. Breakdown: Car wash is now an Annual row', await page.evaluate(() => [...document.querySelectorAll('.budget-table:not(.misc-table) tbody th')].some(t => t.textContent.includes('Car wash'))))
+  // Merge (0014 M2): "coffee shops" matches the existing Coffee Shops item, so its purchase moves there.
+  await clickId('misc-save-coffee-shops'); await sleep(500)
+  const merged = await page.evaluate(() => ({
+    misc: [...document.querySelectorAll('.misc-table tbody th')].map(t => t.textContent).join(),
+    rows: [...document.querySelectorAll('#tabpanel-budget .budget-table:not(.misc-table) tbody th')].map(t => t.textContent.trim()).filter(t => /coffee shops/i.test(t)),
+  }))
+  check('Misc. Breakdown: a name that exists merges into that item', merged.misc === 'Stamps' && merged.rows.join() === 'Coffee Shops', JSON.stringify(merged))
+  check('Misc. Breakdown: the merge is announced', (await page.evaluate(() => document.getElementById('live-region')?.textContent ?? '')) === 'Moved 1 purchase to Coffee Shops.')
   await range('Week')
   await tableRules('Week table')
   await page.click('[aria-haspopup="menu"][aria-label="Edit Groceries"]'); await settle()

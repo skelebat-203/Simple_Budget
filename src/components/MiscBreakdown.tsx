@@ -73,8 +73,9 @@ export function MiscBreakdown({ roots, items, calendar, date, onChanged }: {
     const name = cleanName(g.label)
     setBusy(true)
     try {
-      const moved = await saveMiscForFuture(misc!.cat.id, name, g.key)
-      setStatus(`Saved ${name} for future as an item in Incidentals. ${moved} purchase${moved === 1 ? '' : 's'} moved from Miscellaneous.`)
+      const { moved, mergedInto } = await saveMiscForFuture(misc!.cat.id, name, g.key)
+      const count = `${moved} purchase${moved === 1 ? '' : 's'}`
+      setStatus(mergedInto ? `Moved ${count} to ${mergedInto}.` : `Saved ${name} for future as an item in Incidentals. ${count} moved from Miscellaneous.`)
       const next = rows[k + 1] ?? rows[k - 1]
       focusAfter.current = next && next.key ? saveId(next) : 'misc-heading'
       onChanged()
