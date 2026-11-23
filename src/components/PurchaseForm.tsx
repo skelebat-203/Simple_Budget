@@ -20,7 +20,7 @@ export type PurchaseSave =
  * The Add purchase form's fields, state and checks (0007 §4), shared by the Add purchase tab and
  * the Day table's purchase dialog so both ask the same things. `init` prepopulates it; `prefix`
  * keeps ids unique when two copies are on the page. A typed name that matches no item starts the
- * new-item flow: Category, Where? and Use in future.
+ * new-item flow: Category, Where? and Save for future.
  */
 export function usePurchaseForm(roots: CatNode[], init: { target?: CatNode; amount?: string; description?: string; date?: string } = {}, prefix = '') {
   const [target, setTarget] = useState<CatNode | null>(init.target ?? null)
@@ -158,11 +158,11 @@ export function usePurchaseForm(roots: CatNode[], init: { target?: CatNode; amou
     </div>
   )
 
-  /** "Use in future" shows only when the typed item is new. */
+  /** "Save for future" shows only when the typed item is new (relabelled from "Use in future", v0.7 step 13). */
   const useInFutureField: ReactNode = isNew && (
     <label className="check">
       <input type="checkbox" id={id('use_in_future')} checked={useInFuture} onChange={e => setUseInFuture(e.target.checked)} />
-      Use in future
+      Save for future
     </label>
   )
 

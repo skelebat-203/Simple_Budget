@@ -114,7 +114,10 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
     - Source: roadmap v0.7; `0014`
     - Files: `src/components/BudgetTable.tsx`, new table component, `src/App.css`
     - Verify: per `0014`; table headings and names
+    - Decided 2026-11-22 (`0014`): two stacked tables (M5 A); count months, not purchases (M1); only Incidentals › Miscellaneous counts, added to the seed and presets with a migration (M3); threshold fixed at 6 (M4; a setting is in v0.8); a "Save for future" button on every breakdown row creates the item under Incidentals and moves its purchases (M2, M6).
+    - Also: the Add purchase "Use in future" checkbox is relabelled "Save for future" (human, 2026-11-22).
     - Deps: 6
+    - Progress (v0.7.35): `MiscBreakdown` under the Annual table (heading "Misc. Breakdown", year caption); grouped by description, alphabetical, "No description" last group by name; Review icon, bold italic and hover background on rows bought in more than 6 months once the year reaches December; "Save for future" (sync-busy rule, one live region) moves every Miscellaneous purchase with that description (all years) into a new selected item. Dexie v10 makes sure Incidentals › Miscellaneous exists and is preselected. Waiting on: UI approval.
 14. **Week and Day import regression** (v0.7/14) — regression test the import of Week and Day sheets, then fill the gaps (e.g. a week sheet and a day sheet covering the same day are not cross-checked).
     - Source: roadmap v0.7 (decided 2026-11-11)
     - Files: `tests/import/`, `src/import/`

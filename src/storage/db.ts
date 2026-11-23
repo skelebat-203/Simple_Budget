@@ -226,6 +226,21 @@ class SimpleBudgetDB extends Dexie {
       await tx.table('budgetItems').toCollection().modify((i: BudgetItem) => { i.uid ??= newUid() })
       await tx.table('settings').toCollection().modify((s: Settings) => { s.updatedAt ??= now })
     })
+    // v10: Incidentals › Miscellaneous exists and is preselected (0014 M3): its purchases
+    // feed the Annual Misc. Breakdown. uid and updatedAt are set here so sync carries it.
+    this.version(10).stores({}).upgrade(async tx => {
+      const cats = tx.table<Category, number>('categories')
+      const all = await cats.toArray()
+      const inc = all.find(c => c.name === 'Incidentals' && all.find(p => p.id === c.parentId)?.name === 'Expenses')
+      if (!inc) return
+      const now = Date.now()
+      const misc = all.find(c => c.parentId === inc.id && c.name === 'Miscellaneous')
+      if (misc) { if (!misc.selected) await cats.update(misc.id!, { selected: true, updatedAt: now }); return }
+      // Incidentals with no items holds its own amounts; adding a first item would strand them.
+      if (!all.some(c => c.parentId === inc.id)) return
+      const order = all.filter(c => c.parentId === inc.id).reduce((m, c) => Math.max(m, (c.order ?? -1) + 1), 0)
+      await cats.add({ name: 'Miscellaneous', color: 'even-lighter-orange', parentId: inc.id!, order, selected: true, uid: newUid(), updatedAt: now })
+    })
 
     // Stamp every local write so sync can merge it (last-write-wins by updatedAt).
     const stamp = (table: Table<{ uid?: string; updatedAt?: number }, number>, withUid: boolean) => {

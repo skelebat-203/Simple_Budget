@@ -237,7 +237,7 @@ async function assertFree(parentId: number, name: string, where: string) {
 /**
  * Add form new-item flow (0007 §4.2), all-or-nothing: an optional new
  * subcategory, the new item, and its first amount. `selected` is the
- * "Use in future" choice. Returns the subcategory name when its estimate moved
+ * "Save for future" choice. Returns the subcategory name when its estimate moved
  * to Miscellaneous (§2.1).
  */
 export async function addNewItem(o: {
@@ -270,6 +270,28 @@ export async function addNewItem(o: {
     return { movedFrom: r.movedFrom, charityMoved }
   })
 }
+
+/**
+ * Misc. Breakdown "Save for future" (0014 M2): a new selected item named `name` beside
+ * Miscellaneous, and every Miscellaneous purchase whose description matches `key`
+ * (trimmed, case-insensitive; '' = no description) moves into it. All or nothing;
+ * returns how many purchases moved.
+ */
+export async function saveMiscForFuture(miscId: number, name: string, key: string): Promise<number> {
+  return db.transaction('rw', db.categories, db.budgetItems, async () => {
+    const misc = await db.categories.get(miscId)
+    if (!misc || misc.parentId == null) throw new RowInUseError('Miscellaneous no longer exists.')
+    const parent = await db.categories.get(misc.parentId)
+    await assertFree(misc.parentId, name, parent?.name ?? 'this category')
+    const { id } = await categoryRepo.add({ name, parentId: misc.parentId, color: misc.color, selected: true })
+    const bought = await db.budgetItems.where('categoryId').equals(miscId).filter(i => miscKey(i.description) === key).toArray()
+    for (const i of bought) await db.budgetItems.update(i.id!, { categoryId: id })
+    return bought.length
+  })
+}
+
+/** Grouping key for a Miscellaneous purchase's description (0014 §2). */
+export const miscKey = (description?: string) => (description ?? '').trim().toLowerCase()
 
 export const settingsRepo = {
   async get(): Promise<Settings> {

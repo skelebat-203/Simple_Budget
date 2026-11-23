@@ -3,6 +3,7 @@ import type { BudgetItem, Range } from '../storage/db'
 import { isoDate, parseIso, periodsFor, rangeHasEstimates, shiftRange, type Calendar, type CatNode } from '../budget/tree'
 import { dateBounds } from '../budget/validate'
 import { BudgetTable } from '../components/BudgetTable'
+import { MiscBreakdown } from '../components/MiscBreakdown'
 import { Button } from '../components/ui'
 import { useWide } from '../components/ui/useWide'
 
@@ -98,6 +99,7 @@ export function Budget({ roots, items, range, onRangeChange, calendar, onChanged
         {wide && syncButton}
       </div>
       <BudgetTable date={anchor} roots={roots} items={items} range={range} showEstimates={showEstimates} calendar={calendar} onChanged={onChanged} />
+      {range === 'annual' && <MiscBreakdown roots={roots} items={items} calendar={calendar} date={anchor} onChanged={onChanged} />}
     </section>
   )
 }

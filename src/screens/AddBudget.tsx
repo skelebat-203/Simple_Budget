@@ -10,7 +10,7 @@ import { fireReward } from '../rewards/rewards'
 import { charityMovedText } from '../budget/charity'
 import { whenIdle } from '../storage/sync/controller'
 
-/** Add purchase (0007 §4, §9): the shared purchase form (Item, Amount, Description, Date; a typed new item adds Category, Where? and Use in future). */
+/** Add purchase (0007 §4, §9): the shared purchase form (Item, Amount, Description, Date; a typed new item adds Category, Where? and Save for future). */
 export function AddBudget({ roots, items, calendar, onSaved }: {
   roots: CatNode[]
   /** For the read-only Day table under the form (v0.7 step 12). */

@@ -12,7 +12,7 @@ import { useAnnounce } from './ui/announcer'
 import { isSyncBusy } from '../storage/sync/controller'
 
 /** While a sync runs the tables take no changes (0015 Q4). */
-const SYNC_BUSY = 'Error: Sync is running. Try again in a moment.'
+export const SYNC_BUSY ='Error: Sync is running. Try again in a moment.'
 import { Chevron } from './ui/Expander'
 import { ActionsMenu, type MenuAction } from './ui/ActionsMenu'
 
