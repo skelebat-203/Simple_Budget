@@ -41,3 +41,7 @@ coverage/
 human_scratch_files/
 # Local browsers for headless screenshots and Lighthouse
 tools/browsers/
+# Android SDK, Android user files and Gradle cache for APK builds
+tools/android-sdk/
+tools/android-user/
+tools/gradle-home/

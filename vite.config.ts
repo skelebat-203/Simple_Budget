@@ -27,7 +27,11 @@ const cspMeta = (): Plugin => ({
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
+// GitHub Pages serves the app under /Simple_Budget/; the deploy workflow sets BASE_PATH.
+const BASE_PATH = process.env.BASE_PATH ?? '/'
+
 export default defineConfig({
+  base: BASE_PATH,
   plugins: [
     react(),
     cspMeta(),
@@ -40,9 +44,10 @@ export default defineConfig({
         theme_color: '#2563eb',
         background_color: '#ffffff',
         display: 'standalone',
-        start_url: '/',
+        start_url: BASE_PATH,
+        scope: BASE_PATH,
         icons: [
-          { src: '/vite.svg', sizes: 'any', type: 'image/svg+xml' },
+          { src: `${BASE_PATH}vite.svg`, sizes: 'any', type: 'image/svg+xml' },
         ],
       },
       workbox: {
