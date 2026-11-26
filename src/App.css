@@ -293,17 +293,20 @@
 .page-head .table thead.stuck th { box-shadow: 0 var(--border-medium) 0 var(--color-secondary-background); }
 @media (max-width: 639.98px) {
   .ranges { display: grid; grid-template-columns: 1fr 1fr; }
+  /* Date navigation fills the width on phones; the title button takes the space between the chevrons (v0.7 step 15d). */
+  .date-row > nav.toolbar { width: 100%; }
+  .date-row .date-nav-title { flex: 1; }
+  .date-row .date-nav-title > .btn { width: 100%; }
 }
 @media (max-width: 1279.98px) {
   /* Budget setup: full screen, no margin around the dialog. */
   .dialog.setup { width: 100%; max-width: 100%; height: 100%; max-height: 100%; margin: 0; border-radius: 0; }
 }
 
-/* Larger views: the app sits on a tinted page background (0007 §10). */
-@media (min-width: 1440px) { /* = --size-app-max */
-  body { background: color-mix(in srgb, var(--color-primary-background), white var(--tint-page)); }
-  .main { background: var(--color-background-page); min-height: 100dvh; }
-}
+/* Larger views: the app sits on a tinted page background (0007 §10). Narrower than --size-app-max
+   the app fills the window, so the tint never shows; no media query needed (media query audit, v0.7 step 15d). */
+body { background: color-mix(in srgb, var(--color-primary-background), white var(--tint-page)); }
+.main { background: var(--color-background-page); min-height: 100dvh; }
 
 /* Budget setup table ends 24px above the sticky footer (0007 §10). */
 .dialog.setup .setup-table-box { max-height: calc(100dvh - var(--footer-h, var(--size-footer-fallback)) - var(--space-lg)); }
@@ -439,7 +442,7 @@ nav.toolbar .btn.icon { flex: none; }
 .wizard-bar { flex: 1; height: var(--size-progress-bar); background: var(--color-border); border-radius: var(--radius-md); overflow: hidden; }
 .wizard-bar > span { display: block; height: 100%; background: var(--color-primary-background); }
 .wizard-layout { display: grid; grid-template-columns: 1fr auto; gap: var(--space-md); align-items: start; }
-@media (max-width: 600px) { .wizard-layout { grid-template-columns: 1fr; } }
+@media (max-width: 639.98px) { .wizard-layout { grid-template-columns: 1fr; } } /* was 600px: one phone breakpoint (media query audit, v0.7 step 15d) */
 .wizard-list { border: var(--border-thin) solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-sm) var(--space-md); max-height: var(--size-wizard-list-max); overflow: auto; }
 /* Group row: checkbox target and name button side by side, a hairline gap apart (owner exception to the control-margin rule). */
 .wizard-group { display: flex; align-items: stretch; gap: var(--space-hairline); }

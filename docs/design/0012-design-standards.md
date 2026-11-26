@@ -50,6 +50,16 @@ Observed:
 - Sticky: table header row; Budget setup footer (unstuck when viewport height ≤480).
 - Decided, not built: max app width 1440px, sticky item column above 500px with a 250px minimum (roadmap v0.7). The current max is 900px, so 1440px is a large change (G2).
 
+Media query budget (human, 2026-11-26: 3 in total, 4 accepted, more than 4 needs a written reason). After the v0.7 step 15d audit there are 3, in CSS and JS alike:
+
+| Query | Used for |
+|---|---|
+| width 640px (`min-width: 640px` / `max-width: 639.98px`, `useWide`) | phone vs. larger: padding, two-column forms, Screens menu, date navigation full width, full-screen review dialog, wizard one column (was a separate 600px query) |
+| width 1280px | large screens: padding, Budget setup settings side by side; below it Budget setup is full screen |
+| height 480px (`max-height`, `useStickyHead`) | short screens: no sticky table header or dialog footer (`digital_accessibility.md`, Sticky content) |
+
+The 1440px query was removed: the tinted page background is always set and only shows where the window is wider than the app. `prefers-reduced-motion` is an accessibility setting, not a breakpoint, and is not counted. A new query of any width is a fourth breakpoint and needs the human's go-ahead.
+
 ## 3. Controls
 
 ### Buttons — observed

@@ -54,7 +54,7 @@
   --radius-pill: 999px; /* fully rounded ends (Toggle) */
 
   /* Layout */
-  --size-app-max: 1440px; /* whole page, centered (0012 G2); wide tables scroll inside it. Media queries can't read it: keep `min-width: 1440px` in App.css in step. */
+  --size-app-max: 1440px; /* whole page, centered (0012 G2); wide tables scroll inside it. */
 
   /* Dialog widths (0012 G6): small for one or two fields, medium for forms with 4+ fields and the wizard, large for tables */
   --size-dialog-small: 32rem;
@@ -80,7 +80,7 @@
   --shadow-popup: 0 6px 18px rgb(0 0 0 / 0.15); /* menus and listboxes */
   --color-backdrop: rgb(0 0 0 / 0.5); /* behind a modal dialog */
   --tint-banner: 90%; /* white mixed into a banner's kind colour, the same for every kind (0012 G1) */
-  --tint-page: 90%; /* white mixed into the brown page background beside the app (from 1440px) */
+  --tint-page: 90%; /* white mixed into the brown page background beside the app (shows only wider than --size-app-max) */
   --tint-header: 5%; /* black mixed into the table header row */
   --tint-net-row: 85%; /* white mixed into the Net Income row's blue */
   --tint-selected: 92%; /* white mixed into a chosen card's brown */
