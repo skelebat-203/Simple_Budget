@@ -9,10 +9,11 @@ interface Group { heading: CatNode; options: CatNode[] }
  * Options sit under their parent's heading, and the heading in view sticks to the top of the list.
  * Headings are never options.
  *
- * - mode 'item': every row that takes amounts. Before the user types, only
- *   rows passing `initial` show; typing searches everything.
- * - mode 'category': the rows directly under Income, Savings and Expenses,
- *   under those headings, so the user can pick where something goes.
+ * - mode 'item': every row that takes amounts, and every subcategory that has items (its purchase
+ *   goes to its Miscellaneous item; v0.7 step 15d). Before the user types, only rows passing
+ *   `initial` show; typing searches everything.
+ * - mode 'category': Income, Savings and Expenses themselves (a new row there is a subcategory)
+ *   and the rows directly under them (a new row there is an item), under those headings.
  *
  * Typed text that names exactly one option picks it. `onText` reports the
  * text so a form can offer to create something new.
@@ -38,12 +39,12 @@ export function ItemSelector({ id, roots, mode = 'item', initial, defaultTarget,
   const groups: Group[] = useMemo(() => {
     const all = flatten(roots).filter(n => n.cat.name !== 'Net Income')
     if (mode === 'category') {
-      return roots.filter(r => r.cat.computed && r.cat.name !== 'Net Income').map(r => ({ heading: r, options: r.children }))
+      return roots.filter(r => r.cat.computed && r.cat.name !== 'Net Income').map(r => ({ heading: r, options: [r, ...r.children] }))
     }
-    // Item mode: every row that takes amounts, grouped by parent (a top-level row is its own heading).
+    // Item mode: every row that takes amounts, plus subcategories with items, grouped by parent (a top-level row is its own heading).
     const byParent = new Map<CatNode, CatNode[]>()
     for (const n of all) {
-      if (isTotal(n) && !isSoloCharity(n)) continue
+      if (isTotal(n) && !isSoloCharity(n) && !(n.parent && n.children.length)) continue
       // While Charity takes purchases itself, its Miscellaneous child is not offered (0009 §6).
       if (n.cat.name === 'Miscellaneous' && n.parent && isSoloCharity(n.parent)) continue
       const h = n.parent ?? n

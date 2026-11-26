@@ -347,7 +347,23 @@ try {
     check('Move: the destination opens so the moved row shows', opened.includes('3:Car wash') && opened.includes('3:Coffee Shops'), opened.join(' | '))
   }
 
+  // Add purchase (v0.7 step 15d): a subcategory with items saves to its Miscellaneous; a new row can go straight under a category.
+  await clickId('tab-add')
+  const saveForm = () => page.evaluate(() => [...document.querySelectorAll('#tabpanel-add button')].find(b => b.textContent.trim() === 'Save')?.click())
+  const dayRows = () => page.evaluate(() => [...document.querySelectorAll('#tabpanel-add .day-table tbody tr:not(.purchase) th')].map(t => t.textContent.trim()))
+  await page.click('#item'); await page.keyboard.type('Insurance'); await settle()
+  await page.click('#amount'); await page.keyboard.type('30')
+  await saveForm(); await sleep(500)
+  check('Add purchase: a subcategory with items saves to a new Miscellaneous under it', /Saved Miscellaneous \(Insurance\): 30\.00/.test(await said()) && (await dayRows()).join().includes('Insurance,Miscellaneous'), `${await said()} | ${(await dayRows()).join()}`)
+  await page.click('#item'); await page.keyboard.type('Pet care'); await settle()
+  await page.click('#category'); await page.keyboard.type('Expenses'); await settle()
+  await page.click('#amount'); await page.keyboard.type('15')
+  await saveForm(); await sleep(500)
+  const petRow = await page.evaluate(() => [...document.querySelectorAll('#tabpanel-add .day-table tbody tr')].find(r => r.querySelector('th')?.textContent.trim() === 'Pet care')?.className ?? '')
+  check('Add purchase: a new row under a category is a subcategory', /depth-1/.test(petRow), `${await said()} | ${petRow}`)
+
   // Phones (375px): the date navigation fills the width; row menus stay inside the window (D006).
+  await clickId('tab-budget')
   await page.setViewport({ width: NARROW, height: HEIGHT }); await settle()
   const nav = await page.evaluate(() => { const n = document.querySelector('.date-row > nav')?.getBoundingClientRect(); const p = document.getElementById('tabpanel-budget')?.getBoundingClientRect(); return n && p ? { nav: Math.round(n.width), panel: Math.round(p.width) } : null })
   check('375px: date navigation is the full width', !!nav && nav.nav === nav.panel, JSON.stringify(nav))

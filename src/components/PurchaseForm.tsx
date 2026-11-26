@@ -1,8 +1,11 @@
 import { useState, type ReactNode } from 'react'
 import { AmountField, DatePicker, Input, ItemSelector, type FieldError } from './ui'
-import { childColor, isoDate, type CatNode } from '../budget/tree'
-import { cleanDescription, expandName, DESCRIPTION_MAX, dateBounds, moneyError, parseAmount } from '../budget/validate'
+import { childColor, isoDate, isSoloCharity, type CatNode } from '../budget/tree'
+import { cleanDescription, expandName, DESCRIPTION_MAX, dateBounds, moneyError, parseAmount, slug } from '../budget/validate'
 import type { addNewItem } from '../storage/repository'
+
+const MISC = 'Miscellaneous'
+const MISC_SLUG = slug(MISC)
 
 const FIELDS = ['item', 'category', 'where', 'amount', 'description', 'date'] as const
 export type PurchaseErrors = Partial<Record<typeof FIELDS[number], string>>
@@ -68,6 +71,16 @@ export function usePurchaseForm(roots: CatNode[], init: { target?: CatNode; amou
     const amt = parseAmount(amount, { allowNegative: true })
     const value = amt.ok ? amt.value : 0
     const note = cleanDescription(description) || undefined
+    // A subcategory with items takes no purchases itself: the purchase goes to its Miscellaneous item,
+    // made here if it has none (v0.7 step 15d). Charity before its first item still takes them itself (0009 §6).
+    if (target && target.children.length && !isSoloCharity(target)) {
+      const misc = target.children.find(c => slug(c.cat.name) === MISC_SLUG)
+      if (misc) return { kind: 'existing', target: misc, amount: value, date, description: note }
+      return {
+        kind: 'new', name: `${MISC} (${target.cat.name})`,
+        args: { name: MISC, parent: { id: target.cat.id, name: target.cat.name }, color: childColor(target), selected: true, amount: value, date, description: note },
+      }
+    }
     if (target) return { kind: 'existing', target, amount: value, date, description: note }
     const name = expandName(itemText.text)
     const root = groups.find(g => g.cat.name === where)
@@ -118,7 +131,7 @@ export function usePurchaseForm(roots: CatNode[], init: { target?: CatNode; amou
       {isNew && (
         <div className="field">
           <label className="label" htmlFor={id('category')}>Category <span aria-hidden="true">*</span></label>
-          <p id={id('category-help')} className="help">Where “{itemText.text.trim()}” belongs. Pick a subcategory, or type a new one.</p>
+          <p id={id('category-help')} className="help">Where “{itemText.text.trim()}” belongs. Pick a category to add it as a subcategory, pick a subcategory to add it as an item, or type a new subcategory.</p>
           <ItemSelector key={`category-${formKey}`} id={id('category')} label="Categories" mode="category" roots={roots}
             onChange={setCategory} onText={(text, matches) => setCategoryText({ text, matches })}
             invalid={!!errors.category} describedBy={describe('category', id('category-help'))} />
