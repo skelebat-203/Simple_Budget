@@ -179,10 +179,11 @@ export async function pickSpreadsheet(): Promise<string | null> {
   await new Promise<void>(resolve => w.gapi!.load('picker', resolve))
   const p = w.google!.picker
   return new Promise(resolve => {
-    // Two tabs: sheets shared with this account (how a second person links, 0015 Q2) first, then their own.
-    const shared = new p.DocsView(p.ViewId.SPREADSHEETS).setMode(p.DocsViewMode.LIST).setOwnedByMe(false).setLabel('Shared with me')
+    // Two tabs: the user's own sheets first (the usual case; D005: an empty "Shared with me" first looked like no files),
+    // then sheets shared with this account (how a second person links, 0015 Q2).
     const own = new p.DocsView(p.ViewId.SPREADSHEETS).setMode(p.DocsViewMode.LIST).setOwnedByMe(true).setLabel('My sheets')
-    new p.PickerBuilder().addView(shared).addView(own).setOAuthToken(t).setDeveloperKey(GOOGLE_CONFIG.apiKey).setAppId(GOOGLE_CONFIG.appId)
+    const shared = new p.DocsView(p.ViewId.SPREADSHEETS).setMode(p.DocsViewMode.LIST).setOwnedByMe(false).setLabel('Shared with me')
+    new p.PickerBuilder().addView(own).addView(shared).setOAuthToken(t).setDeveloperKey(GOOGLE_CONFIG.apiKey).setAppId(GOOGLE_CONFIG.appId)
       .setCallback(d => {
         if (d.action === p.Action.PICKED) resolve(d.docs?.[0]?.id ?? null)
         else if (d.action === p.Action.CANCEL) resolve(null)
