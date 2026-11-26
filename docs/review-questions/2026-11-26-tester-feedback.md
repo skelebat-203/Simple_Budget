@@ -1,6 +1,8 @@
 # Questions and best guesses — tester feedback, 2026-11-26
 
-Logged while the human was away. Each question has the guess I acted on. Roadmap: `docs/design/0003-roadmap.md` (v0.8 "Tester feedback", Post v1.0 "Manual sort"). Nothing is committed.
+Logged while the human was away. Each question has the guess I acted on. Roadmap: `docs/design/0003-roadmap.md` (v0.7 "Tester feedback", Post v1.0 "Manual sort").
+
+**Corrected (human, 2026-11-26):** questions 1 and 4 were wrong guesses. Everything not marked "future feature" was meant to be built now; it moved to v0.7 step 15d and was built on `dev/v0.7` (v0.7.47 to v0.7.56). The questions under "Found while building" were answered by best guess during that build.
 
 ## Placement
 
@@ -36,7 +38,25 @@ Logged while the human was away. Each question has the guess I acted on. Roadmap
 | 13 | Update 8: what counts as "mobile"? | Below 640px. Previous and Next keep their size; the title button grows to fill the rest. This also matches the global rule that form controls fill their container (`components.md`). |
 | 14 | Update 9: do the height query (480px) and `prefers-reduced-motion` count toward the 3–4 media queries? | Reduced motion does not count, since it is an accessibility setting and not a layout breakpoint. The height query does count. |
 | 15 | Update 4: once the Day view is gone, which view does the Budget screen open on? | Week. |
-| 16 | Update 1: may the new subcategory be created under every category, including the Income group and Taxes? | Yes, under every category that is not a computed row. |
+| 16 | Update 1: may the new subcategory be created under every category, including the Income group and Taxes? | As built: under Income, Savings and Expenses (the groups the Category list already used). Not Taxes. |
+
+## Found while building (v0.7 step 15d)
+
+| # | Question | Guess acted on |
+|---|---|---|
+| 17 | Branching: several features in one session | One dev branch `dev/v0.7` in one worktree (`.worktrees/v0.7-tester-feedback`), one commit per change, instead of a worktree per feature. Merge to `main` after your phone test. |
+| 18 | For a Day purchase, the Update dialog: the "Move to" list holds only categories and subcategories, so you couldn't move a purchase to an item | The Day Update dialog keeps the Add purchase form (Item, Amount, Description, Date) and Delete. Its Item field does the move and can reach any item. |
+| 19 | Update in Week/Month: what does "amount" set? | The row's total for the period shown. Saving adds the difference as a new amount, dated today if today is in the period, otherwise the period's last day. |
+| 20 | Update on a total row (a subcategory with items) or a top-level row | Total rows have no amount field. Top-level rows (e.g. Taxes) have no name or Move to fields, only the amount. |
+| 21 | Update with a new name and a move: order, and what happens if one part fails | The name and destination are checked against the table first, so a clash or "too deep" refusal changes nothing. Then: rename, move, then amount. If a later write fails, the error says which parts were already saved. |
+| 22 | New purchase in Week/Month: "does not change" | It is the Day table's old New purchase dialog (amount, date in the period, description), now in Week and Month. It replaces Add/Subtract. |
+| 23 | Day table category rows (Groceries, Expenses) | No buttons; only purchase rows have Update. The rows are plain text, with no expand buttons or highlight dialog. |
+| 24 | Choosing a subcategory with items in the Item list: is it shown before typing? | Yes, when it is selected, like any other row. It also shows when you type. |
+| 25 | A Miscellaneous made by a purchase: is it "Save for future"? | Yes, it is selected, so it shows in the Item list from then on. |
+| 26 | Media queries: the 1440px tinted background | Removed the query. The tint is always set, and it only shows where the window is wider than the app. That leaves 3 queries: 640px, 1280px, and the 480px height query. |
+| 27 | Rewards: characters and animations | Three chibi cats (ginger, gray, calico) and two generic heroes (different skin tones, a star emblem, no real hero's marks). Each reward picks a character and an animation at random; the star and coin stay. Thumbs up is a hand that pops in beside the character. |
+| 28 | D005: the picker's empty list | Two causes are possible: the empty "Shared with me" tab opened first (fixed: "My sheets" is first now), and the API key's website restriction may lack the GitHub Pages address (yours to check in the Google Cloud console). |
+| 29 | Spoken row names in the highlight dialog | Now take repeated names from the whole tree, so "Miscellaneous" is read as "Miscellaneous, Incidentals" inside a highlight too. |
 
 ## Draft global rule change (for the human to apply)
 

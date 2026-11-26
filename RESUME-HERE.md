@@ -4,7 +4,7 @@ Tracking file for current work status. Roadmap authority: `docs/design/0003-road
 Design: `0015-sync-design.md` (sync), `0004-table-design.md` (table), `0006-prototype.html` (v0.2 UI), `0007-v0.3-design-updates.md` (v0.3 changes), `0008-v0.5-design-updates.md` (v0.5 changes), `0009-v0.6-design-updates.md` (v0.6), `0012-design-standards.md` (standards), `0014` (Annual Misc breakdown). Higher-numbered doc wins on conflict.
 
 ## Current version
-v0.7.0 (v0.6 complete 2026-11-21, v0.6.0 to v0.6.37; reports: `docs/audits/a11y/a11y-v0.6.md`, `docs/audits/security/security-v0.6.md`). Step 1 ✅ (v0.7.1 to v0.7.3). Step 2 ✅ (v0.7.4). Step 3 ✅ (v0.7.5 to v0.7.10). Step 3b ✅ (v0.7.12 to v0.7.17). Group A2 (steps 4, 5, 7) ✅ (v0.7.19 to v0.7.25). Group B (steps 6, 8, 9, 12, 13) ✅ (v0.7.27 to v0.7.39). Mobile testing to check: long tables (sticky header, collapsed start; `0007` §10 change). Group C (steps 10, 11b, 11) ✅ (v0.7.40 to v0.7.44). Next: group D (import regression, step 14).
+v0.7.0 (v0.6 complete 2026-11-21, v0.6.0 to v0.6.37; reports: `docs/audits/a11y/a11y-v0.6.md`, `docs/audits/security/security-v0.6.md`). Step 1 ✅ (v0.7.1 to v0.7.3). Step 2 ✅ (v0.7.4). Step 3 ✅ (v0.7.5 to v0.7.10). Step 3b ✅ (v0.7.12 to v0.7.17). Group A2 (steps 4, 5, 7) ✅ (v0.7.19 to v0.7.25). Group B (steps 6, 8, 9, 12, 13) ✅ (v0.7.27 to v0.7.39). Mobile testing to check: long tables (sticky header, collapsed start; `0007` §10 change). Group C (steps 10, 11b, 11) ✅ (v0.7.40 to v0.7.44). Group T (steps 15c, 15d) built on `dev/v0.7` (v0.7.47 to v0.7.56); waiting on the human's phone test, UI approval and the D005 console check. Next: group D (import regression, step 14).
 
 ## v0.7 plan of action
 Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per completed-work commit; trailer `Plan-Step: v0.7/N`). The final step bumps to the next minor version (v0.8.0). UI steps need human approval (`0005-ui-ux-review-checklist.md`). Baseline: v0.7.0. Data: Dexie v8 (`src/storage/structure.ts`). Testing: headless Chromium (`tools/browsers/`, `lighthouse-sandbox.md`); import harness `npm run test:import` (`tests/import/README.md`).
@@ -144,10 +144,12 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
     - Files: `src/storage/sync/googleSheets.ts`, `src/storage/sync/googleConfig.ts` (and the API key restriction in the Google Cloud console, human); ActionsMenu, `src/App.css`
     - Verify: an existing sheet is listed and linked from the phone; the menu is fully visible at 320/375/640px
     - Deps: 3b
+    - Progress (v0.7.48, v0.7.55): D006 fixed (menus placed against the window; checked at 375px in `test:dialogs`). D005: "My sheets" is now the first picker tab; the API key's website restriction may still lack the GitHub Pages address (human, Google Cloud console; see the defect file). Waiting on: the human's phone test.
 15d. **Tester feedback** (v0.7/15d) — the roadmap v0.7 "Tester feedback" list (2026-11-26): Add purchase (new subcategory under a category, subcategory with items → Miscellaneous, Update on the Day table), Day view removed from the Budget screen, Actions menu and Update dialog (Up/Down removed), alphabetical sort, new reward characters and animations, full-width date navigation on mobile, media query audit. Questions and guesses: `docs/review-questions/2026-11-26-tester-feedback.md`.
     - Files: `src/components/BudgetTable.tsx`, `src/components/ui/` (ActionsMenu, EditDialogs), `src/components/PurchaseForm.tsx`, `src/screens/` (Budget, AddBudget, BudgetSetup), `src/budget/` (tree, setupEdits), `src/storage/repository.ts`, `src/rewards/`, `src/App.css`, `tests/dialogs/run.mjs`
     - Verify: build + lint; `test:dialogs`, `test:import`, `test:sync`; 1280/640/375/320px; human phone test on the dev branch
     - Deps: 15c (D006 shares the Actions menu)
+    - Progress (v0.7.49 to v0.7.54): all built. v0.7.49 date navigation and media queries (3 left, `0012` §2); v0.7.50 alphabetical sort, Up/Down removed; v0.7.51 Day view removed; v0.7.52 Actions menu, Update dialog, Day table Update; v0.7.53 Add purchase subcategory changes; v0.7.54 rewards. Build, lint, `test:dialogs`, `test:import`, `test:sync` pass. Waiting on: the human's phone test and UI approval.
 16. **UI/UX review** (v0.7/16) — human approval, `0005` checklist, all widths.
     - Deps: 1–15d
 17. **Accessibility pass** (v0.7/17) — including chart alt text, keyboard navigation and screen reader.
@@ -166,7 +168,7 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
 - **D004** (step 15b) and **D005/D006** (step 15c): after F, before the reviews.
 - **T — Tester feedback** (steps 15c, 15d; dev branch `dev/v0.7`, worktree `.worktrees/v0.7-tester-feedback`): built 2026-11-26, one commit per change; merge to `main` after the human's phone test.
 - **Reviews** (steps 16–18): main session with the user.
-- Status: ✅ A · ✅ F · ✅ A2 · ✅ B · ✅ C · ☐ D · ~~E~~ · ☐ reviews
+- Status: ✅ A · ✅ F · ✅ A2 · ✅ B · ✅ C · ⏳ T (phone test) · ☐ D · ~~E~~ · ☐ reviews
 
 ### Session process
 Run option 1: one session per group, fresh start at each group boundary. A session starts by reading this file and the roadmap, then:
