@@ -15,7 +15,7 @@ import {
 import * as edit from '../budget/setupEdits'
 
 const RANGES: { value: DefaultRange; label: string }[] = [
-  { value: 'day', label: 'Day' }, { value: 'week', label: 'Week' }, { value: 'month', label: 'Month' },
+  { value: 'week', label: 'Week' }, { value: 'month', label: 'Month' },
 ]
 const DAYS = WEEKDAYS
 const BOUNDARIES: { value: MonthBoundary; label: string }[] = [

@@ -1,5 +1,5 @@
 import { useRef, useState, type ReactNode } from 'react'
-import type { BudgetItem, Range } from '../storage/db'
+import type { BudgetItem, BudgetRange } from '../storage/db'
 import { isoDate, parseIso, periodsFor, rangeHasEstimates, shiftRange, type Calendar, type CatNode } from '../budget/tree'
 import { dateBounds } from '../budget/validate'
 import { BudgetTable } from '../components/BudgetTable'
@@ -7,8 +7,8 @@ import { MiscBreakdown } from '../components/MiscBreakdown'
 import { Button } from '../components/ui'
 import { useWide } from '../components/ui/useWide'
 
-const RANGES: { value: Range; label: string }[] = [
-  { value: 'day', label: 'Day' },
+/** No Day view: today's purchases are under the Add purchase form (v0.7 step 15d). */
+const RANGES: { value: BudgetRange; label: string }[] = [
   { value: 'week', label: 'Week' },
   { value: 'month', label: 'Month' },
   { value: 'annual', label: 'Annual' },
@@ -21,7 +21,7 @@ const Chevron = ({ dir }: { dir: 'left' | 'right' }) => (
 )
 
 /** Noun for the Previous / Next button names. */
-const UNIT: Record<Range, string> = { day: 'day', week: 'week', month: 'month', annual: 'year' }
+const UNIT: Record<BudgetRange, string> = { week: 'week', month: 'month', annual: 'year' }
 
 export function Budget({ roots, items, range, onRangeChange, calendar, onChanged, syncButton }: {
   /** From 640px the Sync button sits at the right of the date controls; narrower, Tabs shows it beside the Screens button. */
@@ -30,8 +30,8 @@ export function Budget({ roots, items, range, onRangeChange, calendar, onChanged
   onChanged: () => void
   calendar: Calendar
   items: BudgetItem[]
-  range: Range
-  onRangeChange: (r: Range) => void
+  range: BudgetRange
+  onRangeChange: (r: BudgetRange) => void
 }) {
   const wide = useWide()
   const [showEstimates, setShowEstimates] = useState(true)

@@ -7,7 +7,8 @@ import type { ImportPlan } from '../import/plan'
 const MINUTES_PER_DAY = 1440
 
 const FREQS = new Set<Frequency>(['day', 'week', 'biweek', 'bimonthly', 'month', 'quarter', 'annual'])
-const RANGES = new Set<DefaultRange>(['day', 'week', 'month'])
+/** A stored 'day' (before v0.7 step 15d removed the Day view) falls back to Week. */
+const RANGES = new Set<DefaultRange>(['week', 'month'])
 const validWeekStart = (n: unknown): n is number => Number.isInteger(n) && (n as number) >= 0 && (n as number) <= 6
 const validBoundary = (b: unknown): b is MonthBoundary => b === 'weeks' || b === 'calendar'
 
@@ -18,7 +19,7 @@ export function cleanSettings(s: Partial<Settings>): Settings {
     rewardsEnabled: s.rewardsEnabled ?? true,
     notificationsEnabled: !!s.notificationsEnabled,
     onboarded: s.onboarded === true ? true : undefined,
-    defaultRange: s.defaultRange && RANGES.has(s.defaultRange) ? s.defaultRange : 'day',
+    defaultRange: s.defaultRange && RANGES.has(s.defaultRange) ? s.defaultRange : 'week',
     weekStart: validWeekStart(s.weekStart) ? s.weekStart : 0,
     monthBoundary: validBoundary(s.monthBoundary) ? s.monthBoundary : 'weeks',
   }

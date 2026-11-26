@@ -13,7 +13,7 @@ import { charityMovedText } from './budget/charity'
 import { Notices, type NoticeState } from './components/Notices'
 import { Button, Tabs } from './components/ui'
 import { budgetItemRepo, categoryRepo, settingsRepo, skipped } from './storage/repository'
-import { dbEvents, type BudgetItem, type Category, type DefaultRange, type Range } from './storage/db'
+import { dbEvents, type BudgetItem, type BudgetRange, type Category, type DefaultRange } from './storage/db'
 import { buildTree, DEFAULT_CALENDAR, type Calendar } from './budget/tree'
 
 const PERSIST_DISMISSED = 'simple-budget:persist-dismissed'
@@ -22,8 +22,8 @@ const LOAD_ERROR = 'Reload the page to try again. If this keeps happening, your 
 function App() {
   const [cats, setCats] = useState<Category[]>([])
   const [items, setItems] = useState<BudgetItem[]>([])
-  const [range, setRange] = useState<Range>('day')
-  const [defaultRange, setDefaultRange] = useState<DefaultRange>('day')
+  const [range, setRange] = useState<BudgetRange>('week')
+  const [defaultRange, setDefaultRange] = useState<DefaultRange>('week')
   const [calendar, setCalendar] = useState<Calendar>(DEFAULT_CALENDAR)
   const [rewardsEnabled, setRewardsEnabled] = useState(true)
   const [notificationsEnabled, setNotificationsEnabled] = useState(false)
@@ -49,7 +49,7 @@ function App() {
 
   const reloadSettings = useCallback(() => settingsRepo.get()
     .then(s => {
-      const r = s.defaultRange ?? 'day'
+      const r = s.defaultRange ?? 'week'
       setRange(r); setDefaultRange(r)
       setOnboarded(!!s.onboarded); setLoaded(l => ({ ...l, settings: true }))
       setRewardsEnabled(s.rewardsEnabled); setNotificationsEnabled(s.notificationsEnabled)

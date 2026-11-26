@@ -6,9 +6,11 @@ import { toV7Structure } from './structure'
 /** Recurrence of an estimate. Bi-monthly means twice a month. Quarter/annual: bill groups only (0007 §3). */
 export type Frequency = 'day' | 'week' | 'biweek' | 'bimonthly' | 'month' | 'quarter' | 'annual'
 
-/** Budget table display range. Annual is never a default range (0007 §7.4). */
+/** Budget table display range. Day is only the table under Add purchase (v0.7 step 15d); Annual is never a default range (0007 §7.4). */
 export type Range = 'day' | 'week' | 'month' | 'annual'
-export type DefaultRange = Exclude<Range, 'annual'>
+/** The Budget screen's ranges. */
+export type BudgetRange = Exclude<Range, 'day'>
+export type DefaultRange = Exclude<BudgetRange, 'annual'>
 
 /** One recorded amount (a purchase, paycheck, credit…). Negative = credit. */
 export interface BudgetItem {
