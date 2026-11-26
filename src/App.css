@@ -195,7 +195,7 @@
 .setup-table .create-row .input { flex: 0 1 var(--size-create-input); }
 .btn.danger { background: var(--color-alert); border-color: var(--color-alert); color: var(--color-primary-foreground); }
 .table .row-actions { text-align: left; }
-.budget-table .row-actions .btn, .budget-table .name-line .actions-menu .btn { min-width: var(--size-edit-button); } /* "Edit ▾" and "Edit" line up (0012 G10) */
+.budget-table .row-actions .btn { min-width: var(--size-edit-button); } /* "Actions ▾" and "Update" line up (0012 G10) */
 /* 44×44 touch target around a table checkbox. */
 .hit { display: inline-flex; align-items: center; justify-content: center; min-width: var(--size-touch); min-height: var(--size-touch); cursor: pointer; }
 .row-meta { display: block; font-size: var(--font-size-sm); color: var(--color-text); font-weight: var(--font-weight-normal); }

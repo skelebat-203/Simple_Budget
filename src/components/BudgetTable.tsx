@@ -5,24 +5,27 @@ import { slug } from '../budget/validate'
 import { addNewItem, budgetItemRepo, categoryRepo, NameTakenError, RowInUseError } from '../storage/repository'
 import { PurchaseDialog } from './PurchaseDialog'
 import type { PurchaseSave } from './PurchaseForm'
-import { AmountDialog, Banner, Button, Dialog, RenameDialog, Tip, type SaveResult } from './ui'
+import { AmountDialog, Banner, Button, Dialog, RenameDialog, UpdateDialog, type SaveResult, type UpdateChange } from './ui'
 import { useCollapsed } from './ui/useCollapsed'
 import { useWide } from './ui/useWide'
 import { useStickyHead } from './ui/useStickyHead'
 import { fireReward } from '../rewards/rewards'
-import { announce, useAnnounce } from './ui/announcer'
+import { useAnnounce } from './ui/announcer'
 import { isSyncBusy } from '../storage/sync/controller'
-
-/** While a sync runs the tables take no changes (0015 Q4). */
-export const SYNC_BUSY ='Error: Sync is running. Try again in a moment.'
 import { Chevron } from './ui/Expander'
 import { ActionsMenu, type MenuAction } from './ui/ActionsMenu'
+
+/** While a sync runs the tables take no changes (0015 Q4). */
+export const SYNC_BUSY = 'Error: Sync is running. Try again in a moment.'
 
 /** Note on an imported purchase whose date was not in the file (0013 §5). */
 const UNDATED_NOTE = 'Date not in the imported file. It was placed on the first day of its week or month.'
 
-/** Edit actions (0009 §4): each opens a dialog. 'new' is Day's New purchase, 'adjust' is Add/Subtract on an item's total, 'editPurchase' is a Day purchase's Edit dialog. */
-type Act = 'rename' | 'new' | 'adjust' | 'editPurchase' | 'delete'
+/**
+ * Table actions, each opening a dialog: 'new' and 'update' from the Actions menu (Week, Month),
+ * 'updatePurchase' from a Day purchase's Update button, 'rename' from Annual's pencil, 'delete' from an Update dialog.
+ */
+type Act = 'new' | 'update' | 'updatePurchase' | 'rename' | 'delete'
 type Dlg = { act: Act; n: CatNode; purchase?: BudgetItem }
 
 const GRID = '__grid__'
@@ -32,11 +35,15 @@ const isReturn = (i: BudgetItem) => i.amount < 0
 const purchaseAmount = (i: BudgetItem) => isReturn(i) ? `(-$${formatAmount(-i.amount)})` : formatAmount(i.amount) || '0.00'
 const purchaseNoun = (i: BudgetItem) => isReturn(i) ? `return of $${formatAmount(-i.amount)}` : `purchase of ${formatAmount(i.amount) || '0.00'}`
 const PENCIL_SIZE = 18
+const charityText = (n: number) => n ? ` Your ${n} Charity purchase${n === 1 ? '' : 's'} moved to Charity › Miscellaneous.` : ''
 
 /**
  * Budget table per docs/design/0004-table-design.md: tree order, indents
  * 0/1/2, category colors, computed rows, only rows with an amount, and
  * expand/collapse state kept across range changes and restarts.
+ *
+ * Week and Month have an Actions column (New purchase, Update); Annual renames with a pencil only
+ * (0009 §4); the Day table (under Add purchase) lists today's purchases with an Update button each.
  */
 export function BudgetTable({ roots, items, range, showEstimates: wantEstimates, calendar, date, idBase = 'budget', preview = false, highlight = false, allRoots, onChanged, onMoved, pageHead = false }: {
   /** Highlight dialog: a row moved under these rows; the main table opens them (v0.7 step 11). */
@@ -50,11 +57,11 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
   onChanged?: () => void
   /** Prefix for this table's ids; the heading it's named by is `{idBase}-heading`. */
   idBase?: string
-  /** Read-only preview (0007 §5.4): every row expanded, no expand/collapse buttons. */
+  /** Read-only preview (0007 §5.4): every row expanded, no buttons. */
   preview?: boolean
   /** Inside a highlight dialog (0009 §3): every row open, names are plain text, ids are prefixed so they stay unique. */
   highlight?: boolean
-  /** The whole tree, when `roots` is only part of it (highlight dialog): where Rename may move a row. */
+  /** The whole tree, when `roots` is only part of it (highlight dialog): where Move to may put a row. */
   allRoots?: CatNode[]
   calendar: Calendar
   items: BudgetItem[]
@@ -63,8 +70,9 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
 }) {
   const tree = allRoots ?? roots
   const did = (field: string, n: CatNode) => domId(highlight ? `hl_${field}` : field, n)
-  /** Plain rows: no expand or name buttons (preview and highlight dialog). */
-  const plain = preview || highlight
+  const day = range === 'day'
+  /** Plain rows: every row open, no expand or name buttons (preview, highlight dialog, Day table). */
+  const plain = preview || highlight || day
   const showEstimates = wantEstimates && rangeHasEstimates(range)
   const wide = useWide()
   // Below 640px the categories start closed until the user opens or closes a row (v0.7 step 6).
@@ -76,18 +84,14 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
   const periods = total ? [...columns, total] : columns
 
   const actions = !preview && !!onChanged
-  /** Edit menus and buttons: Annual edits names in the name cell (0007 §10); the highlight dialog puts Edit next to the name (0012 G15). Otherwise an Edit column. */
-  const hasEdit = actions && range !== 'annual'
-  const editInName = hasEdit && highlight
-  const actionCol = hasEdit && !highlight
-  /** The highlight dialog's Move column (v0.7 step 11): Up, Down and Move to. */
-  const moveCol = actions && highlight
-  const repeated = repeatedNames(roots)
+  /** The Actions column (v0.7 step 15d): every table but Annual, which renames with a pencil in the name cell (0009 §4). */
+  const actionCol = actions && range !== 'annual'
+  const repeated = repeatedNames(tree)
   const say = (n: CatNode) => spokenName(n, repeated)
   const payWord = (n: CatNode) => (ancestors(n)[0] ?? n).cat.name === 'Income' ? 'Pay' : 'Due'
-  /** Open Edit-menu dialog (0009 §4). */
+  /** Open action dialog. */
   const [dlg, setDlg] = useState<Dlg | null>(null)
-  /** Open highlight dialog (0009 §3): a row with its children, or one Day purchase. */
+  /** Open highlight dialog (0009 §3): a row with its children. */
   const [hl, setHl] = useState<{ id: number } | null>(null)
   const [status, setStatus] = useState('')
   const [error, setError] = useState('')
@@ -100,7 +104,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
   const focusTries = useRef(0)
   useEffect(() => {
     if (!focusAfter.current) return
-    // GRID: focus the table's first cell (e.g. after the last purchase in a list is deleted).
+    // GRID: focus the table's first control (e.g. after the last purchase in a list is deleted).
     const el = focusAfter.current === GRID ? gridRef.current?.querySelector<HTMLElement>('tbody button, tbody input, tbody select') : document.getElementById(focusAfter.current)
     // A renamed row gets a new id only after the reload renders it, so wait a few renders for it.
     if (!el && ++focusTries.current < 4) return
@@ -109,24 +113,19 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
     focusTries.current = 0
   })
 
-  // Day: each purchase is its own row under its item (0007 §9.1).
-  const purchasesOf = (n: CatNode) => range === 'day'
+  // Day: each purchase is its own row under its item, by time (0007 §9.1).
+  const purchasesOf = (n: CatNode) => day
     ? items.filter(i => i.categoryId === n.cat.id && i.date === periods[0].from).sort((a, b) => a.createdAt - b.createdAt)
     : []
-  const purchaseLabel = (i: BudgetItem) =>
-    `${isReturn(i) ? 'Return' : 'Purchase'}, ${new Date(i.createdAt).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`
-  /** A Day purchase's name opens its Edit dialog; an imported undated one also carries a tooltip (`describedBy`). */
-  const nameButton = (n: CatNode, i: BudgetItem, describedBy?: string) => (
-    <button type="button" className="name-link" id={`${editId(n, i)}-name`.replace('edit_purchase', 'name_purchase')} aria-haspopup="dialog"
-      aria-label={`${purchaseLabel(i)}, ${say(n)}, ${purchaseAmount(i)}${i.description ? `, ${i.description}` : ''}`}
-      aria-describedby={[purchaseRowId(n, i), describedBy].filter(Boolean).join(' ')} onClick={() => act(n, 'editPurchase', i)}>
-      {purchaseLabel(i)}{describedBy && <span className="tip-mark" aria-hidden="true">i</span>}
-    </button>
-  )
-  const editId = (n: CatNode, i: BudgetItem) => [highlight ? 'hl_edit_purchase' : 'edit_purchase', n.parent && slug(n.parent.cat.name), slug(n.cat.name), i.id].filter(Boolean).join('-')
+  const purchaseTime = (i: BudgetItem) => new Date(i.createdAt).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
+  const purchaseLabel = (i: BudgetItem) => `${isReturn(i) ? 'Return' : 'Purchase'}, ${purchaseTime(i)}`
+  const purchaseId = (n: CatNode, i: BudgetItem) => ['update_purchase', n.parent && slug(n.parent.cat.name), slug(n.cat.name), i.id].filter(Boolean).join('-')
   /** Row header ids: every control in a row is described by its row header (digital_accessibility.md, Tables). */
   const rowId = (n: CatNode) => did(`${idBase}_row`, n)
-  const purchaseRowId = (n: CatNode, i: BudgetItem) => editId(n, i).replace('edit_purchase', `${idBase}_row_purchase`)
+  const purchaseRowId = (n: CatNode, i: BudgetItem) => purchaseId(n, i).replace('update_purchase', `${idBase}_row_purchase`)
+  /** The Actions button id of row `n` once it is named `name` under `parent` (after an Update reloads the tree). */
+  const actionsIdAfter = (n: CatNode, name: string, parent: CatNode | null) =>
+    [highlight ? 'hl_actions' : 'actions', parent && slug(parent.cat.name), slug(name), n.cat.id].filter(Boolean).join('-')
 
   async function removePurchase(n: CatNode, i: BudgetItem, next: string): Promise<SaveResult> {
     if (isSyncBusy()) return SYNC_BUSY
@@ -143,81 +142,119 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
 
   const span = total ?? columns[0]
   const todayIso = isoDate(today)
-  /** Date for a value added from Week/Month: today if it's in range, else the range's last day. */
+  /** Date for an amount added from Week/Month: today if it's in range, else the range's last day. */
   const addDate = todayIso >= span.from && todayIso <= span.to ? todayIso : span.to
 
-  /** Edit menu for a Day, Week or Month category row (0009 §4). Delete: Day and Week only. */
+  /** A row takes purchases itself: not a total row (0007 §2.1). */
+  const takesAmounts = (n: CatNode) => !isTotal(n) && n.cat.name !== 'Net Income'
+  /** Actions menu for a Week or Month row (v0.7 step 15d): New purchase and Update. */
   function menuActions(n: CatNode): MenuAction<Act>[] {
     const list: MenuAction<Act>[] = []
-    const item = (value: Act, label: string) => list.push({ value, label, id: did(`edit_${value}`, n) })
-    if (!isTotal(n) && n.cat.name !== 'Net Income') item(range === 'day' ? 'new' : 'adjust', range === 'day' ? 'New purchase' : 'Add/Subtract')
-    if (n.parent) item('rename', 'Rename')
-    if (n.parent && range !== 'month') item('delete', 'Delete')
+    const item = (value: Act, label: string) => list.push({ value, label, id: did(`actions_${value}`, n) })
+    if (takesAmounts(n)) item('new', 'New purchase')
+    if (n.parent || takesAmounts(n)) item('update', 'Update')
     return list
   }
   function act(n: CatNode, a: Act, purchase?: BudgetItem) {
     if (a === 'delete' && !purchase) {
       const why = n.children.length ? 'delete its items first'
-        : items.filter(i => i.categoryId === n.cat.id).length > 1 ? 'it has more than one purchase; delete them in the Day table first' : ''
-      if (why) { setNotice(`${say(n)} can’t be deleted yet: ${why}.`); return }
+        : items.filter(i => i.categoryId === n.cat.id).length > 1 ? 'it has more than one purchase; delete them under Add purchase first' : ''
+      if (why) { setDlg(null); setNotice(`${say(n)} can’t be deleted yet: ${why}.`); return }
     }
     setError(''); setNotice('')
     setDlg({ act: a, n, purchase })
   }
 
-  /** Where a row may be moved by Rename: its parent's level (0009 §4). Computed roots are left out. */
-  function parentChoices(n: CatNode): { id: number; label: string }[] {
-    const here = n.parent!
-    const roots = tree
-    if (n.depth === 1) return roots.filter(r => !r.cat.computed || r === here).map(r => ({ id: r.cat.id, label: r.cat.name }))
-    return roots.filter(r => !r.cat.computed || r === here.parent)
-      .flatMap(r => r.children.map(c => ({ id: c.cat.id, label: `${r.cat.name} › ${c.cat.name}` })))
-  }
-
-  /** Dialog rename, with a move when the Category select changed. */
-  async function saveRename(n: CatNode, name: string, parentId: number): Promise<SaveResult> {
+  /** Annual's pencil: a name change only (0009 §4). */
+  async function saveRename(n: CatNode, name: string): Promise<SaveResult> {
     if (isSyncBusy()) return SYNC_BUSY
-    let move: { parentId: number; recolor: { id: number; color: string }[] } | undefined
-    const dest = flatten(tree).find(x => x.cat.id === parentId)!
-    if (parentId !== n.parent!.cat.id) {
-      const moved = { ...n, parent: dest }
-      move = { parentId, recolor: [{ id: n.cat.id, color: childColor(dest) }, ...n.children.map(c => ({ id: c.cat.id, color: childColor(moved) }))] }
-    }
-    let charity = 0
     try {
-      charity = await categoryRepo.rename(n.cat.id, name, move)
+      await categoryRepo.rename(n.cat.id, name)
     } catch (err) {
       if (err instanceof NameTakenError) return `Invalid: Name ${err.message}`
       if (err instanceof RowInUseError) { setDlg(null); setError(`Error: ${n.cat.name} wasn’t renamed because ${err.message}`); onChanged?.(); return }
       return `Error: ${n.cat.name} wasn’t renamed. Try again.`
     }
     setDlg(null)
-    // Open the rows above the moved item so it shows (and can take focus).
-    if (move) openRows([...ancestors(dest).map(a => a.cat.id), dest.cat.id])
-    setStatus(`${move ? `Renamed ${say(n)} to ${name} and moved it to ${dest.cat.name}.` : `Renamed ${say(n)} to ${name}.`}${charity ? ` Your ${charity} Charity purchase${charity === 1 ? '' : 's'} moved to Charity › Miscellaneous.` : ''}`)
-    const field = range === 'annual' ? 'rename' : 'edit'
-    focusAfter.current = [highlight ? `hl_${field}` : field, slug(dest.cat.name), slug(name), n.cat.id].join('-')
+    setStatus(`Renamed ${say(n)} to ${name}.`)
+    focusAfter.current = [highlight ? 'hl_rename' : 'rename', n.parent && slug(n.parent.cat.name), slug(name), n.cat.id].filter(Boolean).join('-')
     onChanged?.()
   }
 
-  /** Dialog Add/Subtract, New purchase and a purchase's Edit (0009 §4.1). */
-  async function saveAmount(d: Dlg, amount: number, description: string, date: string): Promise<SaveResult> {
-    const { n } = d
+  /** New purchase from the Actions menu (0009 §4.1). */
+  async function saveNew(n: CatNode, amount: number, description: string, date: string): Promise<SaveResult> {
     if (isSyncBusy()) return SYNC_BUSY
     try {
       await budgetItemRepo.add({ categoryId: n.cat.id, amount, date, ...(description ? { description } : {}) })
     } catch {
-      return `Error: The amount for ${n.cat.name} wasn’t saved. Try again.`
+      return `Error: The purchase for ${n.cat.name} wasn’t saved. Try again.`
     }
-    const text = formatAmount(amount) || '0.00'
     setDlg(null)
-    setStatus(d.act === 'new' ? `Added a ${say(n)} purchase of ${text} on ${date}.` : `Added ${text} to ${say(n)} on ${date}.`)
-    focusAfter.current = did('edit', n)
+    setStatus(`Added a ${say(n)} purchase of ${formatAmount(amount) || '0.00'} on ${date}.`)
+    focusAfter.current = did('actions', n)
     onChanged?.()
     fireReward()
   }
 
-  /** Day purchase dialog Save: the old record is removed and a new one added (all or nothing). A name clash is thrown to the dialog. */
+  const pathLabel = (d: CatNode) => d.parent ? `${d.parent.cat.name} › ${d.cat.name}` : d.cat.name
+  /** Where Move to may put a row: any category or subcategory but its own parent, itself and its subcategories (v0.7 step 11). */
+  const moveChoices = (n: CatNode) => flatten(tree)
+    .filter(d => d.depth <= 1 && d.cat.name !== 'Net Income' && d.cat.id !== n.cat.id && d.cat.id !== n.parent?.cat.id && d.parent?.cat.id !== n.cat.id)
+
+  /**
+   * Update's Save (v0.7 step 15d): rename, then move, then add the difference to the period total.
+   * The name and the move are checked against the tree first, so a refusal changes nothing;
+   * each write is still checked again inside its own transaction.
+   */
+  async function saveUpdate(n: CatNode, c: UpdateChange): Promise<SaveResult> {
+    if (isSyncBusy()) return SYNC_BUSY
+    const dest = c.moveTo ? flatten(tree).find(x => x.cat.id === c.moveTo) : undefined
+    const name = c.name ?? n.cat.name
+    const parent = dest ?? n.parent
+    if (dest && dest.depth === 1 && n.children.length) {
+      return `Error: ${say(n)} has ${n.children.length} item${n.children.length === 1 ? '' : 's'}, so it cannot go inside another subcategory. Move its items out first.`
+    }
+    if ((c.name || dest) && parent?.children.some(s => s.cat.id !== n.cat.id && slug(s.cat.name) === slug(name))) {
+      return `Invalid: Name “${name}” already exists in ${parent.cat.name}`
+    }
+    const done: string[] = []
+    let charity = 0, movedFrom: string | undefined
+    try {
+      if (c.name) { await categoryRepo.rename(n.cat.id, c.name); done.push(`renamed it ${c.name}`) }
+      if (dest) {
+        const moved = { ...n, parent: dest }
+        const recolor = [{ id: n.cat.id, color: childColor(dest) }, ...n.children.map(k => ({ id: k.cat.id, color: childColor(moved) }))]
+        ;({ charity, movedFrom } = await categoryRepo.moveTo(n.cat.id, dest.cat.id, recolor))
+        done.push(`moved it to ${pathLabel(dest)} as ${dest.depth === 0 ? 'a subcategory' : 'an item'}`)
+      }
+      if (c.amount !== undefined) {
+        const diff = Math.round((c.amount - actualFor(n, span, items)) * 100) / 100
+        if (diff) await budgetItemRepo.add({ categoryId: n.cat.id, amount: diff, date: addDate })
+        done.push(`set the total for ${title} to ${formatAmount(c.amount) || '0.00'}`)
+      }
+    } catch (err) {
+      const soFar = done.length ? ` Already saved: ${done.join(', ')}.` : ''
+      if (done.length) onChanged?.()
+      if (err instanceof NameTakenError) return `Invalid: Name ${err.message}.${soFar}`
+      if (err instanceof RowInUseError) return `Error: ${n.cat.name} wasn’t updated because ${err.message}${soFar}`
+      return `Error: ${n.cat.name} wasn’t updated. Try again.${soFar}`
+    }
+    setDlg(null)
+    setStatus(`Updated ${say(n)}: ${done.join(', ')}.${movedFrom ? ` ${movedFrom}’s own amounts moved to ${movedFrom} › Miscellaneous.` : ''}${charityText(charity)}`)
+    if (dest) {
+      // Open the rows above the moved row so it shows (here, and in the main table behind a highlight).
+      const open = [...ancestors(dest).map(a => a.cat.id), dest.cat.id]
+      openRows(open)
+      onMoved?.(open)
+    }
+    // Focus the row's Actions button; in a highlight a row that moved out of it hands focus to the highlighted row's.
+    const top = roots[0]
+    const stays = !highlight || !dest || top.cat.id === n.cat.id || flatten([top]).some(x => x.cat.id === dest.cat.id)
+    focusAfter.current = stays ? actionsIdAfter(n, name, parent) : top.parent ? did('actions', top) : GRID
+    onChanged?.()
+  }
+
+  /** A Day purchase's Update dialog Save: the old record is removed and a new one added (all or nothing). A name clash is thrown to the dialog. */
   async function savePurchase(old: BudgetItem, n: CatNode, p: PurchaseSave): Promise<SaveResult> {
     if (isSyncBusy()) return SYNC_BUSY
     let charity = 0
@@ -235,9 +272,9 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
     }
     setDlg(null)
     const text = formatAmount(p.kind === 'existing' ? p.amount : p.args.amount) || '0.00'
-    setStatus(`Saved the ${p.kind === 'existing' ? say(target) : p.name} purchase of ${text}.${charity ? ` Your ${charity} Charity purchase${charity === 1 ? '' : 's'} moved to Charity › Miscellaneous.` : ''}`)
-    // The purchase is a new record, maybe under another item: focus the item it was on.
-    focusAfter.current = did('edit', n)
+    setStatus(`Saved the ${p.kind === 'existing' ? say(target) : p.name} purchase of ${text}.${charityText(charity)}`)
+    // The purchase is a new record, maybe under another item or day: focus the table.
+    focusAfter.current = GRID
     onChanged?.()
   }
 
@@ -263,7 +300,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
     return p ? ` and its purchase of ${formatAmount(p.amount) || '0.00'}` : ''
   }
 
-  /** Annual: the name's pencil button opens the same Rename dialog as the other tables (0012 G9). */
+  /** Annual: the name's pencil opens Rename, a name change only (0009 §4, 0012 G9). */
   function renameControls(n: CatNode): ReactNode {
     if (!actions || range !== 'annual' || !n.parent) return null
     return (
@@ -276,74 +313,20 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
     )
   }
 
-  /** Edit cell for a Day, Week or Month category row (0009 §4); Annual edits names in the name cell. */
-  function editMenu(n: CatNode): ReactNode {
-    const list = menuActions(n)
-    return list.length > 0 && <ActionsMenu id={did('edit', n)} label={`Edit ${say(n)}`} describedBy={rowId(n)} buttonLabel="Edit" items={list} onSelect={k => act(n, k)} />
-  }
+  /** Actions cell of a category row: the Actions menu in Week and Month; nothing in Day (its purchases have Update). */
   function rowActions(n: CatNode): ReactNode {
-    return <>{actionCol && <td className="row-actions">{editMenu(n)}</td>}{moveCol && moveCell(n)}</>
-  }
-
-  const pathLabel = (d: CatNode) => d.parent ? `${d.parent.cat.name} › ${d.cat.name}` : d.cat.name
-  /** Where Move to may put a row: any category or subcategory but its own parent, itself and its subcategories (v0.7 step 11). */
-  function moveChoices(n: CatNode): MenuAction[] {
-    return flatten(tree)
-      .filter(d => d.depth <= 1 && d.cat.name !== 'Net Income' && d.cat.id !== n.cat.id && d.cat.id !== n.parent?.cat.id && d.parent?.cat.id !== n.cat.id)
-      .map(d => ({ value: String(d.cat.id), label: pathLabel(d), id: `${did('move_to', n)}-${d.cat.id}` }))
-  }
-  function report(msg: string) { setStatus(msg); announce(msg) }
-  function moveFailed(n: CatNode, err: unknown) {
-    setStatus('')
-    setError(err instanceof RowInUseError ? `Error: ${n.cat.name} wasn’t moved because ${err.message}` : `Error: ${n.cat.name} wasn’t moved. Try again.`)
-    onChanged?.()
-  }
-
-  /** Move to: the row becomes the last child of the chosen category (a subcategory) or subcategory (an item); saved at once (v0.7 step 11). */
-  async function moveTo(n: CatNode, destId: number) {
-    const dest = flatten(tree).find(x => x.cat.id === destId)
-    if (!dest) return
-    setError(''); setNotice('')
-    if (isSyncBusy()) { setError(SYNC_BUSY); return }
-    const kids = n.children.length
-    if (dest.depth === 1 && kids) {
-      setStatus('')
-      setError(`Error: ${say(n)} has ${kids} item${kids === 1 ? '' : 's'}, so it cannot go inside another subcategory. Move its items out first.`)
-      return
-    }
-    const moved = { ...n, parent: dest }
-    const recolor = [{ id: n.cat.id, color: childColor(dest) }, ...n.children.map(c => ({ id: c.cat.id, color: childColor(moved) }))]
-    let charity = 0, movedFrom: string | undefined
-    try {
-      ;({ charity, movedFrom } = await categoryRepo.moveTo(n.cat.id, destId, recolor))
-    } catch (err) {
-      if (err instanceof NameTakenError) { setStatus(''); setError(`Invalid: Move to for ${say(n)}: ${err.message}. Rename one of them first.`); return }
-      moveFailed(n, err); return
-    }
-    report(`Moved ${say(n)} to ${pathLabel(dest)} as ${dest.depth === 0 ? 'a subcategory' : 'an item'}.${movedFrom ? ` ${movedFrom}’s own amounts moved to ${movedFrom} › Miscellaneous.` : ''}${charity ? ` Your ${charity} Charity purchase${charity === 1 ? '' : 's'} moved to Charity › Miscellaneous.` : ''}`)
-    // The main table opens the rows above the moved row so it shows when the highlight closes (saved expand state).
-    onMoved?.([...ancestors(dest).map(a => a.cat.id), dest.cat.id])
-    // Focus stays on the moved row's Move to button when it is still in this highlight; otherwise on the highlighted row's.
-    const top = roots[0]
-    const stays = top.cat.id === n.cat.id || flatten([top]).some(x => x.cat.id === destId)
-    focusAfter.current = stays ? ['hl_move_to', slug(dest.cat.name), slug(n.cat.name), n.cat.id].join('-') : top.parent ? did('move_to', top) : GRID
-    onChanged?.()
-  }
-
-  /** The Move cell: Up and Down (rows under the highlighted one), then Move to (v0.7 step 11). */
-  function moveCell(n: CatNode): ReactNode {
-    if (!n.parent) return <td className="row-actions" />
-    const choices = moveChoices(n)
+    if (!actionCol) return null
+    const list = day ? [] : menuActions(n)
     return (
       <td className="row-actions">
-        {choices.length > 0 && <ActionsMenu id={did('move_to', n)} label={`Move ${say(n)} to`} describedBy={rowId(n)} buttonLabel="Move to"
-          items={choices} onSelect={k => moveTo(n, Number(k))} />}
+        {list.length > 0 && <ActionsMenu id={did('actions', n)} label={`Actions for ${say(n)}`} describedBy={rowId(n)} items={list} onSelect={k => act(n, k)} />}
       </td>
     )
   }
-  const purchaseEdit = (n: CatNode, i: BudgetItem) => (
-    <Button type="button" className="secondary small" id={editId(n, i)}
-      aria-label={`Edit ${say(n)} ${purchaseNoun(i)}, ${purchaseLabel(i).split(', ')[1]}${i.description ? `, ${i.description}` : ''}`} aria-describedby={purchaseRowId(n, i)} onClick={() => act(n, 'editPurchase', i)}>Edit</Button>
+  const purchaseUpdate = (n: CatNode, i: BudgetItem) => (
+    <Button type="button" className="secondary small" id={purchaseId(n, i)} aria-haspopup="dialog"
+      aria-label={`Update ${say(n)} ${purchaseNoun(i)}, ${purchaseTime(i)}${i.description ? `, ${i.description}` : ''}`} aria-describedby={purchaseRowId(n, i)}
+      onClick={() => act(n, 'updatePurchase', i)}>Update</Button>
   )
 
   const values = (n: CatNode, p: Period) => ({ est: estimateTotal(n, p), act: actualFor(n, p, items) })
@@ -351,7 +334,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
     periods.some(p => { const v = values(n, p); return v.act !== 0 || (showEstimates && v.est !== 0) })
 
   /** Week, Month and Annual: a solid border starts each period, Total included (0008 §4). */
-  const start = range === 'day' ? '' : ' period-start'
+  const start = day ? '' : ' period-start'
   const cells = (get: (p: Period) => { est: number; act: number }) => periods.map(p => {
     const v = get(p)
     return (
@@ -372,8 +355,8 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
   const rows: ReactNode[] = []
   /** A highlight shows its row at the left edge. */
   const base = highlight ? roots[0]?.depth ?? 0 : 0
-  /** A row expands when it has rows under it: child rows with amounts, or (Day) its purchases. */
-  const expandable = (n: CatNode) => n.children.some(hasAmount) || purchasesOf(n).length > 0
+  /** A row expands when it has child rows with amounts. */
+  const expandable = (n: CatNode) => n.children.some(hasAmount)
   function addRow(n: CatNode) {
     if (!hasAmount(n)) return
     const kids = n.children.filter(hasAmount)
@@ -384,19 +367,13 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
         {...(plain ? {} : { 'data-id': n.cat.id, 'aria-level': n.depth + 1, 'aria-expanded': expandable(n) ? open : undefined })}>
         <th scope="row" id={rowId(n)} className={`name clr-${n.cat.color}`}>
           <span className="name-line">
-            {(() => {
-              if (plain) return <span>{label}</span>
-              return (
-                <>
-                  {expandable(n) && <Chevron open={open} onToggle={() => toggle(n.cat.id)} id={did('expand', n)} label={say(n)} describedBy={rowId(n)} />}
-                  <button type="button" className="name-link" id={did('name', n)} aria-haspopup="dialog"
-                    aria-label={say(n) === label ? undefined : say(n)} aria-describedby={rowId(n)}
-                    onClick={() => setHl({ id: n.cat.id })}>{label}</button>
-                </>
-              )
-            })()}
+            {plain ? <span>{label}</span> : <>
+              {expandable(n) && <Chevron open={open} onToggle={() => toggle(n.cat.id)} id={did('expand', n)} label={say(n)} describedBy={rowId(n)} />}
+              <button type="button" className="name-link" id={did('name', n)} aria-haspopup="dialog"
+                aria-label={say(n) === label ? undefined : say(n)} aria-describedby={rowId(n)}
+                onClick={() => setHl({ id: n.cat.id })}>{label}</button>
+            </>}
             {renameControls(n)}
-            {editInName && editMenu(n)}
           </span>
           {(range === 'week' || range === 'month') && !isTotal(n) && (scheduleText(n.cat, payWord(n)) || n.cat.autopay) && (
             <span className="row-meta">
@@ -409,25 +386,16 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
       </tr>,
     )
     if (!open) return
-    const bought = purchasesOf(n)
-    bought.forEach(i => {
+    purchasesOf(n).forEach(i => {
       rows.push(
-        <tr key={`p${i.id}`} className={`row purchase depth-${n.depth + 1 - base}`} {...(plain ? {} : { "aria-level": n.depth + 2 })}>
+        <tr key={`p${i.id}`} className={`row purchase depth-${n.depth + 1 - base}`}>
           <th scope="row" id={purchaseRowId(n, i)} className="name">
-            <span className="name-line">
-              {plain ? purchaseLabel(i) : i.undated
-                ? <Tip text={UNDATED_NOTE}>{tip => nameButton(n, i, tip)}</Tip>
-                : nameButton(n, i)}
-              {editInName && purchaseEdit(n, i)}
-            </span>
+            <span className="name-line">{purchaseLabel(i)}</span>
             {i.description && <span className="row-description">{i.description}</span>}
-            {plain && i.undated && <span className="row-description">{UNDATED_NOTE}</span>}
+            {i.undated && <span className="row-description">{UNDATED_NOTE}</span>}
           </th>
           <td className={`num${isReturn(i) ? ' neg' : ''}`}>{purchaseAmount(i)}</td>
-          {actionCol && (
-            <td className="row-actions">{purchaseEdit(n, i)}</td>
-          )}
-          {moveCol && <td />}
+          {actionCol && <td className="row-actions">{purchaseUpdate(n, i)}</td>}
         </tr>,
       )
     })
@@ -437,7 +405,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
     if (r.cat.name !== 'Net Income') { addRow(r); continue }
     if (periods.some(p => { const v = netIncome(p); return v.act !== 0 || (showEstimates && v.est !== 0) })) {
       rows.push(
-        <tr key={r.cat.id} className="row depth-0 net" {...(preview ? {} : { 'aria-level': 1 })}>
+        <tr key={r.cat.id} className="row depth-0 net" {...(plain ? {} : { 'aria-level': 1 })}>
           <th scope="row" className={`name clr-${r.cat.color}`}>Net Income</th>
           {cells(netIncome)}
           {actionCol && <td />}
@@ -448,45 +416,46 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
 
   const hlNode = hl ? flatten(roots).find(x => x.cat.id === hl.id) : undefined
 
-  /** The highlight dialog (0009 §3): the row as this table shows it, with the same functions. A Day purchase opens its own dialog (Edit). */
+  /** The highlight dialog (0009 §3): the row as this table shows it, with the same Actions. */
   function highlightDialog(): ReactNode {
     if (!hlNode) return null
     const close = () => setHl(null)
     return (
       <Dialog id={`${idBase}-highlight`} title={hlNode.cat.name} className="highlight-dialog" onClose={close}
         buttons={<><span /><Button type="button" className="secondary" onClick={close}>Close</Button></>}>
-        <p className="help">{hlNode.children.length || (range === 'day' && purchasesOf(hlNode).length) ? `${say(hlNode)} and the rows under it.` : `${say(hlNode)} has nothing under it.`}</p>
+        <p className="help">{hlNode.children.length ? `${say(hlNode)} and the rows under it.` : `${say(hlNode)} has nothing under it.`}</p>
         <BudgetTable roots={[hlNode]} items={items} range={range} showEstimates={wantEstimates} calendar={calendar} date={date}
           idBase={`${idBase}-hl`} highlight allRoots={tree} onChanged={onChanged} onMoved={openRows} />
       </Dialog>
     )
   }
 
-  /** The open Edit-menu dialog (0009 §4). */
-  function editDialog(d: Dlg): ReactNode {
+  /** The open action dialog. */
+  function actionDialog(d: Dlg): ReactNode {
     const { n, purchase } = d
-    const id = `${idBase}-edit_${d.act}`
+    const id = `${idBase}-${d.act}`
     const close = () => setDlg(null)
     switch (d.act) {
       case 'rename':
-        return <RenameDialog id={id} spoken={say(n)} name={n.cat.name} parentId={n.parent!.cat.id} parents={parentChoices(n)}
-          level={n.depth === 1 ? 'Category' : 'Subcategory'} onSave={(name, parent) => saveRename(n, name, parent)} onCancel={close} />
+        return <RenameDialog id={id} spoken={say(n)} name={n.cat.name} onSave={name => saveRename(n, name)} onCancel={close} />
       case 'new':
-        return <AmountDialog id={id} title={`New purchase for ${say(n)}`} spoken={say(n)} withDescription dateField={{ initial: addDate, min: span.from, max: span.to }}
+        return <AmountDialog id={id} title={`New purchase for ${say(n)}`} spoken={say(n)} dateField={{ initial: addDate, min: span.from, max: span.to }}
           intro={`Adds a purchase to ${say(n)}. Use a minus sign for a refund, or type a sum, e.g. 12.50+3.`}
-          onSave={(amount, description, date) => saveAmount(d, amount, description, date || addDate)} onCancel={close} />
-      case 'adjust':
-        return <AmountDialog id={id} title={`Add or subtract for ${say(n)}`} spoken={say(n)} dateField={{ initial: addDate, min: span.from, max: span.to }}
-          intro={`Adds to or subtracts from the ${say(n)} total as a new amount on the date below, within ${title}. Use a minus sign to subtract, e.g. -12.50, or type a sum, e.g. 12.50+3.`}
-          onSave={(amount, description, date) => saveAmount(d, amount, description, date || addDate)} onCancel={close} />
-      case 'editPurchase':
-        return <PurchaseDialog id={id} title={`${purchaseLabel(purchase!)}, ${say(n)}`} roots={tree} node={n} purchase={purchase!}
+          onSave={(amount, description, date) => saveNew(n, amount, description, date)} onCancel={close} />
+      case 'update': {
+        const moves = n.parent ? [{ value: '', label: `Keep in ${pathLabel(n.parent)}` }, ...moveChoices(n).map(x => ({ value: String(x.cat.id), label: pathLabel(x) }))] : undefined
+        return <UpdateDialog id={id} spoken={say(n)} name={n.parent ? n.cat.name : undefined} moves={moves}
+          amount={takesAmounts(n) ? { label: `Total for ${title}`, current: actualFor(n, span, items), help: `Changing it adds the difference as a new amount on ${addDate}. Use a minus sign to subtract, or type a sum, e.g. 100+20.` } : undefined}
+          onSave={c => saveUpdate(n, c)} onDelete={n.parent ? () => act(n, 'delete') : undefined} onCancel={close} />
+      }
+      case 'updatePurchase':
+        return <PurchaseDialog id={id} title={`Update ${purchaseLabel(purchase!)}, ${say(n)}`} roots={tree} node={n} purchase={purchase!}
           onSave={p => savePurchase(purchase!, n, p) as Promise<string | void>}
           onDelete={() => setDlg({ act: 'delete', n, purchase })} onCancel={close} />
       case 'delete': {
         const confirmDelete = purchase
           ? () => { const bought = purchasesOf(n); const k = bought.indexOf(purchase)
-            removePurchase(n, purchase, bought[k + 1] ? editId(n, bought[k + 1]) : bought[k - 1] ? editId(n, bought[k - 1]) : GRID) }
+            removePurchase(n, purchase, bought[k + 1] ? purchaseId(n, bought[k + 1]) : bought[k - 1] ? purchaseId(n, bought[k - 1]) : GRID) }
           : () => deleteRow(n)
         return (
           <Dialog id={id} title={purchase ? `Delete the ${say(n)} purchase?` : `Delete ${say(n)}?`}
@@ -504,21 +473,20 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
       {/* Only the table scrolls sideways (v0.4 review); no help text under it (v0.7 step 8). */}
       {/* A read-only table has no controls, so its scroll box takes focus to scroll by keyboard in every browser (v0.7 step 12). */}
       <div className={`table-box${pageHead ? ' page-head' : ''}`} {...(preview ? { tabIndex: 0, role: 'region', 'aria-labelledby': `${idBase}-heading` } : {})}>
-        <table className={`table budget-table${range === 'day' ? ' day-table' : ''}`} aria-labelledby={highlight ? `${idBase}-caption` : `${idBase}-heading ${idBase}-caption`}
+        <table className={`table budget-table${day ? ' day-table' : ''}`} aria-labelledby={highlight ? `${idBase}-caption` : `${idBase}-heading ${idBase}-caption`}
           ref={gridRef} role={plain ? undefined : 'treegrid'}>
           <caption id={`${idBase}-caption`}>{title}</caption>
           <thead>
-            {range !== 'day' && range !== 'annual' && showEstimates && (
+            {!day && range !== 'annual' && showEstimates && (
               <tr>
                 <td />
                 {periods.map(p => <th key={p.label} scope="colgroup" className={start.trim()} colSpan={colSpan} aria-label={p.fullLabel}>{p.label}</th>)}
                 {actionCol && <td />}
-                {moveCol && <td />}
               </tr>
             )}
             <tr>
               <th scope="col" className="name">Item</th>
-              {range === 'annual' || (range !== 'day' && !showEstimates)
+              {range === 'annual' || (!day && !showEstimates)
                 // One value per period (Annual, or estimates hidden): each period heads its own column (0007 §10).
                 ? periods.map(p => <th key={p.label} scope="col" className={`num${start}`} aria-label={p.fullLabel}>{p.label}</th>)
                 : periods.map(p => (
@@ -527,19 +495,18 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
                     <th scope="col" className={`num${showEstimates ? '' : start}`}><span aria-hidden="true">Act.</span><span className="sr-only">Actual</span></th>
                   </Fragment>
                 ))}
-              {actionCol && <th scope="col" className="name">Edit</th>}
-              {moveCol && <th scope="col" className="name">Move</th>}
+              {actionCol && <th scope="col" className="name">Actions</th>}
             </tr>
           </thead>
           <tbody>
-            {rows.length ? rows : <tr aria-level={1}><td className="empty" colSpan={1 + periods.length * colSpan + (actionCol ? 1 : 0) + (moveCol ? 1 : 0)}>Nothing recorded for this range yet.</td></tr>}
+            {rows.length ? rows : <tr><td className="empty" colSpan={1 + periods.length * colSpan + (actionCol ? 1 : 0)}>Nothing recorded for this range yet.</td></tr>}
           </tbody>
         </table>
       </div>
       {notice && <Banner kind="info" title={notice} />}
       {actions && <p className="status">{status}</p>}
       {highlightDialog()}
-      {dlg && editDialog(dlg)}
+      {dlg && actionDialog(dlg)}
       {error && <p className="error">{error}</p>}
     </div>
   )

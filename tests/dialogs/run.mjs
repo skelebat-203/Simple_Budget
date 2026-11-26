@@ -181,16 +181,39 @@ try {
     await page.evaluate(() => [...document.querySelectorAll('button')].find(b => b.textContent.trim() === 'Save')?.click())
     await sleep(500)
   }
+
+  /** Open the menu behind this button from the keyboard and pick the item with this label. */
+  async function pick(buttonId, label) {
+    await page.focus(`[id="${buttonId}"]`); await press('ArrowDown')
+    const at = await page.evaluate((b, l) => [...document.querySelectorAll(`[id="${b}-menu"] [role=menuitem]`)].findIndex(m => m.textContent.trim() === l), buttonId, label)
+    for (let i = 0; i < at; i++) await press('ArrowDown')
+    await press('Enter')
+    return at >= 0
+  }
+  const said = () => page.evaluate(() => document.getElementById('live-region')?.textContent ?? '')
+  /** The menu's box is inside the window (D006). */
+  const menuInWindow = id => page.evaluate(i => { const r = document.getElementById(`${i}-menu`)?.getBoundingClientRect(); return !!r && r.left >= 0 && r.right <= innerWidth && r.top >= 0 && r.bottom <= innerHeight }, id)
+
+  // Day table under Add purchase (v0.7 step 15d): an Update button on each purchase, no other controls.
+  await tableRules('Day table (Add purchase)')
+  const dayButtons = await page.evaluate(() => [...document.querySelectorAll('#tabpanel-add .day-table tbody button')].map(b => b.textContent.trim()))
+  check('Day table: only Update buttons', dayButtons.length === 4 && dayButtons.every(t => t === 'Update'), dayButtons.join())
+  const dayUpdate = await page.evaluate(() => document.querySelector('#tabpanel-add .day-table tbody button')?.id ?? '')
+  await clickId(dayUpdate)
+  const dayDlg = (await openIds()).at(-1)
+  check('Day Update: opens the purchase form with Delete', !!dayDlg && await page.evaluate(i => !!document.querySelector(`#${CSS.escape(i)} #${CSS.escape(i)}-item`) && [...document.querySelectorAll(`#${CSS.escape(i)} button`)].some(b => b.textContent.trim() === 'Delete'), dayDlg))
+  await standard('Day Update', dayDlg, dayUpdate)
+
   await clickId('tab-budget')
   const range = async r => { await page.evaluate(r => [...document.querySelectorAll('[role=group][aria-label=Range] button')].find(b => b.textContent.trim() === r)?.click(), r); await settle() }
-  await range('Day')
-  await tableRules('Day table')
+  check('Budget: no Day view', (await page.evaluate(() => [...document.querySelectorAll('[role=group][aria-label=Range] button')].map(b => b.textContent.trim()))).join() === 'Week,Month,Annual')
   await range('Annual')
   await tableRules('Annual and Misc. Breakdown tables')
+  check('Annual: no Actions menu, a pencil to rename', await page.evaluate(() => !document.querySelector('#tabpanel-budget .budget-table [aria-haspopup=menu]') && !!document.querySelector('#tabpanel-budget [id^=rename-]')))
   check('Misc. Breakdown: rows in alphabetical order', await page.evaluate(() => [...document.querySelectorAll('.misc-table tbody th')].map(t => t.textContent).join() === 'Car wash,coffee shops,Stamps'))
   await clickId('misc-save-car-wash'); await sleep(500)
   check('Misc. Breakdown: Save for future moves the row out', await page.evaluate(() => [...document.querySelectorAll('.misc-table tbody th')].map(t => t.textContent).join() === 'coffee shops,Stamps'))
-  check('Misc. Breakdown: Save for future is announced', /Saved Car wash for future/.test(await page.evaluate(() => document.getElementById('live-region')?.textContent ?? '')))
+  check('Misc. Breakdown: Save for future is announced', /Saved Car wash for future/.test(await said()))
   check('Misc. Breakdown: Car wash is now an Annual row', await page.evaluate(() => [...document.querySelectorAll('.budget-table:not(.misc-table) tbody th')].some(t => t.textContent.includes('Car wash'))))
   // Merge (0014 M2): "coffee shops" matches the existing Coffee Shops item, so its purchase moves there.
   await clickId('misc-save-coffee-shops'); await sleep(500)
@@ -199,31 +222,44 @@ try {
     rows: [...document.querySelectorAll('#tabpanel-budget .budget-table:not(.misc-table) tbody th')].map(t => t.textContent.trim()).filter(t => /coffee shops/i.test(t)),
   }))
   check('Misc. Breakdown: a name that exists merges into that item', merged.misc === 'Stamps' && merged.rows.join() === 'Coffee Shops', JSON.stringify(merged))
-  check('Misc. Breakdown: the merge is announced', (await page.evaluate(() => document.getElementById('live-region')?.textContent ?? '')) === 'Moved 1 purchase to Coffee Shops.')
+  check('Misc. Breakdown: the merge is announced', (await said()) === 'Moved 1 purchase to Coffee Shops.')
+
   await range('Week')
   await tableRules('Week table')
-  await page.click('[aria-haspopup="menu"][aria-label="Edit Groceries"]'); await settle()
-  await tableRules('Week table, Edit menu open')
-  await press('Escape')
-
-  // Confirm mode: Delete on the Groceries row (one purchase, no items).
-  const rowMenu = await page.evaluate(() => document.querySelector('[aria-haspopup="menu"][aria-label="Edit Groceries"]')?.id ?? '')
-  check('Week table: Groceries row has an Edit menu', !!rowMenu, JSON.stringify(await page.evaluate(() => [...document.querySelectorAll('[aria-haspopup=menu],button.name-link')].map(m => m.id))))
+  check('Week: no Up or Down buttons', await page.evaluate(() => ![...document.querySelectorAll('button')].some(b => /^Move .* (up|down)$/.test(b.getAttribute('aria-label') ?? ''))))
+  const rowMenu = await page.evaluate(() => document.querySelector('[aria-haspopup="menu"][aria-label="Actions for Groceries"]')?.id ?? '')
+  check('Week table: Groceries row has an Actions menu', !!rowMenu)
   if (rowMenu) {
-    await clickId(rowMenu)
-    await page.evaluate(() => [...document.querySelectorAll('[role=menuitem]')].find(m => m.textContent.trim().startsWith('Delete'))?.click())
-    await settle()
+    await page.focus(`[id="${rowMenu}"]`); await press('ArrowDown')
+    check('Actions menu: New purchase and Update', (await page.evaluate(i => [...document.querySelectorAll(`[id="${i}-menu"] [role=menuitem]`)].map(m => m.textContent.trim()).join(), rowMenu)) === 'New purchase,Update')
+    check('Actions menu: inside the window', await menuInWindow(rowMenu))
+    await tableRules('Week table, Actions menu open')
+    await press('Escape')
+
+    // Delete is in the Update dialog: a confirmation over the table (Groceries has one purchase, so it may go).
+    await pick(rowMenu, 'Update')
+    const up = (await openIds()).at(-1)
+    check('Update: opens with Name, Total and Move to', up === 'budget-update' && await page.evaluate(() => ['budget-update-name', 'budget-update-amount', 'budget-update-move_to'].every(i => !!document.getElementById(i))))
+    await page.evaluate(() => [...document.querySelectorAll('#budget-update button')].find(b => b.textContent.trim() === 'Delete')?.click()); await settle()
     const confirmId = (await openIds()).at(-1)
-    check('confirm: Delete opens a dialog', !!confirmId, JSON.stringify(await openIds()))
+    check('confirm: Delete opens a confirmation', confirmId === 'budget-delete', JSON.stringify(await openIds()))
     if (confirmId) {
       const buttons = await page.evaluate(i => [...document.querySelectorAll(`#${CSS.escape(i)} .dialog-actions button`)].map(b => b.textContent.trim()), confirmId)
       check('confirm: buttons are Cancel then Delete', buttons.join() === 'Cancel,Delete', buttons.join())
       check('confirm: described by its message', await page.evaluate(i => { const d = document.getElementById(i); const t = document.getElementById(d.getAttribute('aria-describedby') ?? ''); return !!t && t.textContent.length > 0 }, confirmId))
       await standard('confirm', confirmId, rowMenu)
     }
+
+    // Update: the total for the week (amount) adds the difference.
+    await pick(rowMenu, 'Update')
+    await page.click('#budget-update-amount', { clickCount: 3 }); await page.keyboard.type('20')
+    await page.evaluate(() => document.querySelector('#budget-update button[type=submit]')?.click()); await sleep(500)
+    check('Update: a new total is saved and announced', /^Updated Groceries: set the total for Week of .* to 20\.00\.$/.test(await said()), await said())
+    check('Update: focus returns to the Actions button', (await activeId()) === rowMenu, `active: ${await activeId()}`)
+    check('Update: the Week total shows 20.00', await page.evaluate(i => document.getElementById(i)?.closest('tr')?.textContent.includes('20.00') ?? false, rowMenu))
   }
 
-  // A table dialog: highlight, with the Edit menu stacked on top of it.
+  // A table dialog: highlight, with New purchase stacked on top of it.
   const nameId = await page.evaluate(() => document.querySelector('button.name-link')?.id ?? '')
   check('Week table: a row name button exists', !!nameId)
   if (nameId) {
@@ -231,13 +267,14 @@ try {
     const hl = (await openIds()).at(-1)
     check('highlight: opens', !!hl && hl.endsWith('-highlight'), JSON.stringify(await openIds()))
     await tableRules('highlight')
-    const editBtn = await page.evaluate(h => document.querySelector(`#${CSS.escape(h)} [aria-haspopup="menu"]`)?.id ?? '', hl)
-    check('highlight: has an Edit menu button', !!editBtn)
-    if (editBtn) {
-      await clickId(editBtn)
-      await press('Enter') // first item (Rename)
+    const actionsBtn = await page.evaluate(h => document.querySelector(`#${CSS.escape(h)} [aria-haspopup="menu"]`)?.id ?? '', hl)
+    check('highlight: has an Actions menu in an Actions column', !!actionsBtn && await page.evaluate(h => [...document.querySelectorAll(`#${CSS.escape(h)} thead th`)].at(-1)?.textContent.trim() === 'Actions', hl))
+    if (actionsBtn) {
+      await clickId(actionsBtn)
+      check('highlight: Actions menu inside the window', await menuInWindow(actionsBtn))
+      await press('Enter') // first item
       const ids = await openIds()
-      check('stacked: Rename opens over the highlight', ids.length === 2 && ids[0] === hl, JSON.stringify(ids))
+      check('stacked: a dialog opens over the highlight', ids.length === 2 && ids[0] === hl, JSON.stringify(ids))
       const top = ids.at(-1)
       check('stacked: focus is in the top dialog', (await focusIn(top)).inside)
       await press('Tab')
@@ -246,14 +283,14 @@ try {
       await press('Escape')
       const after = await openIds()
       check('stacked: Escape closes only the top dialog', after.length === 1 && after[0] === hl, JSON.stringify(after))
-      check('stacked: focus returns to the Edit button', (await activeId()) === editBtn, `active: ${await activeId()}`)
+      check('stacked: focus returns to the Actions button', (await activeId()) === actionsBtn, `active: ${await activeId()}`)
     }
     await press('Escape')
     check('highlight: Escape closes it', (await openIds()).length === 0)
     check('highlight: focus returns to the row name', (await activeId()) === nameId, `active: ${await activeId()}`)
   }
 
-  // Move column (v0.7 step 11), keyboard only, in the Incidentals highlight (Week).
+  // Move to in the Update dialog (v0.7 step 15d), keyboard only, in the Incidentals highlight (Week).
   const incId = await page.evaluate(() => [...document.querySelectorAll('button.name-link')].find(b => b.textContent.trim() === 'Incidentals')?.id ?? '')
   check('Move: Incidentals row name exists', !!incId)
   if (incId) {
@@ -261,69 +298,65 @@ try {
     const hl = (await openIds()).at(-1)
     const q = sel => `#${hl} ${sel}`
     const kids = () => page.evaluate(s => [...document.querySelectorAll(s)].map(t => t.textContent.trim()), q('tbody tr.depth-1 th .name-line > span:first-child'))
-    const said = () => page.evaluate(() => document.getElementById('live-region')?.textContent ?? '')
-    const errorText = () => page.evaluate(s => document.querySelector(s)?.textContent ?? '', q('.error'))
     const idOf = label => page.evaluate(s => document.querySelector(s)?.id ?? '', q(`[aria-label="${label}"]`))
-    /** Open a row's Move to menu from the keyboard and pick the item with this label. */
+    /** Update a row's Move to: open Actions › Update, choose the place by its label, Save. Returns the dialog's error text. */
     async function moveVia(row, label) {
-      await page.focus(`[id="${await idOf(`Move ${row} to`)}"]`); await press('ArrowDown')
-      const at = await page.evaluate((s, l) => [...document.querySelectorAll(s)].findIndex(m => m.textContent.trim() === l), q('[role=menuitem]'), label)
-      for (let i = 0; i < at; i++) await press('ArrowDown')
-      await press('Enter'); await sleep(500)
-      return at >= 0
+      // A repeated name is spoken with its parent ("Miscellaneous, Incidentals").
+      await pick(await page.evaluate(s => document.querySelector(s)?.id ?? '', q(`[aria-label="Actions for ${row}"], ${q(`[aria-label^="Actions for ${row}, "]`)}`)), 'Update')
+      const ok = await page.evaluate(l => { const s = document.getElementById('budget-hl-update-move_to'); const o = [...(s?.options ?? [])].find(x => x.textContent === l); if (o) s.value = o.value; return !!o }, label)
+      if (ok) await page.select('#budget-hl-update-move_to', await page.evaluate(() => document.getElementById('budget-hl-update-move_to').value))
+      await page.evaluate(() => document.querySelector('#budget-hl-update button[type=submit]')?.click()); await sleep(500)
+      const err = await page.evaluate(() => document.querySelector('#budget-hl-update .error')?.textContent ?? '')
+      if ((await openIds()).includes('budget-hl-update')) await press('Escape')
+      return ok ? err : `no option ${label}`
     }
-    await tableRules('highlight with Move column')
-    await page.focus(`[id="${await idOf(`Move ${(await kids())[0]} to`)}"]`); await press('ArrowDown')
-    await tableRules('highlight, Move to menu open')
-    await press('Escape')
-    const before = await kids()
-    check('Move: at least two rows to reorder', before.length >= 2, before.join())
-    const upId = await idOf(`Move ${before[1]} up`)
-    await page.focus(`[id="${upId}"]`); await press('Enter'); await sleep(500)
-    const up = await kids()
-    check('Move: Up swaps the row with the one above', up[0] === before[1] && up[1] === before[0], up.join())
-    check('Move: focus stays on the Up button', (await activeId()) === upId, `active: ${await activeId()}`)
-    check('Move: Up is announced', (await said()) === `Moved ${before[1]} up.`, await said())
-    const downId = await idOf(`Move ${before[1]} down`)
-    await page.focus(`[id="${downId}"]`); await press('Enter'); await sleep(500)
-    check('Move: Down moves it back', (await kids()).join() === before.join(), (await kids()).join())
-    // A name a sibling at the destination already uses is refused.
-    check('Move: Miscellaneous offered Expenses › Maintenance', await moveVia('Miscellaneous', 'Expenses › Maintenance'))
-    check('Move: a name clash is refused with an Invalid message', /^Invalid: .*“Miscellaneous” already exists in Maintenance/.test(await errorText()), await errorText())
+    check('Move: rows listed alphabetically', (await kids()).join() === [...(await kids())].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' })).join(), (await kids()).join())
+    // A name a sibling at the destination already uses is refused, and nothing changes.
+    const clash = await moveVia('Miscellaneous', 'Expenses › Maintenance')
+    check('Move: a name clash is refused with an Invalid message', /^Invalid: Name “Miscellaneous” already exists in Maintenance/.test(clash), clash)
     check('Move: the refused row stays', (await kids()).includes('Miscellaneous'))
-    // An item into another subcategory: it leaves this highlight; focus goes to the highlighted row's Move to.
+    // An item into another subcategory: it leaves this highlight; focus goes to the highlighted row's Actions button.
     await moveVia('Coffee Shops', 'Expenses › Maintenance')
-    check('Move to: an item moves into another subcategory', !(await kids()).includes('Coffee Shops'), (await kids()).join())
-    check('Move to: the move is announced', (await said()) === 'Moved Coffee Shops to Expenses › Maintenance as an item.', await said())
-    check('Move to: focus goes to the highlighted row’s Move to', (await activeId()) === await idOf('Move Incidentals to'), `active: ${await activeId()}`)
+    check('Move: an item moves into another subcategory', !(await kids()).includes('Coffee Shops'), (await kids()).join())
+    check('Move: the move is announced', (await said()) === 'Updated Coffee Shops: moved it to Expenses › Maintenance as an item.', await said())
+    check('Move: focus goes to the highlighted row’s Actions button', (await activeId()) === await idOf('Actions for Incidentals'), `active: ${await activeId()}`)
     // A subcategory with items can't go inside another subcategory.
-    await moveVia('Incidentals', 'Expenses › Medical')
-    check('Move to: a subcategory with items is refused', /^Error: Incidentals has \d+ items, so it cannot go inside another subcategory\. Move its items out first\.$/.test(await errorText()), await errorText())
+    const deep = await moveVia('Incidentals', 'Expenses › Medical')
+    check('Move: a subcategory with items is refused', /^Error: Incidentals has \d+ items, so it cannot go inside another subcategory\. Move its items out first\.$/.test(deep), deep)
     // An item moved to a category becomes a subcategory.
     await moveVia('Car wash', 'Expenses')
-    check('Move to: an item moved to a category becomes a subcategory', (await said()) === 'Moved Car wash to Expenses as a subcategory.', await said())
+    check('Move: an item moved to a category becomes a subcategory', (await said()) === 'Updated Car wash: moved it to Expenses as a subcategory.', await said())
     await press('Escape')
-    const tree = await page.evaluate(() => [...document.querySelectorAll('#tabpanel-budget .budget-table:not(.misc-table) tbody tr[aria-level]')]
+    const rowsNow = () => page.evaluate(() => [...document.querySelectorAll('#tabpanel-budget .budget-table:not(.misc-table) tbody tr[aria-level]')]
       .map(r => `${r.getAttribute('aria-level')}:${r.querySelector('th .name-link')?.textContent.trim()}`))
+    const tree = await rowsNow()
     const coffee = tree.indexOf('3:Coffee Shops')
     const parentRow = tree.slice(0, coffee).reverse().find(r => r.startsWith('2:'))
     check('Move: the table shows Coffee Shops under Maintenance after the highlight closes', coffee > 0 && parentRow === '2:Maintenance', tree.join(' | '))
     check('Move: the table shows Car wash as a subcategory', tree.includes('2:Car wash'), tree.join(' | '))
+    const subs = tree.filter(r => r.startsWith('2:')).map(r => r.slice(2))
+    check('Sort: subcategories listed alphabetically', subs.join() === [...subs].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' })).join(), subs.join())
     // A row moved into a closed row: the main table opens it, so the row shows after the highlight closes.
-    const rowsNow = () => page.evaluate(() => [...document.querySelectorAll('#tabpanel-budget .budget-table:not(.misc-table) tbody tr[aria-level]')]
-      .map(r => `${r.getAttribute('aria-level')}:${r.querySelector('th .name-link')?.textContent.trim()}`))
     await page.evaluate(() => [...document.querySelectorAll('#tabpanel-budget [id^=expand-]')].find(x => x.closest('tr')?.querySelector('.name-link')?.textContent.trim() === 'Maintenance')?.click()); await settle()
     check('Move: Maintenance closed before the move', !(await rowsNow()).includes('3:Coffee Shops'), (await rowsNow()).join(' | '))
     const carId = await page.evaluate(() => [...document.querySelectorAll('button.name-link')].find(b => b.textContent.trim() === 'Car wash')?.id ?? '')
     await page.focus(`[id="${carId}"]`); await press('Enter')
-    const hl2 = (await openIds()).at(-1)
-    await page.focus(`#${hl2} [aria-label="Move Car wash to"]`); await press('ArrowDown')
-    const at2 = await page.evaluate(h => [...document.querySelectorAll(`#${h} [role=menuitem]`)].findIndex(m => m.textContent.trim() === 'Expenses › Maintenance'), hl2)
-    for (let i = 0; i < at2; i++) await press('ArrowDown')
-    await press('Enter'); await sleep(500)
+    await moveVia('Car wash', 'Expenses › Maintenance')
     await press('Escape')
     const opened = await rowsNow()
     check('Move: the destination opens so the moved row shows', opened.includes('3:Car wash') && opened.includes('3:Coffee Shops'), opened.join(' | '))
+  }
+
+  // Phones (375px): the date navigation fills the width; row menus stay inside the window (D006).
+  await page.setViewport({ width: NARROW, height: HEIGHT }); await settle()
+  const nav = await page.evaluate(() => { const n = document.querySelector('.date-row > nav')?.getBoundingClientRect(); const p = document.getElementById('tabpanel-budget')?.getBoundingClientRect(); return n && p ? { nav: Math.round(n.width), panel: Math.round(p.width) } : null })
+  check('375px: date navigation is the full width', !!nav && nav.nav === nav.panel, JSON.stringify(nav))
+  const narrowMenu = await page.evaluate(() => document.querySelector('#tabpanel-budget [aria-haspopup=menu][aria-label^="Actions for"]')?.id ?? '')
+  if (narrowMenu) {
+    await page.evaluate(i => document.getElementById(i)?.scrollIntoView({ block: 'center', inline: 'center' }), narrowMenu)
+    await clickId(narrowMenu)
+    check('375px: Actions menu inside the window', await menuInWindow(narrowMenu))
+    await press('Escape')
   }
 } catch (e) {
   console.error(e)

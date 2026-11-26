@@ -88,9 +88,9 @@ export function AddBudget({ roots, items, calendar, onSaved }: {
         <Button type="button" onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Save'}</Button>
       </div>
       {saveError && <p className="error">{saveError}</p>}
-      {/* Read-only copy of today's Day table (v0.7 step 12): no Edit buttons or highlight dialogs, no status line of its own. */}
+      {/* Today's Day table (v0.7 step 12): each purchase has an Update button (Item, Amount, Description, Date; Delete) (v0.7 step 15d). */}
       <h3 id="add-day-heading" className="add-day-heading">Today’s purchases</h3>
-      <BudgetTable idBase="add-day" roots={roots} items={items} range="day" showEstimates={false} calendar={calendar} preview pageHead />
+      <BudgetTable idBase="add-day" roots={roots} items={items} range="day" showEstimates={false} calendar={calendar} onChanged={onSaved} pageHead />
     </section>
   )
 }

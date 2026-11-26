@@ -38,22 +38,18 @@ function useSaver() {
   return { error, busy, run, setError }
 }
 
-/** Rename an item; a Category select moves it when its new place differs (0009 §4). */
-export function RenameDialog({ id, spoken, name, parentId, parents, level, onSave, onCancel }: {
+const RENAME_WARNING = 'Changes the name in ALL historic records.'
+
+/** Annual's pencil: a name change only, as a convenient bulk rename (0009 §4). */
+export function RenameDialog({ id, spoken, name, onSave, onCancel }: {
   id: string
   /** Accessible name of the row, e.g. "Car, Insurance". */
   spoken: string
   name: string
-  parentId: number
-  /** Where the row may live: its current parent and others at the same level. */
-  parents: { id: number; label: string }[]
-  /** "Category" for a subcategory, "Subcategory" for an item. */
-  level: 'Category' | 'Subcategory'
-  onSave: (name: string, parentId: number) => SaveResult | Promise<SaveResult>
+  onSave: (name: string) => SaveResult | Promise<SaveResult>
   onCancel: () => void
 }) {
   const [value, setValue] = useState(name)
-  const [parent, setParent] = useState(parentId)
   const [fieldError, setFieldError] = useState('')
   const saver = useSaver()
   const input = useRef<HTMLInputElement>(null)
@@ -62,25 +58,90 @@ export function RenameDialog({ id, spoken, name, parentId, parents, level, onSav
     const clean = expandName(value, name)
     if (!clean) { setFieldError(`Error: Name for ${spoken} cannot be empty`); input.current?.focus(); return }
     setFieldError('')
-    if (clean === name && parent === parentId) return onCancel()
-    await saver.run(() => onSave(clean, parent))
+    if (clean === name) return onCancel()
+    await saver.run(() => onSave(clean))
   }
   useAnnounce(fieldError)
   return (
     <Dialog id={id} title={`Rename ${spoken}`} onClose={onCancel} form={{ submitLabel: 'Save', onSubmit: submit, error: saver.error, busy: saver.busy }}>
-      <div className="banner banner-warn" role="note">
-        <p className="banner-title">This changes ALL historic records.</p>
-      </div>
-      <Field id={fieldId} label="New name" error={fieldError} required>
+      <Field id={fieldId} label="New name" error={fieldError} help={RENAME_WARNING} required>
         <Input id={fieldId} ref={input} maxLength={NAME_MAX} value={value} autoComplete="off" spellCheck aria-required="true"
-          aria-invalid={!!fieldError || undefined} aria-describedby={describe(fieldId, fieldError)}
+          aria-invalid={!!fieldError || undefined} aria-describedby={describe(fieldId, fieldError, true)}
           onChange={e => setValue(e.target.value)} />
       </Field>
-      {parents.length > 1 && (
-        <Field id={`${id}-category`} label={level} help="Choosing another one moves the item there.">
-          <select id={`${id}-category`} className="input" value={parent} aria-describedby={`${id}-category-help`}
-            onChange={e => setParent(Number(e.target.value))}>
-            {parents.map(p => <option key={p.id} value={p.id}>{p.label}</option>)}
+    </Dialog>
+  )
+}
+
+/** What Update changed. `amount` is the new period total; `moveTo` the chosen parent's id. */
+export interface UpdateChange { name?: string; amount?: number; moveTo?: number }
+
+/**
+ * Update (v0.7 step 15d, from the Actions menu in Week and Month): the row's name, its total for the
+ * period shown, and Move to, in one dialog; Delete at the right of the footer. Each part shows only
+ * where it applies (no name or move for a top-level row, no amount for a total row).
+ */
+export function UpdateDialog({ id, spoken, name, amount, moves, onSave, onDelete, onCancel }: {
+  id: string
+  spoken: string
+  /** Present when the row can be renamed. */
+  name?: string
+  /** Present when the row takes amounts: its current total and the field's help. */
+  amount?: { label: string; current: number; help: string }
+  /** Present when the row can move: "Keep in …" first (value ''), then the places it can go. */
+  moves?: { value: string; label: string }[]
+  onSave: (change: UpdateChange) => SaveResult | Promise<SaveResult>
+  onDelete?: () => void
+  onCancel: () => void
+}) {
+  const shownAmount = (n: number) => n.toFixed(2)
+  const [nameText, setNameText] = useState(name ?? '')
+  const [amountText, setAmountText] = useState(amount ? shownAmount(amount.current) : '')
+  const [move, setMove] = useState('')
+  const [errors, setErrors] = useState<{ name?: string; amount?: string }>({})
+  const saver = useSaver()
+  const nameId = `${id}-name`, amountId = `${id}-amount`, moveId = `${id}-move_to`
+  async function submit() {
+    const e: typeof errors = {}
+    const change: UpdateChange = {}
+    if (name !== undefined) {
+      const clean = expandName(nameText, name)
+      if (!clean) e.name = `Error: Name for ${spoken} cannot be empty`
+      else if (clean !== name) change.name = clean
+    }
+    if (amount) {
+      const r = parseAmount(amountText, { allowNegative: true })
+      if (!r.ok) e.amount = moneyError(amount.label, r, '120.00, 100+20 or -12.50')
+      else if (Math.round(r.value * 100) !== Math.round(amount.current * 100)) change.amount = r.value
+    }
+    if (move) change.moveTo = Number(move)
+    setErrors(e)
+    if (e.name || e.amount) { document.getElementById(e.name ? nameId : amountId)?.focus(); return }
+    if (!Object.keys(change).length) return onCancel()
+    await saver.run(() => onSave(change))
+  }
+  useAnnounce(errors.name ?? errors.amount ?? '')
+  return (
+    <Dialog id={id} title={`Update ${spoken}`} className="update-dialog" onClose={onCancel}
+      form={{ submitLabel: 'Save', onSubmit: submit, error: saver.error, busy: saver.busy, endButton: onDelete && <Button type="button" className="danger" onClick={onDelete}>Delete</Button> }}>
+      {name !== undefined && (
+        <Field id={nameId} label="Name" error={errors.name} help={RENAME_WARNING} required>
+          <Input id={nameId} maxLength={NAME_MAX} value={nameText} autoComplete="off" spellCheck aria-required="true"
+            aria-invalid={!!errors.name || undefined} aria-describedby={describe(nameId, errors.name, true)}
+            onChange={e => setNameText(e.target.value)} />
+        </Field>
+      )}
+      {amount && (
+        <Field id={amountId} label={amount.label} error={errors.amount} help={amount.help} required>
+          <AmountField id={amountId} className="amount" allowNegative value={amountText} aria-required="true"
+            aria-invalid={!!errors.amount || undefined} aria-describedby={describe(amountId, errors.amount, true)}
+            onFocus={e => e.target.select()} onChange={e => setAmountText(e.target.value)} />
+        </Field>
+      )}
+      {moves && moves.length > 1 && (
+        <Field id={moveId} label="Move to" help="A subcategory moved into another becomes an item; an item moved to a category becomes a subcategory.">
+          <select id={moveId} className="input" value={move} aria-describedby={`${moveId}-help`} onChange={e => setMove(e.target.value)}>
+            {moves.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
           </select>
         </Field>
       )}
@@ -89,30 +150,23 @@ export function RenameDialog({ id, spoken, name, parentId, parents, level, onSav
 }
 
 /**
- * Amount dialog (0009 §4.1): a new purchase (Day, category row; with a description), a change to a
- * purchase's amount (Day, purchase row), or a value added to or subtracted from an item's total
- * (Week, Month). Amounts accept typed sums.
+ * New purchase (0009 §4.1; Week and Month Actions menu): an amount, a date within the period
+ * shown, and a description. Amounts accept typed sums.
  */
-export function AmountDialog({ id, title, spoken, intro, initial, initialDescription, withDescription, dateField, submitLabel = 'Save', onSave, onDelete, onCancel }: {
+export function AmountDialog({ id, title, spoken, intro, dateField, onSave, onCancel }: {
   id: string
   title: string
   spoken: string
   /** Help for the Amount field, shown between its label and the box. */
   intro: string
-  initial?: string
-  initialDescription?: string
-  withDescription?: boolean
-  /** Shows a date picker limited to min..max (the period being viewed, 0009 §4.1). */
-  dateField?: { initial: string; min: string; max: string }
-  submitLabel?: string
+  /** A date picker limited to min..max (the period being viewed, 0009 §4.1). */
+  dateField: { initial: string; min: string; max: string }
   onSave: (amount: number, description: string, date: string) => SaveResult | Promise<SaveResult>
-  /** When given, a Delete button shows at the right of the footer. */
-  onDelete?: () => void
   onCancel: () => void
 }) {
-  const [value, setValue] = useState(initial ?? '')
-  const [description, setDescription] = useState(initialDescription ?? '')
-  const [date, setDate] = useState(dateField?.initial ?? '')
+  const [value, setValue] = useState('')
+  const [description, setDescription] = useState('')
+  const [date, setDate] = useState(dateField.initial)
   const [dateError, setDateError] = useState('')
   const [fieldError, setFieldError] = useState('')
   const saver = useSaver()
@@ -126,38 +180,31 @@ export function AmountDialog({ id, title, spoken, intro, initial, initialDescrip
       return
     }
     setFieldError('')
-    if (dateField) {
-      const bad = date === '' ? 'Error: Date cannot be empty'
-        : date < dateField.min || date > dateField.max ? `Invalid: Date use a date from ${dateField.min} to ${dateField.max}` : ''
-      setDateError(bad)
-      if (bad) { document.getElementById(dateId)?.focus(); return }
-    }
+    const bad = date === '' ? 'Error: Date cannot be empty'
+      : date < dateField.min || date > dateField.max ? `Invalid: Date use a date from ${dateField.min} to ${dateField.max}` : ''
+    setDateError(bad)
+    if (bad) { document.getElementById(dateId)?.focus(); return }
     await saver.run(() => onSave(r.value, cleanDescription(description), date))
   }
   useAnnounce(fieldError)
   useAnnounce(dateError)
   return (
     <Dialog id={id} title={title} className="amount-dialog" onClose={onCancel}
-      form={{ submitLabel, onSubmit: submit, error: saver.error, busy: saver.busy, endButton: onDelete && <Button type="button" className="danger" onClick={onDelete}>Delete</Button> }}>
+      form={{ submitLabel: 'Save', onSubmit: submit, error: saver.error, busy: saver.busy }}>
       <Field id={fieldId} label="Amount" error={fieldError} help={intro} required>
         <AmountField id={fieldId} className="amount" allowNegative value={value} aria-required="true"
           aria-invalid={!!fieldError || undefined} aria-describedby={describe(fieldId, fieldError, true)}
-          onFocus={e => { if (initial) e.target.select() }}
           onChange={e => setValue(e.target.value)} />
       </Field>
-      {dateField && (
-        <Field id={dateId} label="Date" error={dateError} help={dateField.min === dateField.max ? `The day shown, ${dateField.min}.` : `From ${dateField.min} to ${dateField.max}.`} required>
-          <DatePicker id={dateId} value={date} min={dateField.min} max={dateField.max} aria-required="true"
-            aria-invalid={!!dateError || undefined} aria-describedby={[dateError && `${dateId}-error_msg`, `${dateId}-help`].filter(Boolean).join(' ')}
-            onChange={e => setDate(e.target.value)} />
-        </Field>
-      )}
-      {withDescription && (
-        <Field id={`${id}-description`} label="Description" help={`Up to ${DESCRIPTION_MAX} characters.`}>
-          <Input id={`${id}-description`} maxLength={DESCRIPTION_MAX} value={description} autoComplete="off" aria-describedby={`${id}-description-help`}
-            onChange={e => setDescription(e.target.value)} />
-        </Field>
-      )}
+      <Field id={dateId} label="Date" error={dateError} help={dateField.min === dateField.max ? `The day shown, ${dateField.min}.` : `From ${dateField.min} to ${dateField.max}.`} required>
+        <DatePicker id={dateId} value={date} min={dateField.min} max={dateField.max} aria-required="true"
+          aria-invalid={!!dateError || undefined} aria-describedby={[dateError && `${dateId}-error_msg`, `${dateId}-help`].filter(Boolean).join(' ')}
+          onChange={e => setDate(e.target.value)} />
+      </Field>
+      <Field id={`${id}-description`} label="Description" help={`Up to ${DESCRIPTION_MAX} characters.`}>
+        <Input id={`${id}-description`} maxLength={DESCRIPTION_MAX} value={description} autoComplete="off" aria-describedby={`${id}-description-help`}
+          onChange={e => setDescription(e.target.value)} />
+      </Field>
     </Dialog>
   )
 }

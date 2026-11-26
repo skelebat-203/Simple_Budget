@@ -106,7 +106,7 @@
   --size-listbox-max: 300px;
   --space-scroll-heading: 3rem; /* keeps a picked option clear of the sticky group heading */
   --size-menu-min: 14rem; /* Screens menu */
-  --size-menu-row-min: 10rem; /* row Edit menu */
+  --size-menu-row-min: 10rem; /* row Actions menu */
   --size-menu-max-h: 20rem; /* long menus (Move to) scroll inside this height */
   --size-tooltip-max: 16rem;
   --space-tooltip-offset: 6px;
@@ -125,7 +125,7 @@
   --space-footer-clear: 6rem; /* scroll padding above Budget setup's sticky footer */
   --space-footer-clear-review: 8rem; /* the same for the review dialog */
   --size-footer-fallback: 5rem; /* footer height before it is measured */
-  --size-edit-button: 5rem; /* one minimum width for every Edit button in the tables (0012 G10) */
+  --size-edit-button: 6.5rem; /* one minimum width for the Actions and Update buttons in the tables, so they line up (0012 G10) */
   --size-banner-icon: 24px;
   --size-tip-mark: 1.25rem; /* the "i" beside a name that has a tooltip */
   --size-toggle-option: 8.5rem; /* one Toggle option, desktop */
