@@ -411,7 +411,7 @@ nav.toolbar .btn.icon { flex: none; }
 .table .period-start { border-left: var(--border-medium) solid var(--color-secondary-background); }
 
 /* --- Rewards (0008 §7): decorative, never takes focus or clicks, sits high so it can't cover Save. --- */
-.reward { position: fixed; top: var(--reward-top); left: 50%; translate: -50% 0; z-index: 50; pointer-events: none; animation: reward-pop var(--duration-reward) ease-out forwards; }
+.reward { position: fixed; top: var(--reward-top); left: 50%; translate: -50% 0; z-index: 50; pointer-events: none; display: flex; align-items: flex-end; animation: reward-pop var(--duration-reward) ease-out forwards; }
 @keyframes reward-pop {
   0% { opacity: 0; transform: translateY(24px) scale(0.4); }
   20% { opacity: 1; transform: translateY(0) scale(1.15) rotate(-6deg); }
@@ -420,8 +420,52 @@ nav.toolbar .btn.icon { flex: none; }
   80% { opacity: 1; transform: translateY(-8px) scale(1); }
   100% { opacity: 0; transform: translateY(-28px) scale(1); }
 }
+/* Animations added 2026-11-26 (human): dance, fly, thumbs up, spin. Each fades out at the end, like pop. */
+.reward-dance { animation-name: reward-dance; animation-timing-function: ease-in-out; }
+@keyframes reward-dance {
+  0% { opacity: 0; transform: scale(0.6); }
+  10% { opacity: 1; transform: scale(1); }
+  20%, 60% { transform: translateX(-14px) translateY(-6px) rotate(-10deg); }
+  30%, 70% { transform: translateX(0) translateY(0) rotate(0); }
+  40%, 80% { transform: translateX(14px) translateY(-6px) rotate(10deg); }
+  50% { transform: translateX(0) translateY(0) rotate(0); }
+  88% { opacity: 1; transform: translateX(0) rotate(0); }
+  100% { opacity: 0; transform: translateY(-12px); }
+}
+.reward-fly { animation-name: reward-fly; animation-timing-function: ease-in-out; }
+@keyframes reward-fly {
+  0% { opacity: 0; transform: translate(-120px, 60px) rotate(-20deg) scale(0.6); }
+  25% { opacity: 1; transform: translate(-40px, -10px) rotate(-10deg) scale(1); }
+  50% { transform: translate(20px, -30px) rotate(5deg); }
+  75% { opacity: 1; transform: translate(80px, -50px) rotate(15deg); }
+  100% { opacity: 0; transform: translate(140px, -90px) rotate(20deg) scale(0.8); }
+}
+.reward-thumbs { animation-name: reward-thumbs-in; }
+@keyframes reward-thumbs-in {
+  0% { opacity: 0; transform: scale(0.5); }
+  15% { opacity: 1; transform: scale(1.1); }
+  25%, 85% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1); }
+}
+.reward-thumb { margin-left: calc(-1 * var(--space-sm)); transform-origin: bottom left; animation: reward-thumb var(--duration-reward) ease-out forwards; }
+@keyframes reward-thumb {
+  0%, 20% { opacity: 0; transform: scale(0) rotate(-30deg); }
+  35% { opacity: 1; transform: scale(1.2) rotate(10deg); }
+  45%, 55%, 65% { transform: scale(1) rotate(-8deg); }
+  50%, 60% { transform: scale(1) rotate(8deg); }
+  85% { opacity: 1; transform: scale(1) rotate(0); }
+  100% { opacity: 0; }
+}
+.reward-spin { animation-name: reward-spin; animation-timing-function: ease-out; }
+@keyframes reward-spin {
+  0% { opacity: 0; transform: scale(0.4) rotate(0); }
+  15% { opacity: 1; }
+  60% { transform: scale(1.1) rotate(720deg); }
+  70%, 85% { opacity: 1; transform: scale(1) rotate(720deg); }
+  100% { opacity: 0; transform: scale(1) rotate(720deg); }
+}
 @media (prefers-reduced-motion: reduce) {
-  .reward { animation: reward-fade var(--duration-reward) linear forwards; }
+  .reward, .reward-thumb { animation: reward-fade var(--duration-reward) linear forwards; }
   @keyframes reward-fade { 0%, 80% { opacity: 1; } 100% { opacity: 0; } }
 }
 
