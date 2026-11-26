@@ -140,8 +140,12 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
     - Files: `src/storage/sync/googleSheets.ts`, `src/components/Sync.tsx`; an Authorized redirect URI in the Google Cloud console (human)
     - Verify: sign-in in Firefox Strict and in Chromium
     - Deps: 3b
+15c. **Phone-test defects D005 and D006** (v0.7/15c) — D005: the Google file picker lists no files (`docs/defects/D005-picker-lists-no-files.md`); D006: Edit menu items clipped on the left (`docs/defects/D006-edit-menu-items-clipped.md`). Found 2026-11-26.
+    - Files: `src/storage/sync/googleSheets.ts`, `src/storage/sync/googleConfig.ts` (and the API key restriction in the Google Cloud console, human); ActionsMenu, `src/App.css`
+    - Verify: an existing sheet is listed and linked from the phone; the menu is fully visible at 320/375/640px
+    - Deps: 3b
 16. **UI/UX review** (v0.7/16) — human approval, `0005` checklist, all widths.
-    - Deps: 1–15
+    - Deps: 1–15c
 17. **Accessibility pass** (v0.7/17) — including chart alt text, keyboard navigation and screen reader.
     - Deps: 16
 18. **Security review** (v0.7/18) — covers sync; carried items listed in step 2. On approval bump to v0.8.0.
@@ -155,7 +159,7 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
 - **C — Names and moves** (steps 10, 11b, 11; `validate.ts`, `setupEdits.ts`, repository): after F; both need human decisions.
 - **D — Import** (step 14; `tests/import/`): any time.
 - **E — Charts**: moved to v0.8.
-- **D004** (step 15b): after F, before the reviews.
+- **D004** (step 15b) and **D005/D006** (step 15c): after F, before the reviews.
 - **Reviews** (steps 16–18): main session with the user.
 - Status: ✅ A · ✅ F · ✅ A2 · ✅ B · ✅ C · ☐ D · ~~E~~ · ☐ reviews
 

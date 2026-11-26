@@ -142,6 +142,8 @@ tracked as a later-version item.
   - Optional passphrase client-side encryption (open: whether encrypted content in a shared sheet is acceptable)
   - Sync in the onboarding wizard as its first step ("Local only" or "Sync with Google"; New Budget / Existing Budget tabs; Existing skips the category steps); the pay-frequency step removed (set in Advanced options); Sync button in the Budget tab panel beside the date controls; Backup back at the far right of the tabs; Budget setup "Estimated spending" renamed "Estimated amount" (decided 2026-11-22, step 3 UI review)
   - ~~Seed categories/table layout from the sheet's current layout~~ dropped 2026-11-21: categories already sync as records (`0015` Q5)
+- Defect D005 (`docs/defects/`): the Google file picker lists no files, so an existing sheet cannot be linked (found 2026-11-26 in phone testing; step 15c, before the reviews)
+- Defect D006 (`docs/defects/`): the left ~15px of the Edit menu items is sometimes cut off in the highlight dialog (found 2026-11-26 in phone testing; step 15c, before the reviews)
 - UI/UX review (human approval)
 - Accessibility pass
 - Security review (covers sync)
@@ -152,6 +154,25 @@ tracked as a later-version item.
 - Compact rows: an option that makes table rows smaller (decided 2026-11-22)
 - Zoom in and out (+/−) for the budget tables (decided 2026-11-22)
 - Misc. Breakdown review threshold as a setting (default 6; fixed at 6 in v0.7, `0014` M4; decided 2026-11-22)
+- Tester feedback (logged 2026-11-26, placed after the current version under the new-item rule):
+  - New subcategory can be created under a category in the Add purchase flow, not only a new item under a subcategory
+  - Choosing a subcategory that has items in the Add purchase Item list saves the purchase to that subcategory's Miscellaneous item; the Miscellaneous item is created if missing. A subcategory with no items still takes the purchase itself. (Table rule unchanged: a subcategory with items is a totals row only.)
+  - Edit and delete on the Day table under the Add purchase form (tester-requested; replaces the read-only decision of v0.7 step 12, decided 2026-11-08). Built as the Day table's Update button (Actions item below)
+  - Remove the Day view from the Budget screen, toggle included (Week, Month and Annual remain). To check when planned: the Day-only features that move or go (New purchase on category rows, returns, the highlight dialog's Day functions); the table component is still used under Add purchase
+  - Actions and Update (decided 2026-11-26; replaces the Edit menu of `0009` §4 and the Move column of v0.7 step 11):
+    - The "Edit" menu is renamed "Actions" and sits in the column that is the highlight dialog's "Move" column today; that column is renamed "Actions"
+    - Week and Month: the Actions menu has two options, New purchase (unchanged) and Update
+    - Day table (under Add purchase): an Update button on each purchase row
+    - Update opens one dialog in every table: name, amount and the "Move to" drop-down
+    - "Move to" lists categories and subcategories only
+    - The Up and Down move buttons are removed
+    - Annual has no Actions menu: it keeps only the pencil Rename (reason in `0009` §4; human, 2026-11-26)
+    - Assumed (2026-11-26, see `docs/review-questions/2026-11-26-tester-feedback.md`): Delete becomes a button in the Update dialog; a Day purchase moved to a subcategory with items goes to its Miscellaneous item
+  - Sort order (decided 2026-11-26): every table except Day lists Income, then Savings, then Expenses; subcategories alphabetical inside each category; items alphabetical inside each subcategory. The Day table is chronological. Replaces manual order (Budget setup reordering, `0007` §5; Up/Down, v0.7 step 11)
+  - New chibi characters: cats and generic superheroes (rewards, `0008` §6, §7)
+  - New reward animations: dance, fly, thumbs up, spin
+  - Date navigation (Previous, title, Next) fills 100% of the width on mobile; today it is about 60% (decided 2026-11-26)
+  - Media query audit: 3 in total, 4 accepted; any more than 4 needs a written reason (`0012`). Today `App.css` uses width breakpoints 600, 640, 1280 and 1440px plus a 480px height query (the 600px wizard query is a likely merge into 640px)
 - Chart types for Budget screen (chart types and the library to decide; a new dependency needs the human's go-ahead; security v0.2 4.5, 2.5: Trusted Types, escaped item names in chart labels)
 - UI/UX review (human approval)
 - Accessibility pass for charts (alt text, keyboard nav, screen reader)
@@ -173,6 +194,7 @@ tracked as a later-version item.
 
 ## Post v1.0
 - Correct a single purchase's date (today: delete it and add it again; the amount moves to v0.6)
+- Manual sort: design a good way for users to set their own row order, replacing the v0.8 alphabetical sort where they choose (future feature, logged 2026-11-26; needs design first)
 - Receipt photo capture (camera API / Capacitor if needed)
 - Daily end-of-day reminder: needs a delivery outside the web app (phone reminder, or Capacitor APK build with local notifications)
 
