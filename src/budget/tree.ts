@@ -12,7 +12,13 @@ export interface CatNode {
   children: CatNode[]
 }
 
-/** Build the tree. Siblings follow their stored `order` (0007 §5.3), then id. */
+/** Alphabetical, ignoring case and accents; numbers in names sort by value ("403b" after "401k"). */
+const byName = new Intl.Collator(undefined, { sensitivity: 'base', numeric: true })
+
+/**
+ * Build the tree. The top level keeps its stored `order` (Income, Taxes, Net Income, Savings,
+ * Expenses; 0004); subcategories and items sort alphabetically by name, then id (human, 2026-11-26).
+ */
 export function buildTree(cats: Category[]): CatNode[] {
   const nodes = new Map<number, CatNode>()
   for (const c of cats) if (typeof c.id === 'number') nodes.set(c.id, { cat: c as Cat, depth: 0, parent: null, children: [] })
@@ -24,6 +30,7 @@ export function buildTree(cats: Category[]): CatNode[] {
   }
   const finish = (n: CatNode, depth: number) => {
     n.depth = depth
+    n.children.sort((a, b) => byName.compare(a.cat.name, b.cat.name) || a.cat.id - b.cat.id)
     n.children.forEach(c => finish(c, depth + 1))
   }
   roots.forEach(r => finish(r, 0))

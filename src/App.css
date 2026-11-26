@@ -193,8 +193,6 @@
 .create-row .label { align-self: center; }
 .create-row select.input { flex: 0 1 auto; width: auto; }
 .setup-table .create-row .input { flex: 0 1 var(--size-create-input); }
-.reorder { display: inline-flex; align-items: center; gap: 0; }
-.reorder .input { width: auto; }
 .btn.danger { background: var(--color-alert); border-color: var(--color-alert); color: var(--color-primary-foreground); }
 .table .row-actions { text-align: left; }
 .budget-table .row-actions .btn, .budget-table .name-line .actions-menu .btn { min-width: var(--size-edit-button); } /* "Edit ▾" and "Edit" line up (0012 G10) */

@@ -134,15 +134,6 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, rewardsEnable
       : `Added ${name} to ${parent.cat.name}.`)
   }
 
-  function moveRow(n: CatNode, delta: -1 | 1) {
-    const sibs = n.parent?.children ?? roots
-    const i = sibs.indexOf(n)
-    if (i + delta < 0 || i + delta >= sibs.length) return
-    setWork(edit.move(work, n.cat.id, delta))
-    setStatus(`Moved ${say(n)} ${delta < 0 ? 'up' : 'down'}.`)
-    setFocusId(domId(delta < 0 ? 'move_up' : 'move_down', n))
-  }
-
   async function save() {
     setSaveError('')
     const errs: Record<string, string> = {}
@@ -197,8 +188,6 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, rewardsEnable
     // Prefixed so the ids stay unique while the Budget table is open behind this dialog (as the highlight dialog's `hl_` prefix does).
     const nameId = domId('setup_name', n)
     const estId = domId('estimate', n)
-    const sibs = n.parent?.children ?? roots
-    const i = sibs.indexOf(n)
     const label = n.cat.name
     // Categories always expand (they hold a Create row), Taxes included (v0.4 step 10).
     const expandable = n.children.length > 0 || !n.parent
@@ -253,16 +242,6 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, rewardsEnable
           )}
         </td>
         <td>{!total && scheduleCell(n)}</td>
-        <td>
-          {n.parent && (
-            <span className="reorder">
-              <Button type="button" className="secondary small" id={domId('move_up', n)} aria-label={`Move ${say(n)} up`} aria-describedby={nameId}
-                aria-disabled={i === 0 || undefined} onClick={() => moveRow(n, -1)}><span aria-hidden="true">↑</span></Button>
-              <Button type="button" className="secondary small" id={domId('move_down', n)} aria-label={`Move ${say(n)} down`} aria-describedby={nameId}
-                aria-disabled={i === sibs.length - 1 || undefined} onClick={() => moveRow(n, 1)}><span aria-hidden="true">↓</span></Button>
-            </span>
-          )}
-        </td>
       </tr>
     )
   }
@@ -342,7 +321,7 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, rewardsEnable
     const key = domId('setup_name', root)
     return (
       <tr key={`create-${root.cat.id}`} className={`row create depth-1 clr-${root.cat.color}`} aria-level={2}>
-        <td colSpan={6}>
+        <td colSpan={5}>
           <div className="create-row">
             {open && <div className="create-fields">
             <div className="create-field">
@@ -398,7 +377,6 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, rewardsEnable
                 <th scope="col">Recurrence</th>
                 <th scope="col">Autopay</th>
                 <th scope="col">Schedule</th>
-                <th scope="col">Move</th>
               </tr>
             </thead>
             <tbody>{rows}</tbody>

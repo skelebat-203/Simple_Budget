@@ -205,22 +205,6 @@ export const categoryRepo = {
   },
   async remove(id: number) { return db.categories.delete(id) },
   /**
-   * Up or Down in the highlight dialog (v0.7 step 11): put a subcategory or item just before
-   * (`after` false) or after `besideId`, the sibling next to it in the table, and renumber the
-   * siblings. One transaction; the rows are checked inside it (security-v0.4 3.1).
-   */
-  async reorder(id: number, besideId: number, after: boolean) {
-    await db.transaction('rw', db.categories, async () => {
-      const [c, b] = await Promise.all([db.categories.get(id), db.categories.get(besideId)])
-      if (!c || !b || c.parentId == null || b.parentId !== c.parentId) throw new RowInUseError('the rows changed. Try again.')
-      const rank = (x: Category) => x.order ?? Number.MAX_SAFE_INTEGER
-      const sibs = (await db.categories.where('parentId').equals(c.parentId).toArray())
-        .sort((x, y) => rank(x) - rank(y) || x.id! - y.id!).filter(s => s.id !== id)
-      sibs.splice(sibs.findIndex(s => s.id === besideId) + (after ? 1 : 0), 0, c)
-      for (const [i, s] of sibs.entries()) if (s.order !== i) await db.categories.update(s.id!, { order: i })
-    })
-  },
-  /**
    * "Move to" in the highlight dialog (v0.7 step 11): a subcategory or item becomes the last
    * child of a category (it is then a subcategory) or of a subcategory (it is then an item).
    * Its id stays, so its purchases and estimate go with it. Refused, inside the transaction,

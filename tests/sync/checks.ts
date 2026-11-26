@@ -9,6 +9,7 @@ import { aadOf, decrypt, deriveKey, encrypt, newSalt } from '../../src/storage/s
 import { TOMBSTONE_MS } from '../../src/storage/sync/engine'
 import * as sync from '../../src/storage/sync/controller'
 import { FakeSheet } from './fakeSheet'
+import { buildTree } from '../../src/budget/tree'
 
 type Check = (ok: boolean, msg: string) => void
 const PASSCODE = 'correct horse battery'
@@ -116,10 +117,9 @@ export async function run(check: Check) {
   await categoryRepo.moveTo(ira.id!, ins.id!, [])
   const insKids = (await categoryRepo.list()).filter(c => c.parentId === ins.id).sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
   check(insKids.at(-1)?.id === ira.id, 'a moved row becomes its new parent’s last child')
-  const vision = insKids.find(c => c.name === 'Vision')!
-  await categoryRepo.reorder(ira.id!, vision.id!, false)
-  const reordered = (await categoryRepo.list()).filter(c => c.parentId === ins.id).sort((a, b) => (a.order ?? 0) - (b.order ?? 0)).map(c => c.name)
-  check(reordered.indexOf('IRA') === reordered.indexOf('Vision') - 1, `reorder puts a row before its neighbour (${reordered.join(', ')})`)
+  // Tables sort subcategories and items by name, whatever their stored order (v0.7 step 15d).
+  const shown = buildTree(await categoryRepo.list()).flatMap(r => r.children).find(n => n.cat.id === ins.id)!.children.map(n => n.cat.name)
+  check(shown.join() === [...shown].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base', numeric: true })).join() && shown.includes('IRA'), `the tree lists items alphabetically (${shown.join(', ')})`)
   check((await budgetItemRepo.list()).every(i => i.categoryId === groceries.id), 'purchases stay with the moved row')
   const refuse = async (f: () => Promise<unknown>) => { try { await f(); return '' } catch (e) { return String((e as Error).message) } }
   const utilities = (await catByName('Utilities'))!, insCar = (await catByName('Car', 'Insurance'))!, maint = (await catByName('Maintenance'))!

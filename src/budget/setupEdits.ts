@@ -12,10 +12,6 @@ const siblingsOf = (cats: Cat[], parentId: number | null) => {
   return parentId == null ? roots : flatten(roots).find(n => n.cat.id === parentId)?.children ?? []
 }
 
-/** Rewrite every sibling's `order` to 0..n-1 in the given sequence. */
-const renumber = (cats: Cat[], ids: number[]) =>
-  cats.map(c => { const i = ids.indexOf(c.id); return i < 0 ? c : { ...c, order: i } })
-
 export const patch = (cats: Cat[], id: number, p: Partial<Cat>) => cats.map(c => (c.id === id ? { ...c, ...p } : c))
 
 /** A subcategory's checkbox selects or clears all of its items; estimates are never touched (§5.2). */
@@ -56,14 +52,4 @@ function attach(cats: Cat[], child: Cat, parentId: number): { cats: Cat[]; moved
 
 export function create(cats: Cat[], name: string, parentId: number) {
   return attach(cats, { id: nextTempId--, name, color: '', parentId, selected: true }, parentId)
-}
-
-/** Swap a row with its previous (-1) or next (+1) sibling (§5.3). */
-export function move(cats: Cat[], id: number, delta: -1 | 1) {
-  const n = nodeOf(cats, id)
-  const ids = siblingsOf(cats, n.cat.parentId).map(s => s.cat.id)
-  const i = ids.indexOf(id), j = i + delta
-  if (j < 0 || j >= ids.length) return cats
-  ;[ids[i], ids[j]] = [ids[j], ids[i]]
-  return renumber(cats, ids)
 }

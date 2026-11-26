@@ -39,6 +39,7 @@ changes and app restarts.
 
 ## Style
 
+- Order (human, 2026-11-26; replaces manual reordering, `0007` §5.3): top-level rows in the fixed order of the hierarchy below; subcategories alphabetical inside each category; items alphabetical inside each subcategory. The Day table lists purchases by time. A better manual order is a Post v1.0 item.
 - Only add a category if an item inside it has an amount
 - Only add an item if it has an amount
 
