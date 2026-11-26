@@ -144,21 +144,11 @@ tracked as a later-version item.
   - ~~Seed categories/table layout from the sheet's current layout~~ dropped 2026-11-21: categories already sync as records (`0015` Q5)
 - Defect D005 (`docs/defects/`): the Google file picker lists no files, so an existing sheet cannot be linked (found 2026-11-26 in phone testing; step 15c, before the reviews)
 - Defect D006 (`docs/defects/`): the left ~15px of the Edit menu items is sometimes cut off in the highlight dialog (found 2026-11-26 in phone testing; step 15c, before the reviews)
-- UI/UX review (human approval)
-- Accessibility pass
-- Security review (covers sync)
-
-## v0.8 — Graphs and charts
-- Charts moved from v0.7 (decided 2026-11-22). Sync moved to v0.7 earlier (decided 2026-11-18).
-- Chart view (Table/Chart switch)
-- Compact rows: an option that makes table rows smaller (decided 2026-11-22)
-- Zoom in and out (+/−) for the budget tables (decided 2026-11-22)
-- Misc. Breakdown review threshold as a setting (default 6; fixed at 6 in v0.7, `0014` M4; decided 2026-11-22)
-- Tester feedback (logged 2026-11-26, placed after the current version under the new-item rule):
+- Tester feedback (logged 2026-11-26; built in v0.7, step 15d, human 2026-11-26: everything not marked "future feature" is built now):
   - New subcategory can be created under a category in the Add purchase flow, not only a new item under a subcategory
   - Choosing a subcategory that has items in the Add purchase Item list saves the purchase to that subcategory's Miscellaneous item; the Miscellaneous item is created if missing. A subcategory with no items still takes the purchase itself. (Table rule unchanged: a subcategory with items is a totals row only.)
   - Edit and delete on the Day table under the Add purchase form (tester-requested; replaces the read-only decision of v0.7 step 12, decided 2026-11-08). Built as the Day table's Update button (Actions item below)
-  - Remove the Day view from the Budget screen, toggle included (Week, Month and Annual remain). To check when planned: the Day-only features that move or go (New purchase on category rows, returns, the highlight dialog's Day functions); the table component is still used under Add purchase
+  - Remove the Day view from the Budget screen, toggle included (Week, Month and Annual remain); the Day table stays under Add purchase
   - Actions and Update (decided 2026-11-26; replaces the Edit menu of `0009` §4 and the Move column of v0.7 step 11):
     - The "Edit" menu is renamed "Actions" and sits in the column that is the highlight dialog's "Move" column today; that column is renamed "Actions"
     - Week and Month: the Actions menu has two options, New purchase (unchanged) and Update
@@ -172,7 +162,17 @@ tracked as a later-version item.
   - New chibi characters: cats and generic superheroes (rewards, `0008` §6, §7)
   - New reward animations: dance, fly, thumbs up, spin
   - Date navigation (Previous, title, Next) fills 100% of the width on mobile; today it is about 60% (decided 2026-11-26)
-  - Media query audit: 3 in total, 4 accepted; any more than 4 needs a written reason (`0012`). Today `App.css` uses width breakpoints 600, 640, 1280 and 1440px plus a 480px height query (the 600px wizard query is a likely merge into 640px)
+  - Media query audit: 3 in total, 4 accepted; any more than 4 needs a written reason (`0012`). Before: width breakpoints 600, 640, 1280 and 1440px plus a 480px height query
+- UI/UX review (human approval)
+- Accessibility pass
+- Security review (covers sync)
+
+## v0.8 — Graphs and charts
+- Charts moved from v0.7 (decided 2026-11-22). Sync moved to v0.7 earlier (decided 2026-11-18).
+- Chart view (Table/Chart switch)
+- Compact rows: an option that makes table rows smaller (decided 2026-11-22)
+- Zoom in and out (+/−) for the budget tables (decided 2026-11-22)
+- Misc. Breakdown review threshold as a setting (default 6; fixed at 6 in v0.7, `0014` M4; decided 2026-11-22)
 - Chart types for Budget screen (chart types and the library to decide; a new dependency needs the human's go-ahead; security v0.2 4.5, 2.5: Trusted Types, escaped item names in chart labels)
 - UI/UX review (human approval)
 - Accessibility pass for charts (alt text, keyboard nav, screen reader)

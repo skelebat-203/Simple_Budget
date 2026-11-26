@@ -144,8 +144,12 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
     - Files: `src/storage/sync/googleSheets.ts`, `src/storage/sync/googleConfig.ts` (and the API key restriction in the Google Cloud console, human); ActionsMenu, `src/App.css`
     - Verify: an existing sheet is listed and linked from the phone; the menu is fully visible at 320/375/640px
     - Deps: 3b
+15d. **Tester feedback** (v0.7/15d) — the roadmap v0.7 "Tester feedback" list (2026-11-26): Add purchase (new subcategory under a category, subcategory with items → Miscellaneous, Update on the Day table), Day view removed from the Budget screen, Actions menu and Update dialog (Up/Down removed), alphabetical sort, new reward characters and animations, full-width date navigation on mobile, media query audit. Questions and guesses: `docs/review-questions/2026-11-26-tester-feedback.md`.
+    - Files: `src/components/BudgetTable.tsx`, `src/components/ui/` (ActionsMenu, EditDialogs), `src/components/PurchaseForm.tsx`, `src/screens/` (Budget, AddBudget, BudgetSetup), `src/budget/` (tree, setupEdits), `src/storage/repository.ts`, `src/rewards/`, `src/App.css`, `tests/dialogs/run.mjs`
+    - Verify: build + lint; `test:dialogs`, `test:import`, `test:sync`; 1280/640/375/320px; human phone test on the dev branch
+    - Deps: 15c (D006 shares the Actions menu)
 16. **UI/UX review** (v0.7/16) — human approval, `0005` checklist, all widths.
-    - Deps: 1–15c
+    - Deps: 1–15d
 17. **Accessibility pass** (v0.7/17) — including chart alt text, keyboard navigation and screen reader.
     - Deps: 16
 18. **Security review** (v0.7/18) — covers sync; carried items listed in step 2. On approval bump to v0.8.0.
@@ -160,6 +164,7 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
 - **D — Import** (step 14; `tests/import/`): any time.
 - **E — Charts**: moved to v0.8.
 - **D004** (step 15b) and **D005/D006** (step 15c): after F, before the reviews.
+- **T — Tester feedback** (steps 15c, 15d; dev branch `dev/v0.7`, worktree `.worktrees/v0.7-tester-feedback`): built 2026-11-26, one commit per change; merge to `main` after the human's phone test.
 - **Reviews** (steps 16–18): main session with the user.
 - Status: ✅ A · ✅ F · ✅ A2 · ✅ B · ✅ C · ☐ D · ~~E~~ · ☐ reviews
 

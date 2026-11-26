@@ -1,5 +1,7 @@
 # Dependencies
 node_modules/
+# A worktree's link to the main checkout's dependencies
+node_modules
 
 # Build outputs
 dist/
