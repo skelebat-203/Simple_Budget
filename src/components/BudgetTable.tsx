@@ -362,7 +362,7 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
             <Button type="button" className="secondary small" id={did('move_down', n)} aria-label={`Move ${say(n)} down`} aria-describedby={rowId(n)}
               aria-disabled={i === sibs.length - 1 || undefined} onClick={() => reorder(n, 1)}><span aria-hidden="true">↓</span></Button>
           </>}
-          {choices.length > 0 && <span className="move-menu"><ActionsMenu id={did('move_to', n)} label={`Move ${say(n)} to`} describedBy={rowId(n)} buttonLabel="Move to" floating
+          {choices.length > 0 && <span className="move-menu"><ActionsMenu id={did('move_to', n)} label={`Move ${say(n)} to`} describedBy={rowId(n)} buttonLabel="Move to"
             items={choices} onSelect={k => moveTo(n, Number(k))} /></span>}
         </span>
       </td>

@@ -14,10 +14,10 @@ export type MenuAction<T extends string = string> = { id: string; label: string;
  * - Up/Down (wrapping), Home/End move; Enter or Space picks; Escape closes;
  *   Tab closes. Focus returns to the button, then the picked action may move it.
  * - Keys it handles don't reach a surrounding treegrid.
+ * - The menu is placed against the window, never past its edges, so a scrolling
+ *   table box or a dialog can't clip it (D006).
  */
-export function ActionsMenu<T extends string>({ id, label, buttonLabel = 'Actions', items, onSelect, describedBy, floating = false }: {
-  /** Long menus inside a scrolling table box (Move to, v0.7 step 11): the menu is placed against the window, so the box doesn't clip it. */
-  floating?: boolean
+export function ActionsMenu<T extends string>({ id, label, buttonLabel = 'Actions', items, onSelect, describedBy }: {
   /** In a data table: the row header's id, on the button and each item (digital_accessibility.md, Tables). */
   describedBy?: string
   /** Button id; the menu is `{id}-menu`. */
@@ -35,9 +35,9 @@ export function ActionsMenu<T extends string>({ id, label, buttonLabel = 'Action
   const refs = useRef<(HTMLLIElement | null)[]>([])
 
   const [place, setPlace] = useState<CSSProperties | undefined>()
-  // Floating: below the button, or above it when there is more room there; right edges line up.
+  // Below the button, or above it when there is more room there; right edges line up.
   useLayoutEffect(() => {
-    if (!open || !floating || !button.current) { setPlace(undefined); return }
+    if (!open || !button.current) { setPlace(undefined); return }
     const b = button.current.getBoundingClientRect()
     const below = innerHeight - b.bottom - VIEWPORT_GAP_PX, above = b.top - VIEWPORT_GAP_PX
     const down = below >= above
@@ -52,8 +52,8 @@ export function ActionsMenu<T extends string>({ id, label, buttonLabel = 'Action
       ...(down ? { top: b.bottom, bottom: 'auto' } : { bottom: innerHeight - b.top, top: 'auto' }),
       maxHeight: `min(var(--size-menu-max-h), ${Math.max(down ? below : above, 0)}px)`,
     })
-  }, [open, floating])
-  useEffect(() => { if (open && (!floating || place)) refs.current[active]?.focus() }, [open, active, floating, place])
+  }, [open])
+  useEffect(() => { if (open && place) refs.current[active]?.focus() }, [open, active, place])
 
   function show(at: number) { setActive(at); setOpen(true) }
   function close(focusButton = true) { setOpen(false); if (focusButton) button.current?.focus() }
