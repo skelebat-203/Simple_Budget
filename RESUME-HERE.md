@@ -4,7 +4,7 @@ Tracking file for current work status. Roadmap authority: `docs/design/0003-road
 Design: `0015-sync-design.md` (sync), `0004-table-design.md` (table), `0006-prototype.html` (v0.2 UI), `0007-v0.3-design-updates.md` (v0.3 changes), `0008-v0.5-design-updates.md` (v0.5 changes), `0009-v0.6-design-updates.md` (v0.6), `0012-design-standards.md` (standards), `0014` (Annual Misc breakdown). Higher-numbered doc wins on conflict.
 
 ## Current version
-v0.8.0 (v0.7 complete 2026-11-27, v0.7.0 to v0.7.67 plus the review fixes in v0.8.0; reports: `docs/audits/a11y/a11y-v0.7.md`, `docs/audits/security/security-v0.7.md`). v0.8 has not started; the first step is a design pass (nothing is built before the human approves a mockup).
+v0.8.1 (v0.7 complete 2026-11-27, v0.7.0 to v0.7.67 plus the review fixes in v0.8.0; reports: `docs/audits/a11y/a11y-v0.7.md`, `docs/audits/security/security-v0.7.md`). v0.8.1 adds the human's v0.7 step 16 UI/UX review updates (built as v0.7.68 to v0.7.70 on `v0.7-ui-updates`, merged in via branch `v0.8-ui-review-updates`; accessibility re-run in the addendum of `a11y-v0.7.md`; the security review was done on v0.7.67 and these changes add no network, storage or dependency code). v0.8 has not started; the first step is a design pass (nothing is built before the human approves a mockup).
 
 ## v0.8 plan of action
 Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per completed-work commit; trailer `Plan-Step: v0.8/N`). The final step bumps to the next minor version (v0.9.0). UI steps need human approval (`0005-ui-ux-review-checklist.md`). Baseline: v0.8.0. Data: Dexie v10 (`src/storage/db.ts`). Testing: `tests/README.md`; accessibility script approach in `a11y-v0.7.md`.

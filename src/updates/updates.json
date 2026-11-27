@@ -1,6 +1,17 @@
 {
   "releases": [
     {
+      "version": "0.8.1",
+      "changes": [
+        "Click outside a window to close it.",
+        "Show estimates now sits in the table heading.",
+        "The expand arrow now comes after the item name. A closed row shows an up arrow.",
+        "New purchase window now has the same fields as Add purchase.",
+        "Update window: a warning icon on the name, and less text.",
+        "Cancel and Save share the row on phones."
+      ]
+    },
+    {
       "version": "0.8.0",
       "changes": [
         "Budget setup no longer saves over changes made on another device.",
