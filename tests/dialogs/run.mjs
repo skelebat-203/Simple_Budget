@@ -103,17 +103,15 @@ try {
   await clickId('onboarding-skip')
   check('first load: Skip closes it', (await openIds()).length === 0)
 
-  // Sync button (v0.7 step 3b): only in the Budget panel, beside the date controls; beside Screens when narrow.
-  const syncIn = () => page.evaluate(() => { const b = document.getElementById('sync'); return b ? (b.closest('[id^=tabpanel-]')?.id ?? b.parentElement?.className ?? '') : null })
-  check('Sync: not shown on Add purchase', await page.evaluate(() => !document.getElementById('sync')?.getClientRects().length))
+  // Sync lives in the Backup dialog (2026-11-26): no Sync button on the screens; Backup is the last button in the tab row.
+  check('Sync: no Sync button on the screens', await page.evaluate(() => !document.getElementById('sync')))
   check('Sync: Backup is the last button in the tab row', await page.evaluate(() => document.querySelector('.tab-row > :last-child')?.textContent?.trim() === 'Backup'))
+  // Range is a three-option toggle (radio group), not buttons.
   await clickId('tab-budget')
-  check('Sync: in the Budget panel', (await syncIn()) === 'tabpanel-budget', String(await syncIn()))
-  check('Sync: after the date controls in reading order', await page.evaluate(() => document.querySelector('.date-row > nav + #sync') !== null))
-  await page.setViewport({ width: NARROW, height: HEIGHT }); await settle()
-  check('Sync (narrow): beside the Screens button', (await syncIn()) === 'menu-row', String(await syncIn()))
-  check('Sync (narrow): one instance', await page.evaluate(() => document.querySelectorAll('#sync').length === 1))
-  await page.setViewport({ width: WIDTH, height: HEIGHT }); await settle()
+  check('Range: a radio group of Week, Month, Annual', await page.evaluate(() => {
+    const g = [...document.querySelectorAll('#tabpanel-budget [role=radiogroup]')].find(r => r.getAttribute('aria-labelledby'))
+    return !!g && [...g.querySelectorAll('input[type=radio]')].length === 3 && g.textContent.replace(/\s/g, '') === 'WeekMonthAnnual' && !document.querySelector('#tabpanel-budget [aria-pressed]')
+  }))
   await clickId('tab-add')
 
   // Wizard steps (v0.7 step 3b): sync first, the count follows the path.
@@ -205,8 +203,8 @@ try {
   await standard('Day Update', dayDlg, dayUpdate)
 
   await clickId('tab-budget')
-  const range = async r => { await page.evaluate(r => [...document.querySelectorAll('[role=group][aria-label=Range] button')].find(b => b.textContent.trim() === r)?.click(), r); await settle() }
-  check('Budget: no Day view', (await page.evaluate(() => [...document.querySelectorAll('[role=group][aria-label=Range] button')].map(b => b.textContent.trim()))).join() === 'Week,Month,Annual')
+  const range = async r => { await page.evaluate(r => [...document.querySelectorAll('#tabpanel-budget [role=radiogroup] .toggle-option')].find(l => l.textContent.trim() === r)?.querySelector('input')?.click(), r); await settle() }
+  check('Budget: no Day view', (await page.evaluate(() => [...document.querySelectorAll('#tabpanel-budget [role=radiogroup] .toggle-option')].map(l => l.textContent.trim()))).join() === 'Week,Month,Annual')
   await range('Annual')
   await tableRules('Annual and Misc. Breakdown tables')
   check('Annual: no Actions menu, a pencil to rename', await page.evaluate(() => !document.querySelector('#tabpanel-budget .budget-table [aria-haspopup=menu]') && !!document.querySelector('#tabpanel-budget [id^=rename-]')))

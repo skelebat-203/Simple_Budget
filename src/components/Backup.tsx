@@ -4,9 +4,14 @@ import { Button, Dialog } from './ui'
 import { BACKUP_MAX_BYTES, BackupError, checkBackup, exportBackup, restoreBackup, type Backup as BackupData } from '../storage/repository'
 import { isoDate } from '../budget/tree'
 import { ImportSection } from './import/ImportSection'
+import { Sync } from './Sync'
 
 /** Backup dialog (0009 §5): export and restore a JSON backup of all data (security-v0.2 6.2). The import section follows (0013 §9, v0.6 step 14). */
-export function Backup({ onClose, onRestored, onImported }: { onClose: () => void; onRestored: () => void; onImported: () => void }) {
+export function Backup({ onClose, onRestored, onImported, onboarded, pickedId, onPick }: {
+  onClose: () => void; onRestored: () => void; onImported: () => void
+  /** For the Sync section (moved here 2026-11-26). */
+  onboarded: boolean; pickedId: string | null; onPick: () => void
+}) {
   const fileRef = useRef<HTMLInputElement>(null)
   const [pending, setPending] = useState<BackupData | null>(null)
   const [status, setStatus] = useState('')
@@ -77,6 +82,7 @@ export function Backup({ onClose, onRestored, onImported }: { onClose: () => voi
         {error && <p id="backup-error" className="error">{error}</p>}
       </section>
       <ImportSection onImported={onImported} />
+      <Sync onboarded={onboarded} pickedId={pickedId} onPick={onPick} />
       {pending && (
         <div className="banner banner-warn">
           <h3 className="banner-title">Replace all data with this backup?</h3>

@@ -1,11 +1,10 @@
-import { useRef, useState, type ReactNode } from 'react'
+import { useRef, useState } from 'react'
 import type { BudgetItem, BudgetRange } from '../storage/db'
 import { isoDate, parseIso, periodsFor, rangeHasEstimates, shiftRange, type Calendar, type CatNode } from '../budget/tree'
 import { dateBounds } from '../budget/validate'
 import { BudgetTable } from '../components/BudgetTable'
 import { MiscBreakdown } from '../components/MiscBreakdown'
-import { Button } from '../components/ui'
-import { useWide } from '../components/ui/useWide'
+import { Button, Toggle } from '../components/ui'
 
 /** No Day view: today's purchases are under the Add purchase form (v0.7 step 15d). */
 const RANGES: { value: BudgetRange; label: string }[] = [
@@ -23,9 +22,7 @@ const Chevron = ({ dir }: { dir: 'left' | 'right' }) => (
 /** Noun for the Previous / Next button names. */
 const UNIT: Record<BudgetRange, string> = { week: 'week', month: 'month', annual: 'year' }
 
-export function Budget({ roots, items, range, onRangeChange, calendar, onChanged, syncButton }: {
-  /** From 640px the Sync button sits at the right of the date controls; narrower, Tabs shows it beside the Screens button. */
-  syncButton?: ReactNode
+export function Budget({ roots, items, range, onRangeChange, calendar, onChanged }: {
   roots: CatNode[]
   onChanged: () => void
   calendar: Calendar
@@ -33,7 +30,6 @@ export function Budget({ roots, items, range, onRangeChange, calendar, onChanged
   range: BudgetRange
   onRangeChange: (r: BudgetRange) => void
 }) {
-  const wide = useWide()
   const [showEstimates, setShowEstimates] = useState(true)
   // Date nav (0007 §9.5): the shown range contains `anchor`; defaults to today.
   const [anchor, setAnchor] = useState(() => new Date())
@@ -59,13 +55,7 @@ export function Budget({ roots, items, range, onRangeChange, calendar, onChanged
     <section className="panel wide" aria-labelledby="budget-heading">
       <h2 id="budget-heading" className="sr-only">Budget</h2>
       <div className="toolbar">
-        <div className="toggle-group ranges" role="group" aria-label="Range">
-          {RANGES.map(r => (
-            <Button key={r.value} type="button" className="toggle" aria-pressed={range === r.value} onClick={() => onRangeChange(r.value)}>
-              {r.label}
-            </Button>
-          ))}
-        </div>
+        <Toggle name="Range" options={RANGES} value={range} onChange={onRangeChange} />
         {/* Estimates exist only in Week and Month, so the toggle shows only there (0004, roadmap v0.4). */}
         {rangeHasEstimates(range) && (
           <label className="check">
@@ -96,7 +86,6 @@ export function Budget({ roots, items, range, onRangeChange, calendar, onChanged
             <Chevron dir="right" />
           </Button>
         </nav>
-        {wide && syncButton}
       </div>
       <BudgetTable date={anchor} roots={roots} items={items} range={range} showEstimates={showEstimates} calendar={calendar} onChanged={onChanged} pageHead />
       {range === 'annual' && <MiscBreakdown roots={roots} items={items} calendar={calendar} date={anchor} onChanged={onChanged} />}

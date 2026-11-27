@@ -22,7 +22,6 @@
 .actions-end { justify-content: flex-end; }
 .actions-end .status { order: 2; flex: 1 1 100%; text-align: right; }
 .toolbar { display: flex; align-items: center; gap: var(--space-md); flex-wrap: wrap; }
-.toggle-group { display: flex; gap: 0; flex-wrap: wrap; }
 
 /* --- Tabs (0007 §6) --- */
 .tabs { display: flex; flex-direction: column; gap: var(--space-lg); }
@@ -79,8 +78,7 @@
   cursor: pointer;
 }
 .btn:disabled, .btn[aria-disabled="true"] { opacity: var(--opacity-disabled); cursor: not-allowed; }
-.btn.secondary, .btn.toggle { background: var(--color-background-page); color: var(--color-primary-background); }
-.btn.toggle[aria-pressed="true"] { background: var(--color-primary-background); color: var(--color-primary-foreground); }
+.btn.secondary { background: var(--color-background-page); color: var(--color-primary-background); }
 
 .input {
   min-height: var(--size-touch);
@@ -290,7 +288,6 @@
 .page-head .table thead th { position: static; }
 .page-head .table thead.stuck th { box-shadow: 0 var(--border-medium) 0 var(--color-secondary-background); }
 @media (max-width: 639.98px) {
-  .ranges { display: grid; grid-template-columns: 1fr 1fr; }
   /* Date navigation fills the width on phones; the title button takes the space between the chevrons (v0.7 step 15d). */
   .date-row > nav.toolbar { width: 100%; }
   .date-row .date-nav-title { flex: 1; }
@@ -526,8 +523,7 @@ nav.toolbar .btn.icon { flex: none; }
 /* --- Hover (v0.6 step 9a): every button, link and clickable label reacts; disabled controls do not.
    Hover only changes colour or underline, never shows or hides information (WCAG 1.4.13). --- */
 .btn:not(:disabled):not([aria-disabled="true"]):hover { background: var(--color-primary-hover); border-color: var(--color-primary-hover); color: var(--color-primary-foreground); }
-.btn.secondary:not(:disabled):not([aria-disabled="true"]):hover,
-.btn.toggle:not([aria-pressed="true"]):not(:disabled):hover { background: var(--color-border); border-color: var(--color-primary-background); color: var(--color-primary-background); }
+.btn.secondary:not(:disabled):not([aria-disabled="true"]):hover { background: var(--color-border); border-color: var(--color-primary-background); color: var(--color-primary-background); }
 .btn.danger:not(:disabled):not([aria-disabled="true"]):hover { background: var(--color-alert-hover); border-color: var(--color-alert-hover); color: var(--color-primary-foreground); }
 .tab:hover { background: var(--color-border); }
 .chevron:hover, .name-link:hover, .expander:hover { background: var(--color-border); }

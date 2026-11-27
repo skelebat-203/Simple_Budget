@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useSyncState } from './useSyncState'
 import { useAnnounce } from './ui/announcer'
-import { Button, Dialog } from './ui'
+import { Button } from './ui'
 import * as sync from '../storage/sync/controller'
 import { isGoogleConfigured } from '../storage/sync/googleConfig'
 import { isSignedIn, signIn } from '../storage/sync/googleSheets'
@@ -11,12 +11,12 @@ import { PasscodeField } from './syncForms'
 const syncedText = (skipped: number) => `Synced.${skipped ? ` ${skipped} row${skipped === 1 ? '' : 's'} from the sheet needed attention; see the list in Sync.` : ''}`
 
 /**
- * Sync dialog (0015 §6), opened from the Budget screen: sign in with Google, create or link a sheet with
+ * Sync section of the Backup dialog (0015 §6; moved there 2026-11-26): sign in with Google, create or link a sheet with
  * its passcode, then last sync time, Sync now and Unlink. One live region (useAnnounce).
- * `pickedId` is a sheet chosen in the Google Picker, which App opens with this dialog
+ * `pickedId` is a sheet chosen in the Google Picker, which App opens with the Backup dialog
  * closed (a modal dialog would keep the Picker from taking clicks).
  */
-export function Sync({ onboarded, pickedId, onPick, onClose }: { onboarded: boolean; pickedId: string | null; onPick: () => void; onClose: () => void }) {
+export function Sync({ onboarded, pickedId, onPick }: { onboarded: boolean; pickedId: string | null; onPick: () => void }) {
   const s = useSyncState()
   const [signedIn, setSignedIn] = useState(isSignedIn())
   const p = usePasscode()
@@ -47,14 +47,14 @@ export function Sync({ onboarded, pickedId, onPick, onClose }: { onboarded: bool
   else if (!onboarded) body = <p className="help">Finish the setup questions first. Then you can sync your budget to a Google Sheet.</p>
   else if (!signedIn) body = (
     <section className="field" aria-labelledby="sync-signin-heading">
-      <h3 id="sync-signin-heading" className="label">Sign in</h3>
+      <h4 id="sync-signin-heading" className="label">Sign in</h4>
       <p className="help">Sync keeps the same budget on several devices, using a Google Sheet in your own Google account. The app sees only sheets it created or you picked.</p>
       <div className="actions"><Button type="button" onClick={login} disabled={working}>Sign in with Google</Button></div>
     </section>
   )
   else if (!s.linked) body = pickedId ? (
     <section className="field" aria-labelledby="sync-link-heading">
-      <h3 id="sync-link-heading" className="label">Link the sheet you picked</h3>
+      <h4 id="sync-link-heading" className="label">Link the sheet you picked</h4>
       {passcodeField(false)}
       <div className="actions">
         <Button type="button" className="secondary" onClick={onPick} disabled={working}>Pick another sheet</Button>
@@ -64,12 +64,12 @@ export function Sync({ onboarded, pickedId, onPick, onClose }: { onboarded: bool
   ) : (
     <>
       <section className="field" aria-labelledby="sync-create-heading">
-        <h3 id="sync-create-heading" className="label">Create a new sheet</h3>
+        <h4 id="sync-create-heading" className="label">Create a new sheet</h4>
         {passcodeField(true)}
         <div className="actions"><Button type="button" onClick={create} disabled={working}>Create sheet</Button></div>
       </section>
       <section className="field" aria-labelledby="sync-pick-heading">
-        <h3 id="sync-pick-heading" className="label">Link a sheet</h3>
+        <h4 id="sync-pick-heading" className="label">Link a sheet</h4>
         <p className="help">Use a sheet someone shared with you in Google Drive. You also need its passcode.</p>
         <div className="actions"><Button type="button" onClick={onPick} disabled={working}>Link a sheet</Button></div>
       </section>
@@ -77,7 +77,7 @@ export function Sync({ onboarded, pickedId, onPick, onClose }: { onboarded: bool
   )
   else body = (
     <section className="field" aria-labelledby="sync-status-heading">
-      <h3 id="sync-status-heading" className="label">Synced sheet</h3>
+      <h4 id="sync-status-heading" className="label">Synced sheet</h4>
       <p className="help">{s.busy ? 'Syncing…' : s.lastSync ? `Last synced ${new Date(s.lastSync).toLocaleString()}.` : 'Not synced yet.'}</p>
       <div className="actions">
         <Button type="button" onClick={syncNow} disabled={working || s.busy}>Sync now</Button>
@@ -85,7 +85,7 @@ export function Sync({ onboarded, pickedId, onPick, onClose }: { onboarded: bool
       </div>
       {unlinking && (
         <div className="banner banner-warn">
-          <h3 className="banner-title">Stop syncing on this device?</h3>
+          <h4 className="banner-title">Stop syncing on this device?</h4>
           <p>The passcode is forgotten on this device. Your data here and the sheet stay as they are.</p>
           <div className="actions">
             <Button type="button" className="secondary" onClick={() => setUnlinking(false)}>Cancel</Button>
@@ -98,12 +98,12 @@ export function Sync({ onboarded, pickedId, onPick, onClose }: { onboarded: bool
   )
 
   return (
-    <Dialog id="sync-dialog" title="Sync" onClose={onClose} className="backup"
-      buttons={<Button type="button" className="secondary" id="sync-close" onClick={onClose}>Close</Button>}>
+    <section className="field" aria-labelledby="sync-heading">
+      <h3 id="sync-heading" className="label">Sync with Google</h3>
       {body}
       {shownError && <p className="error">{shownError}</p>}
       <p className="status">{status}</p>
-    </Dialog>
+    </section>
   )
 }
 

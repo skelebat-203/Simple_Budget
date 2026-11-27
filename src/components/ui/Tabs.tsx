@@ -11,11 +11,7 @@ export interface TabAction { id: string; label: string; onSelect: () => void }
  * a "Screens" menu button listing the screens and the actions.
  * Hidden panels stay mounted so a half-filled form keeps its values.
  */
-export function Tabs({ label, tabs, actions = [], menuEnd }: {
-  label: string; tabs: Tab[]; actions?: TabAction[]
-  /** Small screens: a control shown right of the Screens button for the current screen (e.g. Sync on Budget). */
-  menuEnd?: (current: string) => ReactNode
-}) {
+export function Tabs({ label, tabs, actions = [] }: { label: string; tabs: Tab[]; actions?: TabAction[] }) {
   const wide = useWide()
   const [current, setCurrent] = useState(tabs[0].id)
   const refs = useRef<Record<string, HTMLButtonElement | null>>({})
@@ -64,7 +60,6 @@ export function Tabs({ label, tabs, actions = [], menuEnd }: {
                 if (h) { h.tabIndex = -1; h.focus() }
               })
             }} />
-            {menuEnd?.(current)}
           </div>
         )}
       {tabs.map(t => (

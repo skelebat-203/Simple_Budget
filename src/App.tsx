@@ -5,13 +5,12 @@ import { BudgetSetup } from './screens/BudgetSetup'
 import { RewardLayer } from './rewards/RewardLayer'
 import { Onboarding } from './screens/Onboarding'
 import { Backup } from './components/Backup'
-import { Sync } from './components/Sync'
 import { useSyncState } from './components/useSyncState'
 import * as sync from './storage/sync/controller'
 import { GoogleSheetsAdapter, isSignedIn, pickSpreadsheet } from './storage/sync/googleSheets'
 import { charityMovedText } from './budget/charity'
 import { Notices, type NoticeState } from './components/Notices'
-import { Button, Tabs } from './components/ui'
+import { Tabs } from './components/ui'
 import { budgetItemRepo, categoryRepo, settingsRepo, skipped } from './storage/repository'
 import { dbEvents, type BudgetItem, type BudgetRange, type Category, type DefaultRange } from './storage/db'
 import { buildTree, DEFAULT_CALENDAR, type Calendar } from './budget/tree'
@@ -29,7 +28,6 @@ function App() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(false)
   const [setupOpen, setSetupOpen] = useState(false)
   const [backupOpen, setBackupOpen] = useState(false)
-  const [syncOpen, setSyncOpen] = useState(false)
   const [pickedId, setPickedId] = useState<string | null>(null)
   const syncState = useSyncState()
   const [onboardOpen, setOnboardOpen] = useState(false)
@@ -111,14 +109,12 @@ function App() {
 
   /** The Google Picker can't take clicks under a modal dialog, so Sync closes while it is open. */
   async function pick() {
-    setSyncOpen(false)
+    setBackupOpen(false)
     try { const id = await pickSpreadsheet(); if (id) setPickedId(id) } catch { /* the dialog shows sign-in again */ }
-    setSyncOpen(true)
+    setBackupOpen(true)
   }
 
   const roots = useMemo(() => buildTree(cats), [cats])
-  // Sync opens from the Budget screen only (step 3b); onboarding (which offers sync first) comes before it.
-  const syncButton = onboarded ? <Button type="button" id="sync" onClick={() => setSyncOpen(true)}>Sync</Button> : null
 
   function dismissPersist() {
     try { localStorage.setItem(PERSIST_DISMISSED, '1') } catch { /* storage unavailable */ }
@@ -138,16 +134,15 @@ function App() {
       <Notices state={notices} onDismissPersist={dismissPersist} onDismissInfo={() => note({ charityMoved: undefined })} />
       <Tabs label="Sections" actions={[
         { id: 'backup', label: 'Backup', onSelect: () => setBackupOpen(true) },
-      ]} menuEnd={current => (current === 'budget' ? syncButton : null)} tabs={[
+      ]} tabs={[
         { id: 'add', label: 'Add purchase', panel: <AddBudget roots={roots} items={items} calendar={calendar} onSaved={saved} /> },
-        { id: 'budget', label: 'Budget', panel: <Budget roots={roots} items={items} range={range} onRangeChange={setRange} calendar={calendar} onChanged={saved} syncButton={syncButton} /> },
+        { id: 'budget', label: 'Budget', panel: <Budget roots={roots} items={items} range={range} onRangeChange={setRange} calendar={calendar} onChanged={saved} /> },
       ]} />
       {backupOpen && (
-        <Backup onClose={() => setBackupOpen(false)} onRestored={() => {
+        <Backup onClose={() => { setBackupOpen(false); setPickedId(null) }} onRestored={() => {
           reloadCats(); reloadItems(); reloadSettings()
-        }} onImported={() => { reloadCats(); reloadItems() }} />
+        }} onImported={() => { reloadCats(); reloadItems() }} onboarded={onboarded} pickedId={pickedId} onPick={pick} />
       )}
-      {syncOpen && <Sync onboarded={onboarded} pickedId={pickedId} onPick={pick} onClose={() => { setSyncOpen(false); setPickedId(null) }} />}
       {showOnboarding && (
         <Onboarding cats={cats} firstRun={autoOnboard && !onboardOpen} onClose={() => setOnboardOpen(false)} onSkip={skipOnboarding}
           onDone={() => { setOnboardOpen(false); setDismissed(true); setOnboarded(true); reloadCats(); reloadItems(); reloadSettings(); void sync.requestSync() }}
