@@ -294,7 +294,7 @@ try {
   }
   // Week table: the expand button follows the name, and Show estimates sits at the right of the date row.
   check('Week table: the expand button comes after the name', await page.evaluate(() => { const l = document.querySelector('#tabpanel-budget .budget-table .name-line:has(.chevron)'); return !!l && l.querySelector('.name-link')?.compareDocumentPosition(l.querySelector('.chevron')) === Node.DOCUMENT_POSITION_FOLLOWING }))
-  check('Week: Show estimates is in the date row at the right', await page.evaluate(() => { const r = document.querySelector('#tabpanel-budget .date-row'); const c = r?.querySelector('.check'); return !!c && r.getBoundingClientRect().right - c.getBoundingClientRect().right < 40 }))
+  check('Week: Show estimates is in line with the table heading, at the right', await page.evaluate(() => { const h = document.querySelector('#tabpanel-budget .table-heading'); const t = h?.querySelector('.table-title')?.getBoundingClientRect(); const c = h?.querySelector('.check')?.getBoundingClientRect(); return !!t && !!c && Math.abs((t.top + t.bottom) / 2 - (c.top + c.bottom) / 2) < 4 && h.getBoundingClientRect().right - c.right < 40 }))
 
   // A table dialog: highlight, with New purchase stacked on top of it.
   const nameId = await page.evaluate(() => document.querySelector('button.name-link')?.id ?? '')
@@ -410,7 +410,17 @@ try {
     await clickId(narrowMenu)
     check('375px: Actions menu inside the window', await menuInWindow(narrowMenu))
     await press('Escape')
+    await pick(narrowMenu, 'Update')
+    const halves = d => page.evaluate(id => { const b = [...document.querySelectorAll(`#${id} .dialog-actions .actions .btn`)].map(x => Math.round(x.getBoundingClientRect().width)); const a = document.querySelector(`#${id} .dialog-actions .actions`)?.getBoundingClientRect().width ?? 0; return { b, a: Math.round(a) } }, d)
+    const upHalves = await halves('budget-update')
+    check('375px: Update, Cancel and Save take half the row each', upHalves.b.length === 2 && Math.abs(upHalves.b[0] - upHalves.b[1]) <= 1 && upHalves.b[0] * 2 + 20 >= upHalves.a - 2, JSON.stringify(upHalves))
+    await press('Escape')
+    await clickId('help-button'); await settle()
+    const wizHalves = await halves('onboarding')
+    check('375px: wizard, Cancel and Next take half the row each', wizHalves.b.length === 2 && Math.abs(wizHalves.b[0] - wizHalves.b[1]) <= 1 && wizHalves.b[0] * 2 + 20 >= wizHalves.a - 2, JSON.stringify(wizHalves))
+    await press('Escape'); await settle()
   }
+  check('375px: Show estimates wraps under the table heading', await page.evaluate(() => { const t = document.querySelector('#tabpanel-budget .table-title')?.getBoundingClientRect(); const c = document.querySelector('#tabpanel-budget .table-heading .check')?.getBoundingClientRect(); return !!t && !!c && c.top >= t.bottom - 1 }))
 
   // Update popup (2026-11-26): opens on the first open after an update, once per update (the version is kept per device).
   const reopen = async seen => {

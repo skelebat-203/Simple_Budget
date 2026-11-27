@@ -12,7 +12,7 @@ function loadCollapsed(): Set<number> | null {
 }
 
 /**
- * Closed (▸) category/subcategory rows of the budget tables (v0.4 step 9). One
+ * Closed (▴) category/subcategory rows of the budget tables (v0.4 step 9). One
  * shared state for Day, Week, Month and Annual, kept in localStorage so it
  * survives reloads, and synced between mounted tables and other tabs.
  * Until anything is saved, `defaults` are closed (narrow screens start with categories closed, v0.7 step 6).

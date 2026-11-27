@@ -15,9 +15,9 @@ export function Expander({ open, onToggle, children, id, label, describedBy, ico
 }) {
   return (
     <button type="button" className="expander" id={id} aria-expanded={open} aria-label={label} aria-describedby={describedBy} onClick={onToggle}>
-      {!iconEnd && <span className="twisty" aria-hidden="true">{open ? '▾' : '▸'}</span>}
+      {!iconEnd && <span className="twisty" aria-hidden="true">{open ? '▾' : '▴'}</span>}
       <span>{children}</span>
-      {iconEnd && <span className="twisty" aria-hidden="true">{open ? '▾' : '▸'}</span>}
+      {iconEnd && <span className="twisty" aria-hidden="true">{open ? '▾' : '▴'}</span>}
     </button>
   )
 }
@@ -26,7 +26,7 @@ export function Expander({ open, onToggle, children, id, label, describedBy, ico
 export function Chevron({ open, onToggle, label, id, describedBy }: { open: boolean; onToggle: () => void; label: string; id?: string; describedBy?: string }) {
   return (
     <button type="button" className="chevron" id={id} aria-expanded={open} aria-label={`${open ? 'Collapse' : 'Expand'} ${label}`} aria-describedby={describedBy} onClick={onToggle}>
-      <span className="twisty" aria-hidden="true">{open ? '▾' : '▸'}</span>
+      <span className="twisty" aria-hidden="true">{open ? '▾' : '▴'}</span>
     </button>
   )
 }
