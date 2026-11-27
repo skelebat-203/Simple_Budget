@@ -1,10 +1,12 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AddBudget } from './screens/AddBudget'
 import { Budget } from './screens/Budget'
 import { BudgetSetup } from './screens/BudgetSetup'
 import { RewardLayer } from './rewards/RewardLayer'
 import { Onboarding } from './screens/Onboarding'
 import { Backup } from './components/Backup'
+import { UpdatePopup } from './components/UpdatePopup'
+import { UPDATES, readLastSeen, whatsNew, writeLastSeen, type Updates } from './updates/updates'
 import { useSyncState } from './components/useSyncState'
 import * as sync from './storage/sync/controller'
 import { GoogleSheetsAdapter, isSignedIn, pickSpreadsheet } from './storage/sync/googleSheets'
@@ -36,6 +38,18 @@ function App() {
   const [dismissed, setDismissed] = useState(false)
   const [notices, setNotices] = useState<NoticeState>({})
   const note = useCallback((p: Partial<NoticeState>) => setNotices(n => ({ ...n, ...p })), [])
+  const [update, setUpdate] = useState<Updates | null>(null)
+  const updateChecked = useRef(false)
+
+  /** The update popup, once per open: when the app is newer than the version this device last showed it for.
+   *  A first run (setup not finished) only records the version; the wizard opens instead. */
+  const checkUpdate = useCallback((onboardedNow: boolean) => {
+    if (updateChecked.current) return
+    updateChecked.current = true
+    const news = onboardedNow ? whatsNew(UPDATES, readLastSeen(), __APP_VERSION__) : null
+    writeLastSeen(__APP_VERSION__)
+    if (news && (news.releases.length || news.knownIssues.length)) setUpdate(news)
+  }, [])
 
   // Loads report failures and skipped rows instead of showing an empty table (security-v0.2 8.2, 6.5).
   const reloadCats = useCallback(() => categoryRepo.list()
@@ -49,11 +63,11 @@ function App() {
     .then(s => {
       const r = s.defaultRange ?? 'week'
       setRange(r); setDefaultRange(r)
-      setOnboarded(!!s.onboarded); setLoaded(l => ({ ...l, settings: true }))
+      setOnboarded(!!s.onboarded); setLoaded(l => ({ ...l, settings: true })); checkUpdate(!!s.onboarded)
       setRewardsEnabled(s.rewardsEnabled); setNotificationsEnabled(s.notificationsEnabled)
       setCalendar({ weekStart: s.weekStart ?? 0, monthBoundary: s.monthBoundary ?? 'weeks' })
     })
-    .catch(() => note({ loadError: LOAD_ERROR })), [note])
+    .catch(() => note({ loadError: LOAD_ERROR })), [note, checkUpdate])
 
   useEffect(() => {
     reloadCats()
@@ -139,6 +153,7 @@ function App() {
         { id: 'add', label: 'Add purchase', panel: <AddBudget roots={roots} items={items} calendar={calendar} onSaved={saved} /> },
         { id: 'budget', label: 'Budget', panel: <Budget roots={roots} items={items} range={range} onRangeChange={setRange} calendar={calendar} onChanged={saved} /> },
       ]} />
+      {update && <UpdatePopup updates={update} version={__APP_VERSION__} onClose={() => setUpdate(null)} />}
       {backupOpen && (
         <Backup onClose={() => { setBackupOpen(false); setPickedId(null) }} onRestored={() => {
           reloadCats(); reloadItems(); reloadSettings()

@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Update popup mockup</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../../../../src/styles/tokens.css">
+<style>
+  /* Mockup only: 375px, normal state. The popup opens over the app on the first open after an update. */
+  body { margin: 0; padding: var(--space-md); background: #eee; font-family: var(--font-family); font-size: var(--font-size-base); color: var(--color-foreground-page); }
+  .phone { position: relative; width: 375px; height: 700px; overflow: hidden; background: var(--color-background-page); border: var(--border-thin) solid var(--color-border); box-sizing: border-box; }
+  .page { padding: var(--space-md); }
+  .page h1 { font-size: var(--font-size-xl); margin: 0 0 var(--space-md); }
+  .tabs { display: flex; gap: var(--space-md); border-bottom: var(--border-thin) solid var(--color-border); padding-bottom: var(--space-sm); font-weight: var(--font-weight-bold); }
+  .ghost { height: 44px; margin-top: var(--space-md); background: var(--color-border); border-radius: var(--radius-sm); }
+  .backdrop { position: absolute; inset: 0; background: var(--color-backdrop); display: flex; align-items: center; justify-content: center; }
+
+  /* The popup: the app's Dialog plus a thick (3px) border and a close X at the top right. */
+  .dialog { position: relative; width: calc(100% - 2 * var(--space-md)); max-height: calc(100% - 2 * var(--space-md)); display: flex; flex-direction: column; box-sizing: border-box;
+    border: var(--border-thick) solid var(--color-primary-background); border-radius: var(--radius-md); background: var(--color-background-page); }
+  .dialog-body { padding: var(--space-lg) var(--space-md); display: flex; flex-direction: column; gap: var(--space-md); overflow-y: auto; }
+  .head { padding-right: var(--size-touch); } /* keeps the title clear of the X */
+  .section-title { font-size: var(--font-size-xl); margin: 0; }
+  .sub { margin: 0; color: var(--color-text-description); font-size: var(--font-size-sm); }
+  .close { position: absolute; top: var(--space-control); right: var(--space-control); width: var(--size-touch); height: var(--size-touch); padding: 0; display: inline-flex; align-items: center; justify-content: center;
+    border: var(--border-medium) solid var(--color-primary-background); border-radius: var(--radius-pill); background: var(--color-background-page); color: var(--color-primary-background); cursor: pointer; }
+  .close svg { width: 18px; height: 18px; }
+  h3 { font-size: var(--font-size-base); margin: 0; }
+  ul { margin: var(--space-sm) 0 0; padding-left: var(--space-lg); display: flex; flex-direction: column; gap: var(--space-sm); }
+  .issues h3 { color: var(--color-warn); }
+  .issues { border-left: var(--border-accent) solid var(--color-warn); padding-left: var(--space-sm); }
+</style></head>
+<body>
+<div class="phone">
+  <div class="page" aria-hidden="true">
+    <h1>Simple Budget</h1>
+    <div class="tabs"><span>Add purchase</span><span>Budget</span></div>
+    <div class="ghost"></div><div class="ghost"></div><div class="ghost"></div>
+  </div>
+  <div class="backdrop">
+    <section class="dialog" role="dialog" aria-modal="true" aria-labelledby="up-title">
+      <button type="button" class="close" aria-label="Close">
+        <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M4 4l12 12M16 4L4 16" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" fill="none"/></svg>
+      </button>
+      <div class="dialog-body">
+        <div class="head">
+          <h2 id="up-title" class="section-title">What’s new</h2>
+          <p class="sub">Version 0.7.60</p>
+        </div>
+        <div>
+          <h3>Changes</h3>
+          <ul>
+            <li>Week, Month and Annual are now one switch.</li>
+            <li>Sync now lives in the Backup window.</li>
+            <li>Add purchase has “i” buttons that explain each field.</li>
+            <li>Items are now sorted from A to Z.</li>
+            <li>Date arrows now fill the screen on phones.</li>
+            <li>New cat and superhero rewards.</li>
+            <li>Fixed: menu items cut off on small screens.</li>
+          </ul>
+        </div>
+        <div class="issues">
+          <h3>Known Issues</h3>
+          <ul>
+            <li>Linking an existing Google sheet shows no files.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+</body></html>

@@ -132,5 +132,6 @@
   --size-toggle-option: 8.5rem; /* one Toggle option, desktop */
   --size-toggle-option-narrow: 6rem; /* one Toggle option below 640px */
   --size-toggle-name: 7.5rem; /* Toggle group name column, desktop */
+  --size-close-icon: 18px; /* the X in a dialog's close button */
   --size-info-arrow: 12px; /* the pointer on an info note, aimed at its button */
 }

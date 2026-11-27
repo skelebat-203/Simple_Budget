@@ -154,6 +154,11 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
     - Files: `src/screens/Budget.tsx`, `src/components/Backup.tsx`, `src/components/Sync.tsx`, `src/App.tsx`, `src/components/PurchaseForm.tsx`, `src/App.css`
     - Verify: build + lint; `test:dialogs`; 1280/640/375/320px
     - Progress: mockup of the info buttons made (`docs/design/images/v0.7-info-buttons/`, Options A and B). Waiting on: the human's choice before building that part.
+15f. **Update popup** (v0.7/15f) — human, 2026-11-26: on the first open after an update, a popup lists the changes and new known issues; every merge to `main` updates it.
+    - Source: roadmap v0.7 "Update popup"; `0016-update-popup.md`
+    - Files: `src/updates/`, `src/components/UpdatePopup.tsx`, `src/components/ui/Dialog.tsx` (`closeButton`), `src/App.tsx`, `src/App.css`, `.claude/CLAUDE.md` (merge rule), `tests/dialogs/run.mjs`
+    - Verify: build + lint; `test:dialogs`; the human reviews the Changes list before the merge
+    - Progress (v0.7.61): built on branch `v0.7-update-popup` (worktree `.worktrees/v0.7-update-popup`); mockup approved (3px border, "Known Issues"); merge rule added. Waiting on: the human's review of the Changes list and merge approval.
 16. **UI/UX review** (v0.7/16) — human approval, `0005` checklist, all widths.
     - Deps: 1–15d
 17. **Accessibility pass** (v0.7/17) — including chart alt text, keyboard navigation and screen reader.
@@ -181,7 +186,7 @@ Run option 1: one session per group, fresh start at each group boundary. A sessi
 2. **Check blockers** ("needs human decision", "blocked"). Do not build a blocked step: skip it, or stop and tell the user if it is the only one left.
 3. **Build one step at a time:** re-read the latest version on `main`, build and lint, commit with the next patch version and the `Plan-Step: v0.7/N` trailer, mark the step ✅ with its version(s). Check `git diff --cached --stat` before each commit.
 4. **UI steps** pause for human approval before they are marked ✅ (`0005`).
-5. **At the end of the group:** update the Execution status line, commit in the worktree, and tell the user the group is done and waiting for merge approval.
+5. **At the end of the group:** update the Execution status line, commit in the worktree, and tell the user the group is done and waiting for merge approval. Before asking to merge to `main`, update the update popup (`src/updates/updates.json`) and have the human review its Changes list (`.claude/CLAUDE.md`, "Update popup").
 6. **Reviews** (16–18) are run in the main session with the user, not by a worker.
 
 ## Rules

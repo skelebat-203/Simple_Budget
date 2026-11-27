@@ -41,7 +41,7 @@ export interface FormMode {
  * The footer is one of: `confirm` (a message with Cancel and Confirm), `form`
  * (the children are the fields; Cancel and a submit button), or `buttons` (caller-made).
  */
-export function Dialog({ id, title, children, buttons, confirm, form, onClose, className, describedBy, footerClassName, footerRef, suspended }: {
+export function Dialog({ id, title, children, buttons, confirm, form, onClose, className, describedBy, footerClassName, footerRef, suspended, closeButton }: {
   id: string
   title: ReactNode
   children: ReactNode
@@ -60,6 +60,8 @@ export function Dialog({ id, title, children, buttons, confirm, form, onClose, c
   footerRef?: Ref<HTMLDivElement>
   /** Closed for a while but kept mounted (state kept), e.g. while the Google Picker is open: it can't take clicks under a modal dialog. */
   suspended?: boolean
+  /** An X at the top right that calls `onClose`. A dialog with no footer (no `buttons`, `confirm` or `form`) shows none. */
+  closeButton?: boolean
 }) {
   useAnnounce(form?.error ?? '')
   const ref = useRef<HTMLDialogElement>(null)
@@ -103,8 +105,13 @@ export function Dialog({ id, title, children, buttons, confirm, form, onClose, c
         const next = i < 0 ? (e.shiftKey ? f.length - 1 : 0) : (i + (e.shiftKey ? -1 : 1) + f.length) % f.length
         f[next].focus()
       }}>
+      {closeButton && (
+        <button type="button" className="dialog-close" aria-label="Close" onClick={onClose}>
+          <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M4 4l12 12M16 4L4 16" /></svg>
+        </button>
+      )}
       <div className="dialog-body">
-        <h2 id={`${id}-title`} className="section-title">{title}</h2>
+        <h2 id={`${id}-title`} className={closeButton ? 'section-title has-close' : 'section-title'}>{title}</h2>
         {confirm ? <p id={`${id}-desc`}>{children}</p>
           : form ? (
             <form id={formId} noValidate className="dialog-form" onSubmit={e => { e.preventDefault(); form.onSubmit() }}>
@@ -113,7 +120,7 @@ export function Dialog({ id, title, children, buttons, confirm, form, onClose, c
             </form>
           )
           : children}
-        <div ref={footerRef} className={`actions dialog-actions ${footerClassName ?? ''}`.trim()}>{footer}</div>
+        {footer && <div ref={footerRef} className={`actions dialog-actions ${footerClassName ?? ''}`.trim()}>{footer}</div>}
       </div>
     </dialog>
   )

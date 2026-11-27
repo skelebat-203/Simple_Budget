@@ -387,6 +387,33 @@ try {
     check('375px: Actions menu inside the window', await menuInWindow(narrowMenu))
     await press('Escape')
   }
+
+  // Update popup (2026-11-26): opens on the first open after an update, once per update (the version is kept per device).
+  const reopen = async seen => {
+    await page.evaluate(v => { if (v === null) localStorage.removeItem('simple-budget:last-seen-version'); else localStorage.setItem('simple-budget:last-seen-version', v) }, seen)
+    await page.reload({ waitUntil: 'networkidle0' }); await settle()
+  }
+  await reopen('0.0.1')
+  check('Update popup: opens after an update', (await openIds()).includes('update-popup'), JSON.stringify(await openIds()))
+  const pop = await page.evaluate(() => {
+    const d = document.getElementById('update-popup'); const x = d?.querySelector('.dialog-close'); const dr = d?.getBoundingClientRect(); const xr = x?.getBoundingClientRect()
+    return d && x && dr && xr ? {
+      border: getComputedStyle(d).borderTopWidth, xName: x.getAttribute('aria-label'), xTopRight: xr.top - dr.top < 20 && dr.right - xr.right < 20,
+      title: d.querySelector('h2')?.textContent, bullets: d.querySelectorAll('.update-list li').length, issues: d.querySelector('.update-issues h3')?.textContent ?? '',
+      xSize: Math.round(xr.width), titleClear: (() => { const h = d.querySelector('h2'); if (!h) return false; const r = document.createRange(); r.selectNodeContents(h); return r.getBoundingClientRect().right <= xr.left + 1 })(),
+    } : null
+  })
+  check('Update popup: 3px border, an X named Close at the top right, bullets and Known Issues', !!pop && pop.border === '3px' && pop.xName === 'Close' && pop.xTopRight && pop.bullets > 0 && pop.issues === 'Known Issues', JSON.stringify(pop))
+  check('Update popup: the title does not run under the X', !!pop && pop.titleClear, JSON.stringify(pop))
+  await standard('Update popup', 'update-popup', '', { returns: false })
+  await reopen('0.0.1')
+  await page.click('#update-popup .dialog-close'); await settle()
+  check('Update popup: the X closes it', !(await openIds()).includes('update-popup'), JSON.stringify(await openIds()))
+  await reopen(await page.evaluate(() => localStorage.getItem('simple-budget:last-seen-version')))
+  check('Update popup: not shown again for the same version', !(await openIds()).includes('update-popup'), JSON.stringify(await openIds()))
+  await reopen(null)
+  check('Update popup: an existing user with no stored version sees it once', (await openIds()).includes('update-popup'), JSON.stringify(await openIds()))
+  await press('Escape')
 } catch (e) {
   console.error(e)
   failed++

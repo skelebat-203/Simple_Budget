@@ -167,6 +167,7 @@ tracked as a later-version item.
   - The Week, Month and Annual buttons become a three-option Toggle (components.md Toggle: radio group, pill)
   - The Sync control moves into the Backup dialog (replaces the 2026-11-22 placement: Sync button in the Budget tab panel and beside the Screens button on narrow views)
   - The supporting text on the Add purchase screen moves into an info button to the right of each control's label. Mockup first, build only after the human approves (`docs/design/images/v0.7-info-buttons/`)
+- Update popup (human, 2026-11-26; step 15f): on the first open after an update, a popup lists what changed and any new known issues. Spec and the process for keeping it current: `0016-update-popup.md`. Mockup: `docs/design/images/v0.7-update-popup/`
 - UI/UX review (human approval)
 - Accessibility pass
 - Security review (covers sync)

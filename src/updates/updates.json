@@ -1,0 +1,26 @@
+{
+  "releases": [
+    {
+      "version": "0.7.61",
+      "changes": [
+        "Week, Month and Annual are now one switch.",
+        "Sync now lives in the Backup window.",
+        "Google Sheets sync issue resolved.",
+        "Add purchase has “i” buttons that explain each field.",
+        "Items are now sorted from A to Z.",
+        "Date arrows now fill the screen on phones.",
+        "New cat and superhero rewards.",
+        "The app now shows its version at the top.",
+        "This window now tells you what changed after each update.",
+        "Fixed: menu items cut off on small screens."
+      ]
+    }
+  ],
+  "knownIssues": [
+    {
+      "id": "D004",
+      "since": "0.7.10",
+      "text": "Google sign-in does not work in some privacy-focused browsers, such as Firefox Strict."
+    }
+  ]
+}

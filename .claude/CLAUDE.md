@@ -35,6 +35,15 @@ Push rules are in the global `version-control.md`.
 The per-commit patch numbering in the global `versioning.md` applies from
 v0.4.12 on (decided 2026-11-02). Earlier versions used the step-number rule.
 
+## Update popup (every merge to main)
+The "What's new" popup lists changes and new known issues (`docs/design/0016-update-popup.md`;
+data in `src/updates/updates.json`). Every merge to `main` updates it, in this order:
+1. Draft a new `releases` entry (version = the version the merge lands at) from `git log main..{branch}`:
+   user-visible changes only, plain words, grade 10 or lower, one short line each.
+2. Add a `knownIssues` entry for each new open user-visible defect in `docs/defects/`; remove the ones fixed.
+3. **The human reviews the Changes list before the merge is requested.** Do not ask to merge until they approve it.
+4. Commit it with the RESUME-HERE update (the last commit before the merge).
+
 ## Accessibility Overrides
 - Exception to sticky content rules - in this app allow "Save" to be sticky in mobile unless the mobile screen has been zoomed.
 - Allow the Import/Cancel footer in the review dialog to be sticky on desktop and mobile, unless the screen is short.

@@ -684,3 +684,19 @@ nav.toolbar .btn.icon { flex: none; }
 .wizard-sync .tablist { border-bottom: var(--border-medium) solid var(--color-secondary-background); }
 .wizard-tabpanel { padding: var(--space-md); border: var(--border-medium) solid var(--color-secondary-background); border-top: 0; border-radius: 0 0 var(--radius-md) var(--radius-md); }
 .wizard-tabpanel .status:empty { display: none; }
+
+/* Dialog close X (top right) and the update popup (mockup v0.7-update-popup). */
+.dialog-close { position: absolute; top: var(--space-control); right: var(--space-control); z-index: 1; width: var(--size-touch); height: var(--size-touch); padding: 0; display: inline-flex; align-items: center; justify-content: center;
+  border: var(--border-medium) solid var(--color-primary-background); border-radius: var(--radius-pill); background: var(--color-background-page); color: var(--color-primary-background); cursor: pointer; }
+.dialog-close:hover { background: var(--color-border); border-color: var(--color-primary-hover); }
+.dialog-close svg { width: var(--size-close-icon); height: var(--size-close-icon); fill: none; stroke: currentColor; stroke-width: var(--border-thick); stroke-linecap: round; }
+.section-title.has-close { padding-inline-end: var(--size-touch); } /* keeps the title clear of the X */
+.dialog.update-popup { border: var(--border-thick) solid var(--color-primary-background); flex-direction: column; overflow: hidden; }
+.dialog.update-popup[open] { display: flex; }
+.dialog.update-popup:not([open]) { display: none; }
+.dialog.update-popup .dialog-body { gap: var(--space-md); overflow-y: auto; min-height: 0; }
+.update-sub { margin: calc(-1 * var(--space-sm)) 0 0; font-size: var(--font-size-sm); color: var(--color-text-description); }
+.update-popup h3 { font-size: var(--font-size-base); margin: 0; }
+.update-list { margin: var(--space-sm) 0 0; padding-inline-start: var(--space-lg); display: flex; flex-direction: column; gap: var(--space-sm); }
+.update-issues { border-inline-start: var(--border-accent) solid var(--color-warn); padding-inline-start: var(--space-sm); }
+.update-issues h3 { color: var(--color-warn); }
