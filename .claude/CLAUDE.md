@@ -49,5 +49,12 @@ data in `src/updates/updates.json`). Every merge to `main` updates it, in this o
 - Exception to sticky content rules - in this app allow "Save" to be sticky in mobile unless the mobile screen has been zoomed.
 - Allow the Import/Cancel footer in the review dialog to be sticky on desktop and mobile, unless the screen is short.
 
+## Testing (standard process)
+Test output costs tokens, so run only the suites a change needs. Map and tiers: `tests/README.md`.
+- Every edit and end of a plan step: `npm run lint`, then `npm run test:changed`. Do not run a suite by hand when it covers it.
+- Full run (`npm run test:all`, plus Lighthouse) only before the merge request and before the reviews.
+- Runners are quiet (FAIL lines and a total). Use `--verbose` only to investigate a failure. Do not paste passing output.
+- A new source folder or suite gets a row in the `tests/changed.mjs` map and in `tests/README.md` in the same change.
+
 ## Git
 Use the git-broker MCP tools for git: git_status, git_diff, git_log, git_stage, git_commit, git_worktree_add, git_worktree_remove, git_merge, git_rebase. Do not run git directly; .git is read-only in the sandbox. Commits and merges to main need the user's approval.

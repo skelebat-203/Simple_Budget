@@ -1,13 +1,15 @@
 {
   "name": "scaffold",
   "private": true,
-  "version": "0.7.62",
+  "version": "0.7.63",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
+    "test:changed": "node tests/changed.mjs",
+    "test:all": "node tests/changed.mjs --all",
     "test:import": "node tests/import/run.mjs",
     "test:dialogs": "node tests/dialogs/run.mjs",
     "test:sync": "node tests/sync/run.mjs"

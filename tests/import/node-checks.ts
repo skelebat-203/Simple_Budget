@@ -133,7 +133,7 @@ export async function run(check: Check) {
     // While the ODS file has lost cells, rows whose amounts were lost add no category, so only a subset is expected.
     const tree = lostTotal ? names(po).every(n => names(px).includes(n)) : JSON.stringify(names(po)) === JSON.stringify(names(px))
     check(tree && po.unplaced.length === px.unplaced.length && (lostTotal > 0 || byMonth(po) === byMonth(px)), `ODS parity (${label}): ${lostTotal ? 'new categories are a subset of the XLSX ones' : 'the same new categories, per-month counts and totals'} (ODS ${po.summary.purchases} purchases ${po.summary.total.toFixed(2)}, XLSX ${px.summary.purchases} ${px.summary.total.toFixed(2)})`)
-    if (label === 'seeded') console.log(`  per month, ODS: ${byMonth(po)}
+    if (label === 'seeded' && process.argv.includes('--verbose')) console.log(`  per month, ODS: ${byMonth(po)}
   per month, XLSX: ${byMonth(px)}`)
   }
 

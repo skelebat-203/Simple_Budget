@@ -4,10 +4,11 @@ import 'fake-indexeddb/auto'
 import { createServer } from 'vite'
 
 const root = new URL('../..', import.meta.url).pathname
+const verbose = process.argv.includes('--verbose') // quiet by default: only FAIL lines and the total
 let pass = 0, fail = 0
-const check = (ok, msg) => { if (ok) pass++; else fail++; console.log(ok ? 'PASS' : 'FAIL', msg) }
+const check = (ok, msg) => { if (ok) pass++; else fail++; if (!ok || verbose) console.log(ok ? 'PASS' : 'FAIL', msg) }
 
-const server = await createServer({ root, logLevel: 'error', server: { middlewareMode: true, hmr: false }, appType: 'custom' })
+const server = await createServer({ root, logLevel: 'error', server: { middlewareMode: true, hmr: false, watch: null }, appType: 'custom' })
 try {
   await (await server.ssrLoadModule('/tests/sync/checks.ts')).run(check)
 } catch (e) {

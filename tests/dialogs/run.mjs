@@ -27,8 +27,9 @@ for (let i = 0; i < 50; i++) {
   await sleep(200)
 }
 
-let failed = 0
-const check = (name, ok, detail = '') => { console.log(`${ok ? 'PASS' : 'FAIL'} ${name}${ok ? '' : ` ${detail}`}`); if (!ok) failed++ }
+const verbose = process.argv.includes('--verbose') // quiet by default: only FAIL lines and the total
+let passed = 0, failed = 0
+const check = (name, ok, detail = '') => { if (ok) passed++; else failed++; if (!ok || verbose) console.log(`${ok ? 'PASS' : 'FAIL'} ${name}${ok ? '' : ` ${detail}`}`) }
 
 const browser = await puppeteer.launch({ executablePath: chrome, args: ['--no-sandbox'], defaultViewport: { width: WIDTH, height: HEIGHT } })
 const page = await browser.newPage()
@@ -428,5 +429,5 @@ try {
   await browser.close()
   server.kill()
 }
-console.log(failed ? `\n${failed} check(s) failed` : '\nAll checks passed')
+console.log(`\n${passed} passed, ${failed} failed`)
 process.exit(failed ? 1 : 0)
