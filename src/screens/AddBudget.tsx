@@ -90,7 +90,7 @@ export function AddBudget({ roots, items, calendar, onSaved }: {
       {saveError && <p className="error">{saveError}</p>}
       {/* Today's Day table (v0.7 step 12): each purchase has an Update button (Item, Amount, Description, Date; Delete) (v0.7 step 15d). */}
       <h3 id="add-day-heading" className="add-day-heading">Today’s purchases</h3>
-      <BudgetTable idBase="add-day" roots={roots} items={items} range="day" showEstimates={false} calendar={calendar} onChanged={onSaved} pageHead />
+      <BudgetTable idBase="add-day" headingLevel={4} roots={roots} items={items} range="day" showEstimates={false} calendar={calendar} onChanged={onSaved} pageHead />
     </section>
   )
 }

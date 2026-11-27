@@ -92,9 +92,9 @@ export function MiscBreakdown({ roots, items, calendar, date, onChanged }: {
     <section className="misc-breakdown" aria-labelledby="misc-heading">
       <h3 id="misc-heading" className="misc-heading" tabIndex={-1}>Misc. Breakdown</h3>
       <p className="help">Rows bought in more than {REVIEW_MONTHS} months of the year are marked Review in December. Consider adding them to the table.</p>
+      <div className="table-heading"><h4 id="misc-caption" className="table-title">{title}</h4></div>
       <div className="table-box page-head">
         <table ref={tableRef} className="table budget-table misc-table" aria-labelledby="misc-heading misc-caption">
-          <caption id="misc-caption">{title}</caption>
           <thead>
             <tr>
               <th scope="col" className="name">Description</th>

@@ -294,6 +294,7 @@ try {
   }
   // Week table: the expand button follows the name, and Show estimates sits at the right of the date row.
   check('Week table: the expand button comes after the name', await page.evaluate(() => { const l = document.querySelector('#tabpanel-budget .budget-table .name-line:has(.chevron)'); return !!l && l.querySelector('.name-link')?.compareDocumentPosition(l.querySelector('.chevron')) === Node.DOCUMENT_POSITION_FOLLOWING }))
+  check('Budget tables: no caption; each is named by a heading', await page.evaluate(() => [...document.querySelectorAll('table.budget-table')].every(t => !t.querySelector('caption') && (t.getAttribute('aria-labelledby') ?? '').split(' ').some(i => /^H[1-6]$/.test(document.getElementById(i)?.tagName ?? '')))))
   check('Week: Show estimates is in line with the table heading, at the right', await page.evaluate(() => { const h = document.querySelector('#tabpanel-budget .table-heading'); const t = h?.querySelector('.table-title')?.getBoundingClientRect(); const c = h?.querySelector('.check')?.getBoundingClientRect(); return !!t && !!c && Math.abs((t.top + t.bottom) / 2 - (c.top + c.bottom) / 2) < 4 && h.getBoundingClientRect().right - c.right < 40 }))
 
   // A table dialog: highlight, with New purchase stacked on top of it.

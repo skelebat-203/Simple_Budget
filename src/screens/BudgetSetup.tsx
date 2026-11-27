@@ -453,7 +453,7 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, rewardsEnable
 
         <section className="preview" aria-labelledby="preview-heading">
           <h3 id="preview-heading" className="section-title">Preview</h3>
-          <BudgetTable roots={previewRoots} items={items} range={range} showEstimates idBase="preview" preview
+          <BudgetTable roots={previewRoots} items={items} range={range} showEstimates idBase="preview" headingLevel={4} preview
             calendar={{ weekStart, monthBoundary: boundary }} />
         </section>
 

@@ -45,9 +45,11 @@ const charityText = (n: number) => n ? ` Your ${n} Charity purchase${n === 1 ? '
  * Week and Month have an Actions column (New purchase, Update); Annual renames with a pencil only
  * (0009 §4); the Day table (under Add purchase) lists today's purchases with an Update button each.
  */
-export function BudgetTable({ roots, items, range, showEstimates: wantEstimates, calendar, date, idBase = 'budget', preview = false, highlight = false, allRoots, onChanged, onMoved, pageHead = false, headingExtra }: {
-  /** A control shown at the right of the table heading (below it on phones); with it the heading is a visible title above the table, not a caption. */
+export function BudgetTable({ roots, items, range, showEstimates: wantEstimates, calendar, date, idBase = 'budget', preview = false, highlight = false, allRoots, onChanged, onMoved, pageHead = false, headingExtra, headingLevel = 3 }: {
+  /** A control shown at the right of the table heading (below it on phones). */
   headingExtra?: ReactNode
+  /** The level of the table's heading (the period shown): one below the heading it sits under. */
+  headingLevel?: 3 | 4
   /** Highlight dialog: a row moved under these rows; the main table opens them (v0.7 step 11). */
   onMoved?: (ids: number[]) => void
   roots: CatNode[]
@@ -469,15 +471,15 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
   }
 
   const colSpan = showEstimates ? 2 : 1
+  const Heading = headingLevel === 4 ? 'h4' : 'h3'
   return (
     <div className="table-wrap">
-      {headingExtra && <div className="table-heading"><span id={`${idBase}-caption`} className="table-title">{title}</span>{headingExtra}</div>}
+      <div className="table-heading"><Heading id={`${idBase}-caption`} className="table-title">{title}</Heading>{headingExtra}</div>
       {/* Only the table scrolls sideways (v0.4 review); no help text under it (v0.7 step 8). */}
       {/* A read-only table has no controls, so its scroll box takes focus to scroll by keyboard in every browser (v0.7 step 12). */}
       <div className={`table-box${pageHead ? ' page-head' : ''}`} {...(preview ? { tabIndex: 0, role: 'region', 'aria-labelledby': `${idBase}-heading` } : {})}>
         <table className={`table budget-table${day ? ' day-table' : ''}`} aria-labelledby={highlight ? `${idBase}-caption` : `${idBase}-heading ${idBase}-caption`}
           ref={gridRef} role={plain ? undefined : 'treegrid'}>
-          {!headingExtra && <caption id={`${idBase}-caption`}>{title}</caption>}
           <thead>
             {!day && range !== 'annual' && showEstimates && (
               <tr>
