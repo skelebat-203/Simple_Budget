@@ -150,6 +150,10 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
     - Verify: build + lint; `test:dialogs`, `test:import`, `test:sync`; 1280/640/375/320px; human phone test on the dev branch
     - Deps: 15c (D006 shares the Actions menu)
     - Progress (v0.7.49 to v0.7.54): all built. v0.7.49 date navigation and media queries (3 left, `0012` §2); v0.7.50 alphabetical sort, Up/Down removed; v0.7.51 Day view removed; v0.7.52 Actions menu, Update dialog, Day table Update; v0.7.53 Add purchase subcategory changes; v0.7.54 rewards. Build, lint, `test:dialogs`, `test:import`, `test:sync` pass. Waiting on: the human's phone test and UI approval.
+15e. **UI updates** (v0.7/15e) — human, 2026-11-26: Week/Month/Annual as a three-option Toggle; Sync control moved into the Backup dialog; Add purchase supporting text moved into info buttons beside each label.
+    - Files: `src/screens/Budget.tsx`, `src/components/Backup.tsx`, `src/components/Sync.tsx`, `src/App.tsx`, `src/components/PurchaseForm.tsx`, `src/App.css`
+    - Verify: build + lint; `test:dialogs`; 1280/640/375/320px
+    - Progress: mockup of the info buttons made (`docs/design/images/v0.7-info-buttons/`, Options A and B). Waiting on: the human's choice before building that part.
 16. **UI/UX review** (v0.7/16) — human approval, `0005` checklist, all widths.
     - Deps: 1–15d
 17. **Accessibility pass** (v0.7/17) — including chart alt text, keyboard navigation and screen reader.

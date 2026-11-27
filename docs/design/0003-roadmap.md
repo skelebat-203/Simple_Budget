@@ -163,12 +163,17 @@ tracked as a later-version item.
   - New reward animations: dance, fly, thumbs up, spin
   - Date navigation (Previous, title, Next) fills 100% of the width on mobile; today it is about 60% (decided 2026-11-26)
   - Media query audit: 3 in total, 4 accepted; any more than 4 needs a written reason (`0012`). Before: width breakpoints 600, 640, 1280 and 1440px plus a 480px height query
+- UI updates (human, 2026-11-26; built in v0.7 under the same rule, step 15e):
+  - The Week, Month and Annual buttons become a three-option Toggle (components.md Toggle: radio group, pill)
+  - The Sync control moves into the Backup dialog (replaces the 2026-11-22 placement: Sync button in the Budget tab panel and beside the Screens button on narrow views)
+  - The supporting text on the Add purchase screen moves into an info button to the right of each control's label. Mockup first, build only after the human approves (`docs/design/images/v0.7-info-buttons/`)
 - UI/UX review (human approval)
 - Accessibility pass
 - Security review (covers sync)
 
 ## v0.8 — Graphs and charts
 - Charts moved from v0.7 (decided 2026-11-22). Sync moved to v0.7 earlier (decided 2026-11-18).
+- Mobile-first layout: optimize the UI for 360 to 430px wide screens while keeping WCAG AA at 320px; desktop is secondary (human, 2026-11-26: "v0.8 or later"). Needs a design pass first: it touches the width breakpoints and the media query limit in `0012`
 - Chart view (Table/Chart switch)
 - Compact rows: an option that makes table rows smaller (decided 2026-11-22)
 - Zoom in and out (+/−) for the budget tables (decided 2026-11-22)

@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Info buttons mockup</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../../../../src/styles/tokens.css">
+<style>
+  /* Mockup only: 375px, Add purchase fields Item, Amount, Description. Option A and Option B shown side by side. */
+  body { margin: 0; padding: var(--space-md); background: #eee; font-family: var(--font-family); font-size: var(--font-size-base); color: var(--color-foreground-page); }
+  .frames { display: flex; gap: var(--space-lg); align-items: flex-start; }
+  .frame { width: 375px; background: var(--color-background-page); border: var(--border-thin) solid var(--color-border); padding: var(--space-md); box-sizing: border-box; min-height: 520px; }
+  h2 { font-size: var(--font-size-lg); margin: 0 0 var(--space-md); }
+  .field { margin-bottom: var(--space-md); position: relative; }
+  .label-row { display: flex; align-items: center; }
+  .label { font-weight: var(--font-weight-bold); }
+  .info { margin: var(--space-control); width: var(--size-target-min); height: var(--size-target-min); border-radius: var(--radius-pill); border: var(--border-medium) solid var(--color-primary-background); background: var(--color-background-page); color: var(--color-primary-background); font: italic var(--font-weight-bold) var(--font-size-sm) Georgia, serif; line-height: 1; padding: 0; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+  .info[aria-expanded="true"] { background: var(--color-primary-background); color: var(--color-primary-foreground); }
+  .input { display: block; box-sizing: border-box; width: var(--size-fill); margin: var(--space-control); min-height: var(--size-touch); padding: 0 var(--space-sm); border: var(--border-medium) solid var(--color-secondary-background); border-radius: var(--radius-sm); font: inherit; }
+  .note { margin: 0 var(--space-control); padding: var(--space-sm); font-size: var(--font-size-sm); line-height: var(--line-height-help); background: color-mix(in srgb, var(--color-info), white var(--tint-banner)); border-left: var(--border-accent) solid var(--color-info); }
+  .pop { position: absolute; left: var(--space-control); right: var(--space-control); top: calc(var(--size-touch) - var(--space-xs)); z-index: 2; box-shadow: var(--shadow-popup); background: var(--color-background-page); border: var(--border-thin) solid var(--color-secondary-background); border-radius: var(--radius-md); padding: var(--space-sm); font-size: var(--font-size-sm); line-height: var(--line-height-help); }
+  .pop::before { content: ""; position: absolute; top: -7px; left: 78px; width: 12px; height: 12px; background: var(--color-background-page); border-left: var(--border-thin) solid var(--color-secondary-background); border-top: var(--border-thin) solid var(--color-secondary-background); transform: rotate(45deg); }
+  .hint { color: var(--color-text-description); font-size: var(--font-size-sm); margin: 0 0 var(--space-md); }
+</style></head>
+<body>
+<div class="frames">
+  <div class="frame">
+    <h2>Option A: note opens in the page</h2>
+    <p class="hint">Item's “i” pressed. The note pushes the fields down. Press again to close.</p>
+    <div class="field">
+      <div class="label-row"><label class="label" for="a-item">Item <span aria-hidden="true">*</span></label>
+        <button type="button" class="info" aria-expanded="true" aria-controls="a-item-note" aria-label="Item help">i</button></div>
+      <p class="note" id="a-item-note">Shows your selected items. Type to search every item, or type a new name to add it.</p>
+      <input id="a-item" class="input" value="">
+    </div>
+    <div class="field">
+      <div class="label-row"><label class="label" for="a-amount">Amount <span aria-hidden="true">*</span></label>
+        <button type="button" class="info" aria-expanded="false" aria-label="Amount help">i</button></div>
+      <input id="a-amount" class="input" value="">
+    </div>
+    <div class="field">
+      <div class="label-row"><label class="label" for="a-desc">Description</label>
+        <button type="button" class="info" aria-expanded="false" aria-label="Description help">i</button></div>
+      <input id="a-desc" class="input" value="">
+    </div>
+  </div>
+  <div class="frame">
+    <h2>Option B: note floats over the page</h2>
+    <p class="hint">Item's “i” pressed. The note covers the fields below; the layout does not move. Esc or a second press closes it.</p>
+    <div class="field">
+      <div class="label-row"><label class="label" for="b-item">Item <span aria-hidden="true">*</span></label>
+        <button type="button" class="info" aria-expanded="true" aria-controls="b-item-note" aria-label="Item help">i</button></div>
+      <p class="pop" id="b-item-note" role="note">Shows your selected items. Type to search every item, or type a new name to add it.</p>
+      <input id="b-item" class="input" value="">
+    </div>
+    <div class="field">
+      <div class="label-row"><label class="label" for="b-amount">Amount <span aria-hidden="true">*</span></label>
+        <button type="button" class="info" aria-expanded="false" aria-label="Amount help">i</button></div>
+      <input id="b-amount" class="input" value="">
+    </div>
+    <div class="field">
+      <div class="label-row"><label class="label" for="b-desc">Description</label>
+        <button type="button" class="info" aria-expanded="false" aria-label="Description help">i</button></div>
+      <input id="b-desc" class="input" value="">
+    </div>
+  </div>
+</div>
+</body></html>
