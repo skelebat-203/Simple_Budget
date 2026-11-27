@@ -131,7 +131,7 @@ export function usePurchaseForm(roots: CatNode[], init: { target?: CatNode; amou
         <div className="field">
           <div className="label-row">
             <label className="label" htmlFor={id('category')}>Category <span aria-hidden="true">*</span></label>
-            <InfoButton id={id('category-help')} name="Category">Where “{itemText.text.trim()}” belongs. Pick a category to add it as a subcategory, pick a subcategory to add it as an item, or type a new subcategory.</InfoButton>
+            <InfoButton id={id('category-help')} name="Category">Add the item to a category, or enter a new one.</InfoButton>
           </div>
           <ItemSelector key={`category-${formKey}`} id={id('category')} label="Categories" mode="category" roots={roots}
             onChange={setCategory} onText={(text, matches) => setCategoryText({ text, matches })}
