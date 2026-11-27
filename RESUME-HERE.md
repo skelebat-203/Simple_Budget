@@ -140,7 +140,7 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
     - Files: `src/storage/sync/googleSheets.ts`, `src/components/Sync.tsx`; an Authorized redirect URI in the Google Cloud console (human)
     - Verify: sign-in in Firefox Strict and in Chromium
     - Deps: 3b
-    - Progress (v0.7.64): built on branch `v0.7-redirect-sign-in` (worktree `.worktrees/v0.7-redirect-sign-in`), option A (human, 2026-11-26): after a pop-up failure the Sync dialog and wizard offer "Sign in another way", a redirect sign-in (`0015` §7.1). Build, lint and `test:sync` pass. Waiting on: the human's redirect URIs in the Google Cloud console (`http://localhost:5173/`, `http://localhost:4173/`, `https://skelebat-203.github.io/Simple_Budget/`) and the test in Firefox Strict and Chromium.
+    - Progress (v0.7.64): built on branch `v0.7-redirect-sign-in` (worktree `.worktrees/v0.7-redirect-sign-in`), option A (human, 2026-11-26): after a pop-up failure the Sync dialog and wizard offer "Sign in another way", a redirect sign-in (`0015` §7.1). Build, lint and `test:sync` pass. The human added the redirect URIs and tested in Chromium and Firefox; passed (2026-11-26). One Picker error ("The API developer key is invalid") in the wizard could not be reproduced. **Step 15b ✅ (v0.7.64).**
 15c. **Phone-test defects D005 and D006** (v0.7/15c) — D005: the Google file picker lists no files (`docs/defects/D005-picker-lists-no-files.md`); D006: Edit menu items clipped on the left (`docs/defects/D006-edit-menu-items-clipped.md`). Found 2026-11-26.
     - Files: `src/storage/sync/googleSheets.ts`, `src/storage/sync/googleConfig.ts` (and the API key restriction in the Google Cloud console, human); ActionsMenu, `src/App.css`
     - Verify: an existing sheet is listed and linked from the phone; the menu is fully visible at 320/375/640px
@@ -178,7 +178,7 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
 - **D004** (step 15b) and **D005/D006** (step 15c): after F, before the reviews.
 - **T — Tester feedback** (steps 15c, 15d, 15e, 15f): built and passed 2026-11-26 (v0.7.47 to v0.7.62).
 - **Reviews** (steps 16–18): main session with the user.
-- Status: ✅ A · ✅ F · ✅ A2 · ✅ B · ✅ C · ✅ T · ☐ D · ☐ 15b (D004) · ~~E~~ · ☐ reviews
+- Status: ✅ A · ✅ F · ✅ A2 · ✅ B · ✅ C · ✅ T · ☐ D · ✅ 15b (D004) · ~~E~~ · ☐ reviews
 
 ### Session process
 Run option 1: one session per group, fresh start at each group boundary. A session starts by reading this file and the roadmap, then:
