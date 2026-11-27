@@ -65,6 +65,7 @@ export function Dialog({ id, title, children, buttons, confirm, form, onClose, c
 }) {
   useAnnounce(form?.error ?? '')
   const ref = useRef<HTMLDialogElement>(null)
+  const pressedBackdrop = useRef(false)
   const cancel = <Button type="button" className="secondary" onClick={onClose}>Cancel</Button>
   const formId = `${id}-form`
   const submit = form && <Button type="submit" form={formId} disabled={form.busy}>{form.submitLabel}</Button>
@@ -93,6 +94,10 @@ export function Dialog({ id, title, children, buttons, confirm, form, onClose, c
   return (
     <dialog ref={ref} id={id} tabIndex={-1} className={`dialog ${kind} ${className ?? ''}`.replace(/\s+/g, ' ').trim()} aria-modal="true"
       aria-labelledby={`${id}-title`} aria-describedby={describedBy ?? (confirm ? `${id}-desc` : undefined)}
+      // A click on the backdrop (the dialog element itself; its padding is 0) closes it, as Escape does. The press must also
+      // start there, so selecting text and releasing outside does not close it. The Close button and Escape remain.
+      onPointerDown={e => { pressedBackdrop.current = e.target === e.currentTarget }}
+      onClick={e => { if (pressedBackdrop.current && e.target === e.currentTarget) onClose(); pressedBackdrop.current = false }}
       onCancel={e => { e.preventDefault(); if (e.target === e.currentTarget) onClose() }} // a dialog opened from this one's React tree must not close this one too
       onKeyDown={e => {
         if (e.key !== 'Tab') return

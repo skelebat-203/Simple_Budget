@@ -368,10 +368,10 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
         <th scope="row" id={rowId(n)} className={`name clr-${n.cat.color}`}>
           <span className="name-line">
             {plain ? <span>{label}</span> : <>
-              {expandable(n) && <Chevron open={open} onToggle={() => toggle(n.cat.id)} id={did('expand', n)} label={say(n)} describedBy={rowId(n)} />}
               <button type="button" className="name-link" id={did('name', n)} aria-haspopup="dialog"
                 aria-label={say(n) === label ? undefined : say(n)} aria-describedby={rowId(n)}
                 onClick={() => setHl({ id: n.cat.id })}>{label}</button>
+              {expandable(n) && <Chevron open={open} onToggle={() => toggle(n.cat.id)} id={did('expand', n)} label={say(n)} describedBy={rowId(n)} />}
             </>}
             {renameControls(n)}
           </span>
@@ -440,7 +440,6 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
         return <RenameDialog id={id} spoken={say(n)} name={n.cat.name} onSave={name => saveRename(n, name)} onCancel={close} />
       case 'new':
         return <AmountDialog id={id} title={`New purchase for ${say(n)}`} spoken={say(n)} dateField={{ initial: addDate, min: span.from, max: span.to }}
-          intro={`Adds a purchase to ${say(n)}. Use a minus sign for a refund, or type a sum, e.g. 12.50+3.`}
           onSave={(amount, description, date) => saveNew(n, amount, description, date)} onCancel={close} />
       case 'update': {
         const moves = n.parent ? [{ value: '', label: `Keep in ${pathLabel(n.parent)}` }, ...moveChoices(n).map(x => ({ value: String(x.cat.id), label: pathLabel(x) }))] : undefined

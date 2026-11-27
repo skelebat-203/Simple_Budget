@@ -678,6 +678,9 @@ nav.toolbar .btn.icon { flex: none; }
 /* --- Sync placement (v0.7 step 3b) --- */
 /* Budget screen: date controls left, Sync right (from 640px; narrower, Sync sits beside the Screens button). */
 .date-row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-md); flex-wrap: wrap; }
+.date-row > .check { margin-left: auto; } /* Show estimates stays at the right when it wraps below the date navigation */
+.help-warn { display: flex; align-items: flex-start; gap: var(--space-xs); }
+.help-warn .banner-icon { color: var(--color-warn); }
 .menu-row { display: flex; align-items: center; gap: var(--space-md); flex-wrap: wrap; }
 /* Wizard sync tabs: New Budget / Existing Budget. */
 .wizard-sync { display: flex; flex-direction: column; margin-top: var(--space-md); }

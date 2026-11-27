@@ -4,8 +4,10 @@ import type { ReactNode } from 'react'
  * Expand/collapse control of a table row (0008 §1): a real button holding a decorative
  * icon and the row name, so the name is the button's accessible name.
  */
-export function Expander({ open, onToggle, children, id, label, describedBy }: {
+export function Expander({ open, onToggle, children, id, label, describedBy, iconEnd }: {
   open: boolean; onToggle: () => void; children: ReactNode; id?: string
+  /** The icon sits after the name (in tables, so the names line up). */
+  iconEnd?: boolean
   /** Accessible name when the visible name repeats elsewhere (e.g. "Car, Insurance"). */
   label?: string
   /** In a data table: the row header's id (digital_accessibility.md, Tables). */
@@ -13,8 +15,9 @@ export function Expander({ open, onToggle, children, id, label, describedBy }: {
 }) {
   return (
     <button type="button" className="expander" id={id} aria-expanded={open} aria-label={label} aria-describedby={describedBy} onClick={onToggle}>
-      <span className="twisty" aria-hidden="true">{open ? '▾' : '▸'}</span>
+      {!iconEnd && <span className="twisty" aria-hidden="true">{open ? '▾' : '▸'}</span>}
       <span>{children}</span>
+      {iconEnd && <span className="twisty" aria-hidden="true">{open ? '▾' : '▸'}</span>}
     </button>
   )
 }

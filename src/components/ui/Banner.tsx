@@ -10,6 +10,11 @@ const ICONS: Record<BannerKind, ReactNode> = {
   success: <path d="M7 11v9H4v-9h3zM7 11l4-8c1.6 0 2.6 1.1 2.3 2.7L12.6 9H19a2 2 0 0 1 2 2.3l-1.2 7a2 2 0 0 1-2 1.7H7" />,
 }
 
+/** The decorative icon of a banner kind, for use beside other text (a warning line). */
+export const BannerIcon = ({ kind }: { kind: BannerKind }) => (
+  <svg className="banner-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">{ICONS[kind]}</svg>
+)
+
 /** Banner with an icon beside its title. Text is plain; announce the message with `announce`/`useAnnounce`, not a live role. */
 export function Banner({ kind, title, id, children }: { kind: BannerKind; title: string; id?: string; children?: ReactNode }) {
   return (

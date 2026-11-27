@@ -205,7 +205,7 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, rewardsEnable
               </label>
             )}
             {expandable
-              ? <Expander open={expanded.has(n.cat.id)} onToggle={() => toggleRow(n.cat.id)} id={domId('setup_expand', n)}
+              ? <Expander iconEnd open={expanded.has(n.cat.id)} onToggle={() => toggleRow(n.cat.id)} id={domId('setup_expand', n)}
                 label={say(n) === label ? undefined : say(n)} describedBy={nameId}>{label}</Expander>
               : <span>{label}</span>}
           </span>

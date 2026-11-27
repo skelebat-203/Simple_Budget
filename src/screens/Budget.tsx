@@ -56,13 +56,6 @@ export function Budget({ roots, items, range, onRangeChange, calendar, onChanged
       <h2 id="budget-heading" className="sr-only">Budget</h2>
       <div className="toolbar">
         <Toggle name="Range" options={RANGES} value={range} onChange={onRangeChange} />
-        {/* Estimates exist only in Week and Month, so the toggle shows only there (0004, roadmap v0.4). */}
-        {rangeHasEstimates(range) && (
-          <label className="check">
-            <input type="checkbox" checked={showEstimates} onChange={e => setShowEstimates(e.target.checked)} />
-            Show estimates
-          </label>
-        )}
       </div>
       <div className="date-row">
         <nav className="toolbar" aria-label="Date range">
@@ -86,6 +79,13 @@ export function Budget({ roots, items, range, onRangeChange, calendar, onChanged
             <Chevron dir="right" />
           </Button>
         </nav>
+        {/* Estimates exist only in Week and Month, so the toggle shows only there (0004, roadmap v0.4). At the right of the date row. */}
+        {rangeHasEstimates(range) && (
+          <label className="check">
+            <input type="checkbox" checked={showEstimates} onChange={e => setShowEstimates(e.target.checked)} />
+            Show estimates
+          </label>
+        )}
       </div>
       <BudgetTable date={anchor} roots={roots} items={items} range={range} showEstimates={showEstimates} calendar={calendar} onChanged={onChanged} pageHead />
       {range === 'annual' && <MiscBreakdown roots={roots} items={items} calendar={calendar} date={anchor} onChanged={onChanged} />}
