@@ -3,6 +3,7 @@
 import { strToU8 } from 'fflate'
 import type { Category } from '../../src/storage/db'
 import { readImportFile } from '../../src/import'
+import { readCsv } from '../../src/import/csv'
 import { ImportError, type Workbook } from '../../src/import/grid'
 import { buildPlan, type ImportOptions, type ImportPlan } from '../../src/import/plan'
 import { detect, sourceRows } from '../../src/import/sheets'
@@ -62,6 +63,55 @@ function sheetTotals(file: string, wb: Workbook, p: ImportPlan, check: Check) {
   })
 }
 
+/** Week and Day sheets (v0.7 step 14): dates, marks, descriptions, credits, and the cross-check between sheets (0013 §5). */
+async function weekDayChecks(check: Check, seeded: Category[], wbX: Workbook) {
+  const weekCsv = await read('test_csv_week.csv', readTestFile('test_csv_week.csv'))
+  const dayCsv = await read('test_csv_day.csv', readTestFile('test_csv_day.csv'))
+  const week = plan(weekCsv, seeded)
+  const day = plan(dayCsv, seeded)
+  const pathOf = (p: ImportPlan, x: ImportPlan['purchases'][number]) => p.rows.find(r => r.key === x.rowKey)?.target?.path
+
+  // Week sheet: each Act. cell is a purchase on its own day, with the year from the preview, and none is marked as undated.
+  check(week.purchases.length > 0 && week.purchases.every(p => p.date >= `${SHEET_YEAR}-09-10` && p.date <= `${SHEET_YEAR}-09-16`), 'week sheet: every purchase is dated within the sheet’s seven days')
+  check(week.summary.undated === 0, 'week sheet: no purchase is marked as undated')
+  check(week.purchases.some(p => p.amount < 0), 'week sheet: a negative cell is a negative purchase (a credit)')
+  check(week.purchases.every(p => !('minutes' in p)), 'week sheet: purchases have no time')
+  check(plan(weekCsv, seeded, { year: 2024 }).purchases.every(p => p.date.startsWith('2024-')), 'week sheet: the year comes from the preview')
+
+  // Day sheet: the date and times come from the file; a row that matches no item describes a purchase on the row above.
+  check(day.purchases.length === 5 && day.purchases.every(p => p.date === `${SHEET_YEAR}-09-12` && !p.undated && p.minutes != null), 'day sheet: five purchases on its own date, each with a time and none marked undated')
+  check(day.summary.total === 65.49, `day sheet: total is the sheet’s own ${day.summary.total}`)
+  const bakery = day.purchases.find(p => p.description === 'Bakery')
+  check(!!bakery && pathOf(day, bakery) === 'Expenses › Groceries' && bakery.amount === 12.25, 'day sheet: a row that matches no item is a description on the Groceries row')
+  check(day.purchases.some(p => p.description === 'Weekly shop' && p.amount === 61.5) && day.purchases.some(p => p.amount === -32), 'day sheet: row names kept as descriptions; the negative row is a credit')
+
+  // The sample Week and Day sheets share no row and day, so importing both warns about nothing.
+  const both = (dayFix: (csv: string) => string, weekBook: Workbook = weekCsv): Workbook => ({
+    format: 'csv',
+    sheets: [...weekBook.sheets, ...readSync(dayFix(new TextDecoder().decode(readTestFile('test_csv_day.csv'))))],
+  })
+  const twice = (p: ImportPlan) => p.rows.filter(r => r.warnings.some(w => w.includes('may count them twice'))).map(r => r.name.replace(/\s*\(.*/, ''))
+  check(twice(plan(both(c => c, weekCsv), seeded)).length === 0, 'week and day sheets on different days of one file: no overlap warning')
+
+  // A Day sheet moved onto a day the Week sheet also has: both sheets' rows for the shared items warn; others don't.
+  const same = twice(plan(both(c => c.replace('09/12/2023', '09/11/2023')), seeded))
+  check(same.filter(n => n === 'Coffee Shops').length === 2 && same.includes('Weekly shop') && same.includes('Bakery') && same.includes('Groceries'),
+    `week and day sheets on one day: each shared row warns in both sheets (${same.join(', ')})`)
+  check(!same.some(n => /Pet Stuff|Shoes|Gas|Eat Food Out/.test(n)), 'rows with nothing on that day in the other sheet do not warn')
+  const text = plan(both(c => c.replace('09/12/2023', '09/11/2023')), seeded).rows.flatMap(r => r.warnings).find(w => w.includes('may count them twice')) ?? ''
+  check(/^test_csv_(week|day)\.csv also has .+ purchases in these dates\./.test(text), `the warning names the other sheet and the row (“${text}”)`)
+  check(twice(plan(both(c => c.replace('09/12/2023', '09/11/2023')), seeded, { excludedSheets: [1] })).length === 0, 'an unticked sheet is not compared')
+  check(plan(both(c => c.replace('09/12/2023', '09/11/2023')), seeded).summary.purchases === week.summary.purchases + day.summary.purchases, 'the warning does not remove purchases')
+
+  // A Month sheet's undated purchases stand for their whole week: a Day sheet inside that week warns.
+  const sep = wbX.sheets.find(s => /^Sep/i.test(s.name.trim()))!
+  const monthDay = twice(plan({ format: 'csv', sheets: [sep, ...readSync(new TextDecoder().decode(readTestFile('test_csv_day.csv')))] }, seeded))
+  check(monthDay.length > 0, `a Month sheet and a Day sheet inside one of its weeks warn (${monthDay.join(', ')})`)
+}
+
+/** Reads CSV text into its sheets, for building a workbook from parts. */
+const readSync = (csv: string) => [readCsv(csv, 'test_csv_day.csv')]
+
 /** Cells of one row, holes as null, for comparing. */
 const wbRow = (wb: Workbook, r: number, sheet = 0) => Array.from(wb.sheets[sheet]?.rows[r] ?? [], c => c ?? null)
 
@@ -98,6 +148,7 @@ export async function run(check: Check) {
     const fromCsv = plan(await read(csv, readTestFile(csv)), seeded)
     check(`${fromCsv.summary.purchases} ${fromCsv.summary.total.toFixed(2)}` === sheetTotal(wb, name), `${csv} matches its XLSX sheet (${sheetTotal(wb, name)})`)
   }
+  await weekDayChecks(check, seeded, wbX)
 
   // The ODS copy of the XLSX workbook gives the same result, sheet by sheet and as a whole.
   const wbO = await read('test_ods_import_data.ods', readTestFile('test_ods_import_data.ods'))

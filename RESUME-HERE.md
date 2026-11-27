@@ -4,7 +4,7 @@ Tracking file for current work status. Roadmap authority: `docs/design/0003-road
 Design: `0015-sync-design.md` (sync), `0004-table-design.md` (table), `0006-prototype.html` (v0.2 UI), `0007-v0.3-design-updates.md` (v0.3 changes), `0008-v0.5-design-updates.md` (v0.5 changes), `0009-v0.6-design-updates.md` (v0.6), `0012-design-standards.md` (standards), `0014` (Annual Misc breakdown). Higher-numbered doc wins on conflict.
 
 ## Current version
-v0.7.0 (v0.6 complete 2026-11-21, v0.6.0 to v0.6.37; reports: `docs/audits/a11y/a11y-v0.6.md`, `docs/audits/security/security-v0.6.md`). Step 1 ✅ (v0.7.1 to v0.7.3). Step 2 ✅ (v0.7.4). Step 3 ✅ (v0.7.5 to v0.7.10). Step 3b ✅ (v0.7.12 to v0.7.17). Group A2 (steps 4, 5, 7) ✅ (v0.7.19 to v0.7.25). Group B (steps 6, 8, 9, 12, 13) ✅ (v0.7.27 to v0.7.39). Mobile testing to check: long tables (sticky header, collapsed start; `0007` §10 change). Group C (steps 10, 11b, 11) ✅ (v0.7.40 to v0.7.44). Group T (steps 15c, 15d, 15e, 15f) ✅ (v0.7.47 to v0.7.62; passed by the human 2026-11-26). Next: group D (import regression, step 14).
+v0.7.0 (v0.6 complete 2026-11-21, v0.6.0 to v0.6.37; reports: `docs/audits/a11y/a11y-v0.6.md`, `docs/audits/security/security-v0.6.md`). Step 1 ✅ (v0.7.1 to v0.7.3). Step 2 ✅ (v0.7.4). Step 3 ✅ (v0.7.5 to v0.7.10). Step 3b ✅ (v0.7.12 to v0.7.17). Group A2 (steps 4, 5, 7) ✅ (v0.7.19 to v0.7.25). Group B (steps 6, 8, 9, 12, 13) ✅ (v0.7.27 to v0.7.39). Mobile testing to check: long tables (sticky header, collapsed start; `0007` §10 change). Group C (steps 10, 11b, 11) ✅ (v0.7.40 to v0.7.44). Group T (steps 15c, 15d, 15e, 15f) ✅ (v0.7.47 to v0.7.62; passed by the human 2026-11-26). Step 15b ✅ (v0.7.64, v0.7.65). Group D (step 14) ✅ (v0.7.66). Built on branch `v0.7-redirect-sign-in` (worktree `.worktrees/v0.7-redirect-sign-in`); waiting on: the update popup Changes list, then the human's merge approval. Next: the reviews (steps 16 to 18).
 
 ## v0.7 plan of action
 Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per completed-work commit; trailer `Plan-Step: v0.7/N`). The final step bumps to the next minor version (v0.8.0). UI steps need human approval (`0005-ui-ux-review-checklist.md`). Baseline: v0.7.0. Data: Dexie v8 (`src/storage/structure.ts`). Testing: headless Chromium (`tools/browsers/`, `lighthouse-sandbox.md`); import harness `npm run test:import` (`tests/import/README.md`).
@@ -135,6 +135,7 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
     - Files: `tests/import/`, `src/import/`
     - Verify: `npm run test:import`
     - Deps: none
+    - Progress (v0.7.66): Week and Day regression checks added (dates, marks, year, times, descriptions, credits). Gap filled (human, 2026-11-26, option A): two included sheets that cover the same days and give purchases to the same row each get a warning in the preview, nothing removed (`0013` §6). `test:import` passes (332 checks). **Step 14 ✅ (v0.7.66).**
 15. ~~**Charts** (v0.7/15)~~ — moved to v0.8 (human, 2026-11-22).
 15b. **D004 hardened-browser sign-in** (v0.7/15b) — redirect sign-in so sync works in Firefox Strict, Brave and similar (`docs/defects/D004-hardened-firefox-sign-in.md`). Does not block the alpha launch (human, 2026-11-22).
     - Files: `src/storage/sync/googleSheets.ts`, `src/components/Sync.tsx`; an Authorized redirect URI in the Google Cloud console (human)
@@ -178,7 +179,7 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
 - **D004** (step 15b) and **D005/D006** (step 15c): after F, before the reviews.
 - **T — Tester feedback** (steps 15c, 15d, 15e, 15f): built and passed 2026-11-26 (v0.7.47 to v0.7.62).
 - **Reviews** (steps 16–18): main session with the user.
-- Status: ✅ A · ✅ F · ✅ A2 · ✅ B · ✅ C · ✅ T · ☐ D · ✅ 15b (D004) · ~~E~~ · ☐ reviews
+- Status: ✅ A · ✅ F · ✅ A2 · ✅ B · ✅ C · ✅ T · ✅ D · ✅ 15b (D004) · ~~E~~ · ☐ reviews
 
 ### Session process
 Run option 1: one session per group, fresh start at each group boundary. A session starts by reading this file and the roadmap, then:

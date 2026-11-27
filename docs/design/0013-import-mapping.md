@@ -84,6 +84,8 @@ Things in the files the importer must handle:
 
 Importing the same sheet twice would double the amounts. **Decided:** before writing, the preview counts how many purchases already exist for the same item in the same date range and warns; the user can choose "Skip those items" (**closed, Q6**).
 
+**Sheets in the same file (v0.7 step 14, decided 2026-11-26: warning only).** A Day or Week sheet can cover days that another included sheet also covers. When two included sheets give purchases to the same row and their days overlap, each of the two rows gets a warning ("{other sheet} also has {row} purchases in these dates. Importing both may count them twice."). A purchase with a date in the file stands for that day; one without a date stands for the week (Month sheet) or month (Annual sheet) it was placed in. Two Month sheets, or a Month and an Annual sheet, are not compared here (the Annual sheet has its own rule, Q7). Nothing is removed: the user unticks a sheet if it is a copy.
+
 ## 7. Annual sheet and the Misc. Breakdown table
 
 The annual sheet repeats what the month sheets hold, so importing both would double every amount. **Decided 2026-11-11:** when a file has a month sheet and the annual sheet for the same month, the preview flags it and the user chooses which to use for that month.

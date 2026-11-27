@@ -251,6 +251,19 @@ function yearBounds(today: Date) {
 
 const SEP = ' — '
 const describe = (...parts: (string | undefined)[]) => cleanDescription(parts.filter(Boolean).join(SEP)) || undefined
+/** Sheet kinds whose purchases carry dates from the file; the cross-check compares them with every other sheet. */
+const DATED_KINDS = new Set<SheetKind>(['day', 'week'])
+const DAYS_PER_WEEK = 7
+
+/** The days a purchase stands for: its own date, or the week (month sheet) or month (annual sheet) it was placed in when the file had no date. */
+function spanOf(p: PlannedPurchase, kind: SheetKind): [string, string] {
+  if (!p.undated) return [p.date, p.date]
+  if (kind === 'annual') return [p.date, monthEnd(Number(p.date.slice(0, 4)), Number(p.date.slice(5, 7)))]
+  const end = new Date(`${p.date}T00:00:00Z`)
+  end.setUTCDate(end.getUTCDate() + DAYS_PER_WEEK - 1)
+  return [p.date, end.toISOString().slice(0, 10)]
+}
+
 export const money = (n: number) => `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 const cents = (n: number) => Math.round(n * 100)
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
@@ -534,6 +547,28 @@ export function buildPlan(wb: Workbook, snap: Snapshot, opts: ImportOptions = {}
     const mine = finalPurchases.filter(p => p.rowKey === row.key)
     row.purchases = mine.length
     row.total = mine.reduce((t, p) => t + cents(p.amount), 0) / 100
+  }
+
+  // ----- two sheets that cover the same days (a Day or Week sheet with another sheet; a warning only) -----
+  const rowOf = new Map(rows.map(r => [r.key, r]))
+  const byRow = new Map<number, PlannedPurchase[]>()
+  for (const p of finalPurchases) byRow.set(p.categoryId, [...(byRow.get(p.categoryId) ?? []), p])
+  const noted = new Set<string>()
+  for (const list of byRow.values()) {
+    for (let i = 0; i < list.length; i++) for (let j = i + 1; j < list.length; j++) {
+      const [a, b] = [list[i], list[j]]
+      const [sa, sb] = [sheetOf.get(Number(a.rowKey.split(':')[0]))!, sheetOf.get(Number(b.rowKey.split(':')[0]))!]
+      if (sa.index === sb.index || !(DATED_KINDS.has(sa.kind) || DATED_KINDS.has(sb.kind))) continue
+      const [aSpan, bSpan] = [spanOf(a, sa.kind), spanOf(b, sb.kind)]
+      if (aSpan[0] > bSpan[1] || bSpan[0] > aSpan[1]) continue
+      for (const [x, other] of [[a, sb], [b, sa]] as const) {
+        const key = `${x.rowKey}|${other.index}`
+        if (noted.has(key)) continue
+        noted.add(key)
+        const row = rowOf.get(x.rowKey)
+        row?.warnings.push(`${other.name.trim()} also has ${row.target?.path ?? 'this row'} purchases in these dates. Importing both may count them twice.`)
+      }
+    }
   }
 
   // ----- what gets created and selected -----
