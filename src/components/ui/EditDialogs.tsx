@@ -4,6 +4,8 @@ import { Dialog } from './Dialog'
 import { AmountField } from './AmountField'
 import { DatePicker } from './DatePicker'
 import { Input } from './Input'
+import { BannerIcon } from './Banner'
+import { InfoButton } from './InfoButton'
 import { useAnnounce } from './announcer'
 import { cleanDescription, expandName, DESCRIPTION_MAX, moneyError, NAME_MAX, parseAmount } from '../../budget/validate'
 
@@ -11,11 +13,11 @@ import { cleanDescription, expandName, DESCRIPTION_MAX, moneyError, NAME_MAX, pa
 export type SaveResult = string | void
 
 /** A field: label, help, control, error, in that order (0012 §4). Required fields show `*` (G5). */
-function Field({ id, label, error, help, required, children }: { id: string; label: string; error?: string; help?: string; required?: boolean; children: ReactNode }) {
+function Field({ id, label, error, help, warn, required, children }: { id: string; label: string; error?: string; help?: string; /** A warning: shown with a warning icon before the text. */ warn?: boolean; required?: boolean; children: ReactNode }) {
   return (
     <div className={help ? 'field' : 'field field-align'}>
       <label className="label" htmlFor={id}>{label}{required && <span aria-hidden="true"> *</span>}</label>
-      {help && <p id={`${id}-help`} className="help">{help}</p>}
+      {help && <p id={`${id}-help`} className={warn ? 'help help-warn' : 'help'}>{warn && <BannerIcon kind="warn" />}<span>{help}</span></p>}
       {children}
       {error && <p id={`${id}-error_msg`} className="error">{error}</p>}
     </div>
@@ -125,7 +127,7 @@ export function UpdateDialog({ id, spoken, name, amount, moves, onSave, onDelete
     <Dialog id={id} title={`Update ${spoken}`} className="update-dialog" onClose={onCancel}
       form={{ submitLabel: 'Save', onSubmit: submit, error: saver.error, busy: saver.busy, endButton: onDelete && <Button type="button" className="danger" onClick={onDelete}>Delete</Button> }}>
       {name !== undefined && (
-        <Field id={nameId} label="Name" error={errors.name} help={RENAME_WARNING} required>
+        <Field id={nameId} label="Name" error={errors.name} help={RENAME_WARNING} warn required>
           <Input id={nameId} maxLength={NAME_MAX} value={nameText} autoComplete="off" spellCheck aria-required="true"
             aria-invalid={!!errors.name || undefined} aria-describedby={describe(nameId, errors.name, true)}
             onChange={e => setNameText(e.target.value)} />
@@ -139,8 +141,8 @@ export function UpdateDialog({ id, spoken, name, amount, moves, onSave, onDelete
         </Field>
       )}
       {moves && moves.length > 1 && (
-        <Field id={moveId} label="Move to" help="A subcategory moved into another becomes an item; an item moved to a category becomes a subcategory.">
-          <select id={moveId} className="input" value={move} aria-describedby={`${moveId}-help`} onChange={e => setMove(e.target.value)}>
+        <Field id={moveId} label="Move to">
+          <select id={moveId} className="input" value={move} onChange={e => setMove(e.target.value)}>
             {moves.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
           </select>
         </Field>
@@ -149,16 +151,17 @@ export function UpdateDialog({ id, spoken, name, amount, moves, onSave, onDelete
   )
 }
 
+/** The Amount info text, the same as the Add purchase form's. */
+const AMOUNT_HELP = 'Use a minus sign for a credit or refund, e.g. -12.50. You can add or subtract, e.g. 12.50+3.'
+
 /**
- * New purchase (0009 §4.1; Week and Month Actions menu): an amount, a date within the period
- * shown, and a description. Amounts accept typed sums.
+ * New purchase (0009 §4.1; Week and Month Actions menu): an amount, a description and a date within
+ * the period shown, laid out like the Add purchase form. Amounts accept typed sums.
  */
-export function AmountDialog({ id, title, spoken, intro, dateField, onSave, onCancel }: {
+export function AmountDialog({ id, title, spoken, dateField, onSave, onCancel }: {
   id: string
   title: string
   spoken: string
-  /** Help for the Amount field, shown between its label and the box. */
-  intro: string
   /** A date picker limited to min..max (the period being viewed, 0009 §4.1). */
   dateField: { initial: string; min: string; max: string }
   onSave: (amount: number, description: string, date: string) => SaveResult | Promise<SaveResult>
@@ -172,6 +175,7 @@ export function AmountDialog({ id, title, spoken, intro, dateField, onSave, onCa
   const saver = useSaver()
   const fieldId = `${id}-amount`
   const dateId = `${id}-date`
+  const descId = `${id}-description`
   async function submit() {
     const r = parseAmount(value, { allowNegative: true })
     if (!r.ok) {
@@ -191,20 +195,32 @@ export function AmountDialog({ id, title, spoken, intro, dateField, onSave, onCa
   return (
     <Dialog id={id} title={title} className="amount-dialog" onClose={onCancel}
       form={{ submitLabel: 'Save', onSubmit: submit, error: saver.error, busy: saver.busy }}>
-      <Field id={fieldId} label="Amount" error={fieldError} help={intro} required>
+      {/* Same fields, order and info buttons as the Add purchase form (PurchaseForm). */}
+      <div className="field">
+        <div className="label-row">
+          <label className="label" htmlFor={fieldId}>Amount <span aria-hidden="true">*</span></label>
+          <InfoButton id={`${fieldId}-help`} name="Amount">{AMOUNT_HELP}</InfoButton>
+        </div>
         <AmountField id={fieldId} className="amount" allowNegative value={value} aria-required="true"
           aria-invalid={!!fieldError || undefined} aria-describedby={describe(fieldId, fieldError, true)}
           onChange={e => setValue(e.target.value)} />
-      </Field>
-      <Field id={dateId} label="Date" error={dateError} help={dateField.min === dateField.max ? `The day shown, ${dateField.min}.` : `From ${dateField.min} to ${dateField.max}.`} required>
-        <DatePicker id={dateId} value={date} min={dateField.min} max={dateField.max} aria-required="true"
-          aria-invalid={!!dateError || undefined} aria-describedby={[dateError && `${dateId}-error_msg`, `${dateId}-help`].filter(Boolean).join(' ')}
-          onChange={e => setDate(e.target.value)} />
-      </Field>
-      <Field id={`${id}-description`} label="Description" help={`Up to ${DESCRIPTION_MAX} characters.`}>
-        <Input id={`${id}-description`} maxLength={DESCRIPTION_MAX} value={description} autoComplete="off" aria-describedby={`${id}-description-help`}
+        {fieldError && <p id={`${fieldId}-error_msg`} className="error">{fieldError}</p>}
+      </div>
+      <div className="field">
+        <div className="label-row">
+          <label className="label" htmlFor={descId}>Description</label>
+          <InfoButton id={`${descId}-help`} name="Description">Up to {DESCRIPTION_MAX} characters.</InfoButton>
+        </div>
+        <Input id={descId} maxLength={DESCRIPTION_MAX} value={description} autoComplete="off" aria-describedby={`${descId}-help`}
           onChange={e => setDescription(e.target.value)} />
-      </Field>
+      </div>
+      <div className="field">
+        <div className="label-row"><label className="label" htmlFor={dateId}>Date <span aria-hidden="true">*</span></label></div>
+        <DatePicker id={dateId} value={date} min={dateField.min} max={dateField.max} aria-required="true"
+          aria-invalid={!!dateError || undefined} aria-describedby={dateError ? `${dateId}-error_msg` : undefined}
+          onChange={e => setDate(e.target.value)} />
+        {dateError && <p id={`${dateId}-error_msg`} className="error">{dateError}</p>}
+      </div>
     </Dialog>
   )
 }

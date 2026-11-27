@@ -261,6 +261,10 @@ try {
     await pick(rowMenu, 'Update')
     const up = (await openIds()).at(-1)
     check('Update: opens with Name, Total and Move to', up === 'budget-update' && await page.evaluate(() => ['budget-update-name', 'budget-update-amount', 'budget-update-move_to'].every(i => !!document.getElementById(i))))
+    check('Update: no supporting text under Move to; the Name warning has an icon', await page.evaluate(() => !document.getElementById('budget-update-move_to-help') && !!document.querySelector('#budget-update-name-help .banner-icon')))
+    await page.mouse.click(2, 2); await settle()
+    check('Update: a click outside the dialog closes it', !(await openIds()).includes('budget-update'), JSON.stringify(await openIds()))
+    await pick(rowMenu, 'Update')
     await page.evaluate(() => [...document.querySelectorAll('#budget-update button')].find(b => b.textContent.trim() === 'Delete')?.click()); await settle()
     const confirmId = (await openIds()).at(-1)
     check('confirm: Delete opens a confirmation', confirmId === 'budget-delete', JSON.stringify(await openIds()))
@@ -278,7 +282,20 @@ try {
     check('Update: a new total is saved and announced', /^Updated Groceries: set the total for Week of .* to 20\.00\.$/.test(await said()), await said())
     check('Update: focus returns to the Actions button', (await activeId()) === rowMenu, `active: ${await activeId()}`)
     check('Update: the Week total shows 20.00', await page.evaluate(i => document.getElementById(i)?.closest('tr')?.textContent.includes('20.00') ?? false, rowMenu))
+
+    // New purchase: the Add purchase form's order (Amount, Description, Date) and info buttons (none on Date).
+    await pick(rowMenu, 'New purchase')
+    const np = await page.evaluate(() => {
+      const d = document.getElementById('budget-new'); if (!d) return null
+      return { order: [...d.querySelectorAll('.field label')].map(l => l.textContent.replace('*', '').trim()).join(), info: [...d.querySelectorAll('.field')].map(f => !!f.querySelector('.info-button')).join(), help: [...d.querySelectorAll('.help')].length }
+    })
+    check('New purchase: Amount, Description, Date; info buttons on the first two only', !!np && np.order === 'Amount,Description,Date' && np.info === 'true,true,false' && np.help === 0, JSON.stringify(np))
+    await press('Escape')
   }
+  // Week table: the expand button follows the name, and Show estimates sits at the right of the date row.
+  check('Week table: the expand button comes after the name', await page.evaluate(() => { const l = document.querySelector('#tabpanel-budget .budget-table .name-line:has(.chevron)'); return !!l && l.querySelector('.name-link')?.compareDocumentPosition(l.querySelector('.chevron')) === Node.DOCUMENT_POSITION_FOLLOWING }))
+  check('Budget tables: no caption; each is named by a heading', await page.evaluate(() => [...document.querySelectorAll('table.budget-table')].every(t => !t.querySelector('caption') && (t.getAttribute('aria-labelledby') ?? '').split(' ').some(i => /^H[1-6]$/.test(document.getElementById(i)?.tagName ?? '')))))
+  check('Week: Show estimates is in line with the table heading, at the right', await page.evaluate(() => { const h = document.querySelector('#tabpanel-budget .table-heading'); const t = h?.querySelector('.table-title')?.getBoundingClientRect(); const c = h?.querySelector('.check')?.getBoundingClientRect(); return !!t && !!c && Math.abs((t.top + t.bottom) / 2 - (c.top + c.bottom) / 2) < 4 && h.getBoundingClientRect().right - c.right < 40 }))
 
   // A table dialog: highlight, with New purchase stacked on top of it.
   const nameId = await page.evaluate(() => document.querySelector('button.name-link')?.id ?? '')
@@ -394,7 +411,17 @@ try {
     await clickId(narrowMenu)
     check('375px: Actions menu inside the window', await menuInWindow(narrowMenu))
     await press('Escape')
+    await pick(narrowMenu, 'Update')
+    const halves = d => page.evaluate(id => { const b = [...document.querySelectorAll(`#${id} .dialog-actions .actions .btn`)].map(x => Math.round(x.getBoundingClientRect().width)); const a = document.querySelector(`#${id} .dialog-actions .actions`)?.getBoundingClientRect().width ?? 0; return { b, a: Math.round(a) } }, d)
+    const upHalves = await halves('budget-update')
+    check('375px: Update, Cancel and Save take half the row each', upHalves.b.length === 2 && Math.abs(upHalves.b[0] - upHalves.b[1]) <= 1 && upHalves.b[0] * 2 + 20 >= upHalves.a - 2, JSON.stringify(upHalves))
+    await press('Escape')
+    await clickId('help-button'); await settle()
+    const wizHalves = await halves('onboarding')
+    check('375px: wizard, Cancel and Next take half the row each', wizHalves.b.length === 2 && Math.abs(wizHalves.b[0] - wizHalves.b[1]) <= 1 && wizHalves.b[0] * 2 + 20 >= wizHalves.a - 2, JSON.stringify(wizHalves))
+    await press('Escape'); await settle()
   }
+  check('375px: Show estimates wraps under the table heading', await page.evaluate(() => { const t = document.querySelector('#tabpanel-budget .table-title')?.getBoundingClientRect(); const c = document.querySelector('#tabpanel-budget .table-heading .check')?.getBoundingClientRect(); return !!t && !!c && c.top >= t.bottom - 1 }))
 
   // Update popup (2026-11-26): opens on the first open after an update, once per update (the version is kept per device).
   const reopen = async seen => {

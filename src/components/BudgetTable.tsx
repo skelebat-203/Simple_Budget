@@ -45,7 +45,11 @@ const charityText = (n: number) => n ? ` Your ${n} Charity purchase${n === 1 ? '
  * Week and Month have an Actions column (New purchase, Update); Annual renames with a pencil only
  * (0009 §4); the Day table (under Add purchase) lists today's purchases with an Update button each.
  */
-export function BudgetTable({ roots, items, range, showEstimates: wantEstimates, calendar, date, idBase = 'budget', preview = false, highlight = false, allRoots, onChanged, onMoved, pageHead = false }: {
+export function BudgetTable({ roots, items, range, showEstimates: wantEstimates, calendar, date, idBase = 'budget', preview = false, highlight = false, allRoots, onChanged, onMoved, pageHead = false, headingExtra, headingLevel = 3 }: {
+  /** A control shown at the right of the table heading (below it on phones). */
+  headingExtra?: ReactNode
+  /** The level of the table's heading (the period shown): one below the heading it sits under. */
+  headingLevel?: 3 | 4
   /** Highlight dialog: a row moved under these rows; the main table opens them (v0.7 step 11). */
   onMoved?: (ids: number[]) => void
   roots: CatNode[]
@@ -368,10 +372,10 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
         <th scope="row" id={rowId(n)} className={`name clr-${n.cat.color}`}>
           <span className="name-line">
             {plain ? <span>{label}</span> : <>
-              {expandable(n) && <Chevron open={open} onToggle={() => toggle(n.cat.id)} id={did('expand', n)} label={say(n)} describedBy={rowId(n)} />}
               <button type="button" className="name-link" id={did('name', n)} aria-haspopup="dialog"
                 aria-label={say(n) === label ? undefined : say(n)} aria-describedby={rowId(n)}
                 onClick={() => setHl({ id: n.cat.id })}>{label}</button>
+              {expandable(n) && <Chevron open={open} onToggle={() => toggle(n.cat.id)} id={did('expand', n)} label={say(n)} describedBy={rowId(n)} />}
             </>}
             {renameControls(n)}
           </span>
@@ -440,7 +444,6 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
         return <RenameDialog id={id} spoken={say(n)} name={n.cat.name} onSave={name => saveRename(n, name)} onCancel={close} />
       case 'new':
         return <AmountDialog id={id} title={`New purchase for ${say(n)}`} spoken={say(n)} dateField={{ initial: addDate, min: span.from, max: span.to }}
-          intro={`Adds a purchase to ${say(n)}. Use a minus sign for a refund, or type a sum, e.g. 12.50+3.`}
           onSave={(amount, description, date) => saveNew(n, amount, description, date)} onCancel={close} />
       case 'update': {
         const moves = n.parent ? [{ value: '', label: `Keep in ${pathLabel(n.parent)}` }, ...moveChoices(n).map(x => ({ value: String(x.cat.id), label: pathLabel(x) }))] : undefined
@@ -468,14 +471,15 @@ export function BudgetTable({ roots, items, range, showEstimates: wantEstimates,
   }
 
   const colSpan = showEstimates ? 2 : 1
+  const Heading = headingLevel === 4 ? 'h4' : 'h3'
   return (
     <div className="table-wrap">
+      <div className="table-heading"><Heading id={`${idBase}-caption`} className="table-title">{title}</Heading>{headingExtra}</div>
       {/* Only the table scrolls sideways (v0.4 review); no help text under it (v0.7 step 8). */}
       {/* A read-only table has no controls, so its scroll box takes focus to scroll by keyboard in every browser (v0.7 step 12). */}
       <div className={`table-box${pageHead ? ' page-head' : ''}`} {...(preview ? { tabIndex: 0, role: 'region', 'aria-labelledby': `${idBase}-heading` } : {})}>
         <table className={`table budget-table${day ? ' day-table' : ''}`} aria-labelledby={highlight ? `${idBase}-caption` : `${idBase}-heading ${idBase}-caption`}
           ref={gridRef} role={plain ? undefined : 'treegrid'}>
-          <caption id={`${idBase}-caption`}>{title}</caption>
           <thead>
             {!day && range !== 'annual' && showEstimates && (
               <tr>

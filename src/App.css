@@ -137,7 +137,6 @@
 /* --- Tables (docs/design/0004-table-design.md) --- */
 .table-box { overflow-x: auto; display: flex; flex-direction: column; gap: var(--space-sm); }
 .table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
-.table caption { text-align: left; font-weight: var(--font-weight-bold); padding-bottom: var(--space-sm); }
 .table th, .table td { padding: var(--space-sm); border-bottom: var(--border-thin) solid var(--color-border); text-align: right; white-space: nowrap; }
 .table thead th { font-size: var(--font-size-sm); background: color-mix(in srgb, var(--color-background-page), black var(--tint-header)); }
 .table .name { text-align: left; font-weight: var(--font-weight-normal); }
@@ -678,6 +677,19 @@ nav.toolbar .btn.icon { flex: none; }
 /* --- Sync placement (v0.7 step 3b) --- */
 /* Budget screen: date controls left, Sync right (from 640px; narrower, Sync sits beside the Screens button). */
 .date-row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-md); flex-wrap: wrap; }
+/* A warning line: the icon is the text's height and color. */
+.help-warn { display: flex; align-items: flex-start; gap: var(--space-xs); }
+.help-warn .banner-icon { width: 1em; height: 1em; margin-top: calc((var(--line-height-help) - 1) / 2 * 1em); color: inherit; }
+/* Table heading with a control at the right (Show estimates); under the heading on phones. */
+.table-heading { display: flex; align-items: center; justify-content: space-between; gap: var(--space-sm); padding-bottom: var(--space-sm); }
+.table-title { margin: 0; font-size: inherit; font-weight: var(--font-weight-bold); min-width: 0; overflow-wrap: anywhere; }
+@media (max-width: 639.98px) {
+  .table-heading { flex-direction: column; align-items: flex-start; gap: 0; }
+  /* Cancel and the main button share the row, half each (the wizard, Update). Delete and Advanced options keep their own size, at the right. */
+  .dialog.onboarding .dialog-actions, .dialog.update-dialog .dialog-actions { justify-content: flex-end; }
+  .dialog.onboarding .dialog-actions > .actions, .dialog.update-dialog .dialog-actions > .actions { flex: 1 1 100%; }
+  .dialog.onboarding .dialog-actions > .actions .btn, .dialog.update-dialog .dialog-actions > .actions .btn { flex: 1 1 0; }
+}
 .menu-row { display: flex; align-items: center; gap: var(--space-md); flex-wrap: wrap; }
 /* Wizard sync tabs: New Budget / Existing Budget. */
 .wizard-sync { display: flex; flex-direction: column; margin-top: var(--space-md); }
