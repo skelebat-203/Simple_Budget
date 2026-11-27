@@ -114,6 +114,21 @@ try {
   }))
   await clickId('tab-add')
 
+  // The version shows at the top of the app.
+  check('Version: shown at the top as vN.N.N', await page.evaluate(() => /^v\d+\.\d+\.\d+$/.test(document.getElementById('app-version')?.textContent ?? '')))
+  // Add purchase: Item Search has no help; Amount and Description have info buttons that open a floating note (2026-11-26).
+  check('Add purchase: Item Search label, no supporting text', await page.evaluate(() => document.querySelector('label[for=item]')?.textContent.trim().startsWith('Item Search') && !document.getElementById('item-help')))
+  const infoState = name => page.evaluate(n => document.querySelector(`#tabpanel-add button[aria-label="${n} help"]`)?.getAttribute('aria-expanded'), name)
+  const infoOpen = () => page.evaluate(() => document.querySelectorAll('#tabpanel-add .info-note').length)
+  check('Info: closed by default; the text stays in the page for screen readers', (await infoState('Amount')) === 'false' && await page.evaluate(() => !!document.getElementById('amount-help')?.textContent && document.getElementById('amount')?.getAttribute('aria-describedby')?.includes('amount-help')))
+  await page.evaluate(() => document.querySelector('#tabpanel-add button[aria-label="Amount help"]').click()); await settle()
+  check('Info: the button opens the note', (await infoState('Amount')) === 'true' && (await infoOpen()) === 1)
+  await press('Escape')
+  check('Info: Escape closes the note only', (await infoState('Amount')) === 'false' && (await infoOpen()) === 0 && (await openIds()).length === 0)
+  await page.evaluate(() => document.querySelector('#tabpanel-add button[aria-label="Description help"]').click()); await settle()
+  await page.evaluate(() => document.getElementById('amount').focus()); await page.mouse.click(5, 5); await settle()
+  check('Info: pressing outside closes the note', (await infoOpen()) === 0)
+
   // Wizard steps (v0.7 step 3b): sync first, the count follows the path.
   const stepText = () => page.evaluate(() => document.getElementById('onboarding-step')?.textContent ?? '')
   await clickId('help-button')

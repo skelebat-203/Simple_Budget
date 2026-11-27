@@ -347,18 +347,17 @@ body { background: color-mix(in srgb, var(--color-primary-background), white var
 
 /* --- Multi-column forms (v0.4 step 11, 0007 §10) ---
    Grid auto-placement keeps the visual order the same as the DOM (reading/tab) order.
-   Add purchase: two columns from 640px (human, 2026-11-22). Each field is a subgrid of four rows
-   (label, help, control, error), so labels, help and controls line up across a row even when the
-   help text wraps to different lengths; a field with no help leaves its help row empty. */
+   Add purchase: two columns from 640px (human, 2026-11-22). Each field is a subgrid of three rows
+   (label row, control, error), so labels and controls line up across a row. Help text is in the
+   info button on the label row (v0.7 step 15e). */
 .form-grid { display: flex; flex-direction: column; gap: var(--space-md); }
 .form-grid.setup-settings { gap: var(--space-lg); }
 @media (min-width: 640px) {
   .form-grid:not(.setup-settings):not(.purchase-dialog *) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-md) var(--space-lg); align-items: start; }
-  .form-grid:not(.setup-settings):not(.purchase-dialog *) > .field { grid-row: span 4; display: grid; grid-template-rows: subgrid; row-gap: var(--space-xs); }
-  .form-grid:not(.setup-settings):not(.purchase-dialog *) > .field > * { grid-row: 3; }
-  .form-grid:not(.setup-settings):not(.purchase-dialog *) > .field > .label { grid-row: 1; margin-bottom: 0; }
-  .form-grid:not(.setup-settings):not(.purchase-dialog *) > .field > .help { grid-row: 2; }
-  .form-grid:not(.setup-settings):not(.purchase-dialog *) > .field > .error { grid-row: 4; }
+  .form-grid:not(.setup-settings):not(.purchase-dialog *) > .field { grid-row: span 3; display: grid; grid-template-rows: subgrid; row-gap: var(--space-xs); }
+  .form-grid:not(.setup-settings):not(.purchase-dialog *) > .field > * { grid-row: 2; }
+  .form-grid:not(.setup-settings):not(.purchase-dialog *) > .field > .label-row { grid-row: 1; }
+  .form-grid:not(.setup-settings):not(.purchase-dialog *) > .field > .error { grid-row: 3; }
 }
 @media (min-width: 1280px) {
   .form-grid.setup-settings { display: grid; grid-template-columns: minmax(var(--size-column-min), auto) minmax(0, 1fr) auto; gap: var(--space-md) var(--space-lg); align-items: start; }
@@ -469,9 +468,24 @@ nav.toolbar .btn.icon { flex: none; }
 /* --- Help button and onboarding (0008 §8) --- */
 .title-row { display: flex; align-items: center; gap: var(--space-md); }
 .title-row .title { margin: 0; }
+.title-row .version { margin-inline-start: auto; font-size: var(--font-size-sm); color: var(--color-text-description); }
 .help-btn { width: var(--size-touch); height: var(--size-touch); border-radius: var(--radius-pill); border: var(--border-medium) solid var(--color-primary-background); background: var(--color-background-page);
   color: var(--color-primary-background); font: inherit; font-weight: var(--font-weight-bold); font-size: var(--font-size-lg); cursor: pointer; }
 .help-btn:hover { background: var(--color-border); }
+/* Info button beside a field label and its floating note (v0.7 step 15e; mockup v0.7-info-buttons Option B). */
+/* Every label row is as tall as one with an info button, so labels and controls line up across a row. */
+.label-row { display: flex; align-items: center; position: relative; min-height: calc(var(--size-target-min) + 2 * var(--space-control)); }
+.info-button { flex: none; margin: var(--space-control); width: var(--size-target-min); height: var(--size-target-min); padding: 0; border-radius: var(--radius-pill);
+  border: var(--border-medium) solid var(--color-primary-background); background: var(--color-background-page); color: var(--color-primary-background);
+  font: italic var(--font-weight-bold) var(--font-size-sm) var(--font-family-serif); line-height: 1; cursor: pointer; }
+.info-button:hover { background: var(--color-border); }
+.info-button[aria-expanded="true"] { background: var(--color-primary-background); color: var(--color-primary-foreground); }
+.info-note { position: absolute; z-index: 2; inset-inline: var(--space-control); top: calc(100% - var(--space-xs)); margin: 0; padding: var(--space-sm);
+  background: var(--color-background-page); border: var(--border-thin) solid var(--color-secondary-background); border-radius: var(--radius-md);
+  box-shadow: var(--shadow-popup); font-size: var(--font-size-sm); line-height: var(--line-height-help); font-weight: var(--font-weight-normal); }
+.info-note::before { content: ""; position: absolute; top: calc(-1 * var(--size-info-arrow) / 2 - var(--border-thin)); left: calc(var(--info-arrow-x, 0px) - var(--space-control) - var(--size-info-arrow) / 2);
+  width: var(--size-info-arrow); height: var(--size-info-arrow); background: var(--color-background-page); transform: rotate(45deg);
+  border-left: var(--border-thin) solid var(--color-secondary-background); border-top: var(--border-thin) solid var(--color-secondary-background); }
 .dialog.onboarding { width: min(var(--size-dialog-medium), calc(100% - 2 * var(--space-md))); } /* the wizard follows medium (0012 G6) */
 /* Backup dialog (0009 §5; mockup 0012/g15-backup-dialog): small, the default width. */
 .dialog.backup .dialog-actions { justify-content: flex-end; }

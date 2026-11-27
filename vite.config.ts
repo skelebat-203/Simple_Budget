@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { defineConfig, type Plugin } from 'vite'
 
 // Production-only Content Security Policy (security-v0.2 4.1). The dev server
@@ -30,8 +31,12 @@ import { VitePWA } from 'vite-plugin-pwa'
 // GitHub Pages serves the app under /Simple_Budget/; the deploy workflow sets BASE_PATH.
 const BASE_PATH = process.env.BASE_PATH ?? '/'
 
+// The app shows its version (package.json) at the top of the page.
+const { version } = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as { version: string }
+
 export default defineConfig({
   base: BASE_PATH,
+  define: { __APP_VERSION__: JSON.stringify(version) },
   plugins: [
     react(),
     cspMeta(),

@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { AmountField, DatePicker, Input, ItemSelector, type FieldError } from './ui'
+import { AmountField, DatePicker, InfoButton, Input, ItemSelector, type FieldError } from './ui'
 import { childColor, isoDate, isSoloCharity, type CatNode } from '../budget/tree'
 import { cleanDescription, expandName, DESCRIPTION_MAX, dateBounds, moneyError, parseAmount, slug } from '../budget/validate'
 import type { addNewItem } from '../storage/repository'
@@ -48,8 +48,8 @@ export function usePurchaseForm(roots: CatNode[], init: { target?: CatNode; amou
 
   function check(): PurchaseErrors {
     const e: PurchaseErrors = {}
-    if (!itemText.text.trim()) e.item = 'Error: Item cannot be empty'
-    else if (!target && itemText.matches > 1) e.item = 'Invalid: Item pick one from the list; that name is used in more than one place'
+    if (!itemText.text.trim()) e.item = 'Error: Item Search cannot be empty'
+    else if (!target && itemText.matches > 1) e.item = 'Invalid: Item Search pick one from the list; that name is used in more than one place'
     if (isNew && !category && !categoryText.text.trim()) e.category = 'Error: Category cannot be empty'
     if (isNewSub && !where) e.where = 'Error: Where? cannot be empty'
     const amt = parseAmount(amount, { allowNegative: true })
@@ -101,7 +101,7 @@ export function usePurchaseForm(roots: CatNode[], init: { target?: CatNode; amou
   /** A name clash found while storing: show it on the field it belongs to; returns the errors for focusing. */
   function nameTaken(message: string): FieldError[] {
     const field = category || !isNewSub ? 'item' : 'category'
-    const next = { [field]: `Invalid: ${field === 'item' ? 'Item' : 'Category'} ${message}` }
+    const next = { [field]: `Invalid: ${field === 'item' ? 'Item Search' : 'Category'} ${message}` }
     setErrors(next)
     return toList(next)
   }
@@ -120,18 +120,19 @@ export function usePurchaseForm(roots: CatNode[], init: { target?: CatNode; amou
     // Two columns from 1280px; fields keep their DOM (reading and tab) order (0007 §10).
     <div className="form-grid">
       <div className="field">
-        <label className="label" htmlFor={id('item')}>Item <span aria-hidden="true">*</span></label>
-        <p id={id('item-help')} className="help">Shows your selected items. Type to search every item, or type a new name to add it.</p>
+        <div className="label-row"><label className="label" htmlFor={id('item')}>Item Search <span aria-hidden="true">*</span></label></div>
         <ItemSelector key={`item-${formKey}`} id={id('item')} label="Items" roots={roots}
           initial={n => !!n.cat.selected} defaultTarget={init.target}
           onChange={setTarget} onText={(text, matches) => setItemText({ text, matches })}
-          invalid={!!errors.item} describedBy={describe('item', id('item-help'))} />
+          invalid={!!errors.item} describedBy={describe('item')} />
         {errors.item && <p id={id('item-error_msg')} className="error">{errors.item}</p>}
       </div>
       {isNew && (
         <div className="field">
-          <label className="label" htmlFor={id('category')}>Category <span aria-hidden="true">*</span></label>
-          <p id={id('category-help')} className="help">Where “{itemText.text.trim()}” belongs. Pick a category to add it as a subcategory, pick a subcategory to add it as an item, or type a new subcategory.</p>
+          <div className="label-row">
+            <label className="label" htmlFor={id('category')}>Category <span aria-hidden="true">*</span></label>
+            <InfoButton id={id('category-help')} name="Category">Where “{itemText.text.trim()}” belongs. Pick a category to add it as a subcategory, pick a subcategory to add it as an item, or type a new subcategory.</InfoButton>
+          </div>
           <ItemSelector key={`category-${formKey}`} id={id('category')} label="Categories" mode="category" roots={roots}
             onChange={setCategory} onText={(text, matches) => setCategoryText({ text, matches })}
             invalid={!!errors.category} describedBy={describe('category', id('category-help'))} />
@@ -139,8 +140,8 @@ export function usePurchaseForm(roots: CatNode[], init: { target?: CatNode; amou
         </div>
       )}
       {isNewSub && (
-        <div className="field field-align">
-          <label className="label" htmlFor={id('where')}>Where? <span aria-hidden="true">*</span></label>
+        <div className="field">
+          <div className="label-row"><label className="label" htmlFor={id('where')}>Where? <span aria-hidden="true">*</span></label></div>
           <select id={id('where')} className="input" value={where} aria-required="true" aria-invalid={!!errors.where || undefined}
             aria-describedby={describe('where')} onChange={e => setWhere(e.target.value)}>
             <option value="">Choose where “{categoryText.text.trim()}” goes</option>
@@ -150,20 +151,24 @@ export function usePurchaseForm(roots: CatNode[], init: { target?: CatNode; amou
         </div>
       )}
       <div className="field">
-        <label className="label" htmlFor={id('amount')}>Amount <span aria-hidden="true">*</span></label>
-        <p id={id('amount-help')} className="help">Use a minus sign for a credit or refund, e.g. -12.50. You can add or subtract, e.g. 12.50+3.</p>
+        <div className="label-row">
+          <label className="label" htmlFor={id('amount')}>Amount <span aria-hidden="true">*</span></label>
+          <InfoButton id={id('amount-help')} name="Amount">Use a minus sign for a credit or refund, e.g. -12.50. You can add or subtract, e.g. 12.50+3.</InfoButton>
+        </div>
         <AmountField id={id('amount')} allowNegative value={amount} onChange={e => setAmount(e.target.value)} aria-required="true"
           aria-invalid={!!errors.amount || undefined} aria-describedby={describe('amount', id('amount-help'))} />
         {errors.amount && <p id={id('amount-error_msg')} className="error">{errors.amount}</p>}
       </div>
       <div className="field">
-        <label className="label" htmlFor={id('description')}>Description</label>
-        <p id={id('description-help')} className="help">Up to {DESCRIPTION_MAX} characters.</p>
+        <div className="label-row">
+          <label className="label" htmlFor={id('description')}>Description</label>
+          <InfoButton id={id('description-help')} name="Description">Up to {DESCRIPTION_MAX} characters.</InfoButton>
+        </div>
         <Input id={id('description')} maxLength={DESCRIPTION_MAX} autoComplete="off" value={description}
           onChange={e => setDescription(e.target.value)} aria-describedby={id('description-help')} />
       </div>
-      <div className="field field-align">
-        <label className="label" htmlFor={id('date')}>Date <span aria-hidden="true">*</span></label>
+      <div className="field">
+        <div className="label-row"><label className="label" htmlFor={id('date')}>Date <span aria-hidden="true">*</span></label></div>
         <DatePicker id={id('date')} aria-required="true" value={date} min={bounds.min} max={bounds.max} aria-invalid={!!errors.date || undefined}
           aria-describedby={describe('date')} onChange={e => setDate(e.target.value)} />
         {errors.date && <p id={id('date-error_msg')} className="error">{errors.date}</p>}

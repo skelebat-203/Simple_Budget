@@ -11,4 +11,5 @@ export { RenameDialog, AmountDialog, UpdateDialog, type SaveResult, type UpdateC
 export { Banner, type BannerKind } from './Banner'
 export { Toggle } from './Toggle'
 export { Tip } from './Tip'
+export { InfoButton } from './InfoButton'
 export { Combobox, type ComboGroup, type ComboOption } from './Combobox'

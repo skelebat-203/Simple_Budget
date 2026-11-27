@@ -129,6 +129,7 @@ function App() {
           onClick={() => setOnboardOpen(true)}>
           <span aria-hidden="true">?</span>
         </button>
+        <span className="version" id="app-version">v{__APP_VERSION__}</span>
       </div>
       <RewardLayer enabled={rewardsEnabled} />
       <Notices state={notices} onDismissPersist={dismissPersist} onDismissInfo={() => note({ charityMoved: undefined })} />
