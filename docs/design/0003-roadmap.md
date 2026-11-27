@@ -95,7 +95,7 @@ tracked as a later-version item.
 - ✅ (D001 v0.6.1, D002 v0.6.2, D003 v0.6.23 to v0.6.29) Defects (`docs/defects/`): D001 onboarding name length limit; D002 duplicate settings rows; D003 editing a purchase resets its time and drops its import mark (found 2026-11-11 in import work; fixed with the import flow UI, confirmed 2026-11-11)
 - ✅ (v0.6.20, v0.6.33 to v0.6.35) Spreadsheet upload + auto-categorization parsing (mapping rules in `0013`, test files in `docs/test_sheets/`); an Import option in the Backup dialog accepts CSV and XLSX here, and ODS in the next item (decided 2026-11-08, ODS split out 2026-11-11) so a user can import an existing budget. Large effort: expect several testing and refinement rounds
 - ✅ (v0.6.3, v0.6.5) (Primary User Request) More informative "Saved" confirmation: the text says what was saved and how much (e.g. the item name and amount), not just "Saved"
-- ✅ (v0.6.21, v0.6.22) Combine "Budget setup" and help (decided 2026-11-08, `0009` §5): the "?" button opens the onboarding wizard (automatically on first load); the wizard footer offers "Advanced options" (opens Budget setup); the "Setup Budget" tab action is removed; a "Backup" button takes its place and opens a dialog for export, restore and import
+- ✅ (v0.6.21, v0.6.22) Combine "Budget setup" and help (decided 2026-11-08, `0009` §5): the "?" button opens the onboarding wizard (automatically on first load); the wizard footer offers "Advanced options" (opens Budget setup); the "Setup Budget" tab action is removed; a "Backup" button takes its place and opens a dialog for export, restore and import. Proposed 2026-11-26 (v0.8, see "Help, wizard and Backup UX"): the "?" button opens the onboarding wizard or the Help dialog, with the wizard shown only on first launch; "Advanced options" stays in the wizard footer or moves to a better place; the Backup button and dialog stay or are replaced by a better home for Import, Export, Backup and Sync
 - ✅ UI/UX changes from the v0.5 review (`0009-v0.6-design-updates.md`; prototypes `0010` and `0011` are reviewed and refined before building):
   - ✅ (v0.6.7) Onboarding as a three-step wizard with a progress bar
   - ✅ (v0.6.11, v0.6.12, v0.6.16) Budget setup: "Add" buttons in place of the four "Create in" fields
@@ -140,7 +140,7 @@ tracked as a later-version item.
   - Sheet layout and data shape: open. The earlier JSON-doc shape (version + updatedAt per record) must be reconciled with a sheet that people can read, decided in the design doc
   - Sync-on-open: pull then push, last-write-wins, tombstones
   - Optional passphrase client-side encryption (open: whether encrypted content in a shared sheet is acceptable)
-  - Sync in the onboarding wizard as its first step ("Local only" or "Sync with Google"; New Budget / Existing Budget tabs; Existing skips the category steps); the pay-frequency step removed (set in Advanced options); Sync button in the Budget tab panel beside the date controls; Backup back at the far right of the tabs; Budget setup "Estimated spending" renamed "Estimated amount" (decided 2026-11-22, step 3 UI review)
+  - Sync in the onboarding wizard as its first step ("Local only" or "Sync with Google"; New Budget / Existing Budget tabs; Existing skips the category steps); the pay-frequency step removed (set in Advanced options, whose placement is under review: see v0.8 "Help, wizard and Backup UX"); Sync button in the Budget tab panel beside the date controls; Backup back at the far right of the tabs; Budget setup "Estimated spending" renamed "Estimated amount" (decided 2026-11-22, step 3 UI review)
   - ~~Seed categories/table layout from the sheet's current layout~~ dropped 2026-11-21: categories already sync as records (`0015` Q5)
 - Defect D005 (`docs/defects/`): the Google file picker lists no files, so an existing sheet cannot be linked (found 2026-11-26 in phone testing; step 15c, before the reviews)
 - Defect D006 (`docs/defects/`): the left ~15px of the Edit menu items is sometimes cut off in the highlight dialog (found 2026-11-26 in phone testing; step 15c, before the reviews)
@@ -165,9 +165,9 @@ tracked as a later-version item.
   - Media query audit: 3 in total, 4 accepted; any more than 4 needs a written reason (`0012`). Before: width breakpoints 600, 640, 1280 and 1440px plus a 480px height query
 - UI updates (human, 2026-11-26; built in v0.7 under the same rule, step 15e):
   - The Week, Month and Annual buttons become a three-option Toggle (components.md Toggle: radio group, pill)
-  - The Sync control moves into the Backup dialog (replaces the 2026-11-22 placement: Sync button in the Budget tab panel and beside the Screens button on narrow views)
+  - The Sync control moves into the Backup dialog (replaces the 2026-11-22 placement: Sync button in the Budget tab panel and beside the Screens button on narrow views) or into a new home decided in v0.8 ("Help, wizard and Backup UX", 2026-11-26: Import, Export, Backup and Sync do not fit well under "Backup")
   - The supporting text on the Add purchase screen moves into an info button to the right of each control's label. Mockup first, build only after the human approves (`docs/design/images/v0.7-info-buttons/`)
-- Update popup (human, 2026-11-26; step 15f): on the first open after an update, a popup lists what changed and any new known issues. Spec and the process for keeping it current: `0016-update-popup.md`. Mockup: `docs/design/images/v0.7-update-popup/`
+- Update popup (human, 2026-11-26; step 15f): on the first open after an update, a popup lists what changed and any new known issues. Spec and the process for keeping it current: `0016-update-popup.md`. Mockup: `docs/design/images/v0.7-update-popup/`. The popup shows only the newest update; the latest 2 or 3 update lists are kept and readable again from a place still to be chosen (open; for example a "What's new" section in the Help dialog; logged 2026-11-26, see v0.8 "Help, wizard and Backup UX")
 - UI/UX review (human approval)
 - Accessibility pass
 - Security review (covers sync)
@@ -175,6 +175,12 @@ tracked as a later-version item.
 ## v0.8 — Graphs and charts
 - Charts moved from v0.7 (decided 2026-11-22). Sync moved to v0.7 earlier (decided 2026-11-18).
 - Mobile-first layout: optimize the UI for 360 to 430px wide screens while keeping WCAG AA at 320px; desktop is secondary (human, 2026-11-26: "v0.8 or later"). Needs a design pass first: it touches the width breakpoints and the media query limit in `0012`
+- Help, wizard and Backup UX (logged 2026-11-26; needs a design pass and mockup first):
+  - Sync instructions in the Help dialog: how to use one budget sheet across several accounts or devices (for example share the Google sheet with the other account, or share the account password; the steps and which of the two is advised are open, with security in mind)
+  - The onboarding wizard appears only on first launch, not when the Help dialog opens (the Help dialog may still offer a way to reopen it)
+  - Store the latest 2 or 3 "What's new" update lists (`0016`, `src/updates/updates.json`) where users can read them again; place to be chosen (for example in the Help dialog)
+  - "Advanced options" sits in an odd place (the wizard footer): decide a better home
+  - Better UX for everything now under "Backup" (Import, Export, Backup and restore, Sync): these do not fit under one "Backup" name; decide the grouping, names and where each lives
 - Chart view (Table/Chart switch)
 - Compact rows: an option that makes table rows smaller (decided 2026-11-22)
 - Zoom in and out (+/−) for the budget tables (decided 2026-11-22)
