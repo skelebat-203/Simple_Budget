@@ -77,7 +77,7 @@ v0.2 5.4 was written for a sync server of our own. Q1 removed that server, so mo
 | Error leakage (CWE-209) | Errors are shown as plain messages ("Sync failed, your data on this device is safe"); raw API responses are not shown or logged. |
 
 New points the review adds:
-- **CSP:** sign-in and the Picker load Google scripts and frames. Needed: `script-src` `https://accounts.google.com/gsi/client` and `https://apis.google.com`; `connect-src` `https://sheets.googleapis.com` and `https://www.googleapis.com`; `frame-src` `https://accounts.google.com` and `https://docs.google.com`. Each is an exact host, never a wildcard. `frame-ancestors` (v0.2 6.7) stays `'none'`.
+- **CSP:** sign-in and the Picker load Google scripts and frames. Needed: `script-src` `https://accounts.google.com/gsi/client` and `https://apis.google.com`; `connect-src` `https://sheets.googleapis.com` and `https://www.googleapis.com`; `frame-src` `https://accounts.google.com` and `https://docs.google.com`. Each is an exact host, never a wildcard. `frame-ancestors` (v0.2 6.7) stays `'none'`. Decided 2026-11-26 (D005): `style-src` also allows `'unsafe-inline'`, because the Picker and sign-in add inline styles and the Picker's file list stays invisible without them. It is the one loosening: scripts stay limited to the exact hosts above. The cost is that injected inline CSS would not be blocked.
 - **Untrusted pulls:** every pulled row is untrusted (another device or a hand edit): it must decrypt (AES-GCM fails on any change), then pass the import checks (`0013`) before it reaches Dexie.
 - **Stored key:** the remembered passcode key is non-extractable (above).
 

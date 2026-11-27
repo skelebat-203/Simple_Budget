@@ -8,7 +8,8 @@ const CSP = [
   "default-src 'self'",
   // Google sign-in and the Picker for sync: exact hosts only, no wildcards (0015 §7.1).
   "script-src 'self' https://accounts.google.com/gsi/client https://apis.google.com",
-  "style-src 'self'",
+  // 'unsafe-inline' for styles only: Google's Picker and sign-in add inline styles, and without them the Picker's file list is invisible (D005).
+  "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data:",
   "font-src 'self'",
   "connect-src 'self' https://sheets.googleapis.com https://www.googleapis.com",
