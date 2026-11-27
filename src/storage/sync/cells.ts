@@ -1,4 +1,4 @@
-import type { SyncTab } from '../db'
+import { UID_RE, type SyncTab } from '../db'
 
 /** Sheet tabs, in the order they are read and written (0015 §3). */
 export const TABS: SyncTab[] = ['Categories', 'Purchases', 'Settings']
@@ -37,7 +37,7 @@ export interface ParsedRow {
 
 /** How far ahead of this device's clock a row's time may be (hand edits must not win forever). */
 export const CLOCK_SKEW_MS = 24 * 60 * 60 * 1000
-const ID_RE = /^[A-Za-z0-9_-]{1,64}$/
+const ID_RE = UID_RE
 
 /** Parse a raw row; returns null for a blank row and a reason for a broken one. */
 export function parseRow(row: number, cells: unknown[], now: number): ParsedRow | null | { row: number; id: string; error: string } {

@@ -123,7 +123,7 @@ export function MiscBreakdown({ roots, items, calendar, date, onChanged }: {
                   <td className="row-actions">
                     {g.key && (
                       <Button type="button" className="secondary small" id={saveId(g)} disabled={busy}
-                        aria-label={`Save ${g.label} for future`} aria-describedby={rowId(g)} onClick={() => save(g, k)}>Save for future</Button>
+                        aria-label={`Save for future: ${g.label}`} aria-describedby={rowId(g)} onClick={() => save(g, k)}>Save for future</Button>
                     )}
                   </td>
                 </tr>

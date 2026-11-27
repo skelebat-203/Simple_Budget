@@ -9,7 +9,9 @@ import { clearRedirectResult, isSignedIn, signIn } from '../storage/sync/googleS
 import { createAndLink, CREATED_TEXT, LINKED_TEXT, linkSheet, redirectNotice, syncFailText, usePasscode } from './syncActions'
 import { PasscodeField, RedirectSignIn } from './syncForms'
 
-const syncedText = (skipped: number) => `Synced.${skipped ? ` ${skipped} row${skipped === 1 ? '' : 's'} from the sheet needed attention; see the list in Sync.` : ''}`
+/** Longest list of skipped-row notes shown; a damaged sheet can produce thousands. */
+const MAX_NOTES_SHOWN = 20
+const syncedText =(skipped: number) => `Synced.${skipped ? ` ${skipped} row${skipped === 1 ? '' : 's'} from the sheet needed attention; see the list in Sync.` : ''}`
 
 /**
  * Sync section of the Backup dialog (0015 §6; moved there 2026-11-26): sign in with Google, create or link a sheet with
@@ -98,7 +100,7 @@ export function Sync({ onboarded, pickedId, onPick }: { onboarded: boolean; pick
           </div>
         </div>
       )}
-      {s.notes.length > 0 && <ul className="help">{s.notes.map((n, i) => <li key={i}>{n}</li>)}</ul>}
+      {s.notes.length > 0 && <ul className="help">{[...s.notes.slice(0, MAX_NOTES_SHOWN), ...(s.notes.length > MAX_NOTES_SHOWN ? [`…and ${s.notes.length - MAX_NOTES_SHOWN} more.`] : [])].map((n, i) => <li key={i}>{n}</li>)}</ul>}
     </section>
   )
 

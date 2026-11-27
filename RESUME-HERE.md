@@ -4,192 +4,76 @@ Tracking file for current work status. Roadmap authority: `docs/design/0003-road
 Design: `0015-sync-design.md` (sync), `0004-table-design.md` (table), `0006-prototype.html` (v0.2 UI), `0007-v0.3-design-updates.md` (v0.3 changes), `0008-v0.5-design-updates.md` (v0.5 changes), `0009-v0.6-design-updates.md` (v0.6), `0012-design-standards.md` (standards), `0014` (Annual Misc breakdown). Higher-numbered doc wins on conflict.
 
 ## Current version
-v0.7.0 (v0.6 complete 2026-11-21, v0.6.0 to v0.6.37; reports: `docs/audits/a11y/a11y-v0.6.md`, `docs/audits/security/security-v0.6.md`). Step 1 ✅ (v0.7.1 to v0.7.3). Step 2 ✅ (v0.7.4). Step 3 ✅ (v0.7.5 to v0.7.10). Step 3b ✅ (v0.7.12 to v0.7.17). Group A2 (steps 4, 5, 7) ✅ (v0.7.19 to v0.7.25). Group B (steps 6, 8, 9, 12, 13) ✅ (v0.7.27 to v0.7.39). Mobile testing to check: long tables (sticky header, collapsed start; `0007` §10 change). Group C (steps 10, 11b, 11) ✅ (v0.7.40 to v0.7.44). Group T (steps 15c, 15d, 15e, 15f) ✅ (v0.7.47 to v0.7.62; passed by the human 2026-11-26). Step 15b ✅ (v0.7.64, v0.7.65). Group D (step 14) ✅ (v0.7.66). Built on branch `v0.7-redirect-sign-in` (worktree `.worktrees/v0.7-redirect-sign-in`); the update popup entry (v0.7.67) approved by the human 2026-11-26; waiting on: the human's merge approval. Next: the reviews (steps 16 to 18).
+v0.8.0 (v0.7 complete 2026-11-27, v0.7.0 to v0.7.67 plus the review fixes in v0.8.0; reports: `docs/audits/a11y/a11y-v0.7.md`, `docs/audits/security/security-v0.7.md`). v0.8 has not started; the first step is a design pass (nothing is built before the human approves a mockup).
 
-## v0.7 plan of action
-Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per completed-work commit; trailer `Plan-Step: v0.7/N`). The final step bumps to the next minor version (v0.8.0). UI steps need human approval (`0005-ui-ux-review-checklist.md`). Baseline: v0.7.0. Data: Dexie v8 (`src/storage/structure.ts`). Testing: headless Chromium (`tools/browsers/`, `lighthouse-sandbox.md`); import harness `npm run test:import` (`tests/import/README.md`).
+## v0.8 plan of action
+Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per completed-work commit; trailer `Plan-Step: v0.8/N`). The final step bumps to the next minor version (v0.9.0). UI steps need human approval (`0005-ui-ux-review-checklist.md`). Baseline: v0.8.0. Data: Dexie v10 (`src/storage/db.ts`). Testing: `tests/README.md`; accessibility script approach in `a11y-v0.7.md`.
 
-**Before building (human):** several items below are decided in the roadmap but have open design questions (marked "needs human decision"). Sync (steps 2 and 3) comes right after step 1 (decided 2026-11-21): it needs no other v0.7 step, and step 2 needs the v0.2 5.4 network review and a design doc first.
+**Run option (estimate):** single session with fresh restarts. Most steps are UI steps that need the human's approval mid-way and share `App.css`, `BudgetTable.tsx` and `Backup.tsx`, so subagents would save little.
 
-**Run option (estimate):** single session with fresh restarts for steps 1 and 4 to 15: they share `BudgetTable.tsx`, `App.css`, `Dialog` and `validate.ts`, and most need approval mid-way. Sync (steps 2 and 3) touches separate files (`src/storage/`, a new adapter) and may suit one subagent.
+**Before building (human):** every step below starts with a design pass or has an open decision ("needs human decision"). The chart library is a new dependency and needs the human's go-ahead (two-week-old exact version).
 
-1. **Consolidate dialogs** (v0.7/1) — one dialog component replaces form, confirm and generic dialogs; migrate the v0.6 dialogs (Edit menu, highlight, wizard, Backup) and Budget setup. ✅ (v0.7.1 to v0.7.3, UI approved 2026-11-21)
-   - Source: roadmap v0.7 (decided 2026-11-04; Budget setup added 2026-11-21)
-   - Files: `src/components/ui/` (dialogs), `src/components/BudgetTable.tsx`, `src/screens/BudgetSetup.tsx`, `src/App.css`
-   - Verify: `npm run test:dialogs` (`tests/dialogs/README.md`); build + lint
-   - Deps: none (do first: later steps add dialogs)
-2. **Sync design and network review** (v0.7/2) — new design doc for sync to a Google Sheet; the sheet layout, data shape and encryption questions settled; the v0.2 5.4 network review done first.
-   - Source: roadmap v0.7; `security-v0.6.md` held items (v0.2 5.4 ⚠ REQUIRES REVIEW BEFORE PROCEEDING, v0.2 2.3, v0.3 6.2, v0.2 1.3, 2.4, 3.7, 4.3, 4.4, 6.6, 6.7, 7.7, 8.8, v0.5 3.2)
-   - Files: `docs/design/0015-sync-design.md`; roadmap update
-   - Verify: human approves the design doc; 5.4 re-rated
-   - Deps: none; blocks 3
-   - ✅ (v0.7.4, `0015` approved 2026-11-21; v0.2 5.4 reviewed, proposed Low)
-3. **Sync to a Google Sheet** (v0.7/3) — StorageAdapter interface, Google Sheets adapter, sync-on-open (pull then push, last-write-wins, tombstones), optional passphrase encryption (open), seed from the sheet's layout.
-   - Source: roadmap v0.7; the step 2 design doc
-   - Files: `src/storage/`, new adapter, settings UI (built on the step 1 `Dialog`)
-   - Verify: per the design doc; formula text in synced cells neutralized (v0.2 2.3)
-   - Deps: 1, 2 (built immediately after 2)
-   - ✅ (v0.7.5 to v0.7.10; end-to-end test passed in Chromium and UI approved 2026-11-22; changes from the review are step 3b)
-   - Progress (v0.7.5, v0.7.6): engine, encryption, Dexie v9, Google adapter, CSP, Sync dialog and timing built; `npm run test:sync` passes. Waiting on: the human's Google Cloud setup (placeholders in `src/storage/sync/googleConfig.ts`), the end-to-end test with a test account (Q10) and UI approval of the Sync dialog.
-3b. **Sync placement in the wizard and main app** (v0.7/3b) — from the step 3 UI review (human, 2026-11-22):
-   - Wizard: sync becomes the first step; the "How often do you get paid?" step is removed (human, 2026-11-22). Pay frequency is the Recurrence of the Income items, set in Advanced options (Budget setup) together with their estimated amount; it defaults to Monthly, as estimates have no default either. Design (human, 2026-11-22; mockups in `docs/design/images/v0.7-wizard-sync/`): option A with two answers, "Local only" and "Sync with Google". Choosing "Sync with Google" shows option C's content as a tab list (tabs "New Budget" and "Existing Budget") instead of two side-by-side boxes.
-   - The step count updates as the user moves through, because the branches have different lengths ("Step 2 of 5", for example). "Existing Budget" skips the categories steps (they come from the linked sheet) (human, 2026-11-22).
-   - Sync button: only in the Budget tab panel, at the right, in line with the date controls; in narrow views, once it would run into the date controls, it moves to the right of the Screens drop-down.
-   - Backup button: back at the far right, in line with the tabs.
-   - Budget setup table: the "Estimated spending" column (and its error messages) becomes "Estimated amount".
-   - Source: step 3 UI review; `0015` Q9 (replaced: sync is offered in the wizard, not after it)
-   - Files: `src/screens/Onboarding.tsx`, `src/screens/BudgetSetup.tsx`, `src/components/Sync.tsx`, `src/screens/Budget.tsx`, `src/components/ui/Tabs.tsx`, `src/App.tsx`, `src/App.css`
-   - Verify: `npm run test:dialogs` (wizard step order); 1280/640/320px; keyboard order matches visual order
+1. **Help, wizard and Backup UX design** (v0.8/1) — mockups and a design doc: Help dialog with sync instructions and a "What's new" list (latest 2 or 3 from `updates.json`); the wizard only on first launch; a better home for "Advanced options"; grouping and names for Import, Export, Backup and Sync.
+   - Source: roadmap v0.8 "Help, wizard and Backup UX"
+   - Files: `docs/design/` (new doc, mockups in `docs/design/images/v0.8-help-backup/`), roadmap update
+   - Verify: the human approves the design
+   - Deps: none; needs human decision
+2. **Help, wizard and Backup UX build** (v0.8/2)
+   - Source: step 1 design
+   - Files: `src/components/Backup.tsx`, `src/screens/Onboarding.tsx`, `src/App.tsx`, `src/components/ui/`, `src/App.css`, `src/updates/`
+   - Verify: build + lint; `test:dialogs`; 1280/640/375/320px
+   - Deps: 1
+3. **Mobile-first layout design** (v0.8/3) — 360 to 430px first, WCAG AA kept at 320px; settles the breakpoints and the media query limit in `0012`.
+   - Source: roadmap v0.8; `0012` §2
+   - Files: `docs/design/0012-design-standards.md`, mockups
+   - Verify: the human approves
+   - Deps: none; needs human decision
+4. **Mobile-first layout build** (v0.8/4)
+   - Files: `src/App.css`, `src/styles/tokens.css`, `src/components/BudgetTable.tsx`, screens
+   - Verify: build + lint; `test:dialogs`; 1280/640/375/320px; no page-level sideways scroll
    - Deps: 3
-   - ✅ (v0.7.12 to v0.7.17; UI approved 2026-11-22)
-   - Progress (v0.7.13): built; build, lint, `test:dialogs`, `test:sync`, `test:import` pass; layouts checked at 1280/640/375/320px. Waiting on: the human's sign-in test in Chromium and UI approval.
-4. **Design standards pass** (v0.7/4) — bring the app in line with `0012-design-standards.md`.
-   - Source: roadmap v0.7; `0012` §10 gaps
-   - Files: `src/App.css`, `src/styles/tokens.css`, components named in `0012`
-   - Verify: checklist in `0012`; no hard-coded values; build + lint
-   - Deps: 1 (all `0012` §10 gaps were decided 2026-11-06 and 2026-11-08)
-   - ✅ (v0.7.19 to v0.7.25; UI approved 2026-11-22)
-   - Progress (v0.7.20): built (G1, G3–G6, G8–G10, G12, G15–G17, §1 tokens, §4 field order); G11 Actual-column pin left for step 6. Waiting on: UI approval.
-5. **Max app width 1440px** (v0.7/5) — content stays centered.
-   - Source: roadmap v0.7 (decided 2026-11-04)
-   - Files: `src/App.css`, `src/styles/tokens.css`
-   - Verify: 1440, 1920px; 320/640px unchanged
-   - Deps: none
-   - ✅ (v0.7.19 to v0.7.25; UI approved 2026-11-22)
-   - Progress (v0.7.19): built; checked at 320/640/1280/1440/1920px. Waiting on: UI approval.
-6. **Item column width** (v0.7/6) — the Item column is not sticky in any table (human, 2026-11-22: not enough room at 400px and narrower). It has a 250px minimum and grows so its content never wraps; the table scrolls sideways instead.
-   - Source: roadmap v0.7 (decided 2026-11-04; sticky dropped 2026-11-22)
-   - Files: `src/components/BudgetTable.tsx`, `src/App.css`
-   - Verify: no wrapped names at 1280/640/320px, highlight dialog included; keyboard scroll; no page-level sideways scroll
-   - The Day table's Actual column is not pinned either (`0012` G11 pinning dropped, human 2026-11-22).
-   - Deps: 5
-   - ✅ (v0.7.27 to v0.7.39; UI approved 2026-11-22)
-   - Progress (v0.7.27): built (Item column min 250px, names don't wrap, Day table auto layout); no wrapped names or page-level sideways scroll at 1280/640/320px, highlight dialog included. Waiting on: UI approval.
-   - Added (human, 2026-11-22): every control in a data table is described by its row header and has a unique name (v0.7.36; checked in `test:dialogs`). Long tables on phones (v0.7.37): page tables (Budget, Misc. Breakdown, Add purchase) have no fixed-height box; their header row stays at the top of the viewport while the page scrolls past (moves with the sideways scroll; a focused control under it is scrolled clear; off when the viewport is 480px tall or less). Below 640px the categories start closed until the user saves an expand/collapse state. Waiting on: the human's phone test.
-7. **Form field alignment class** (v0.7/7) — same label-to-control space as fields with help text, so side-by-side fields line up.
-   - Source: roadmap v0.7 (decided 2026-11-04)
-   - Files: `src/App.css`, form screens
-   - Verify: Add purchase, Budget setup, dialogs at 1280/640/320px
+5. **Compact rows and zoom** (v0.8/5) — a compact-rows option and zoom in and out (+/−) for the budget tables (decided 2026-11-22). Where the controls live needs a mockup.
+   - Files: `src/components/BudgetTable.tsx`, `src/App.css`, settings in Budget setup
+   - Verify: build + lint; `test:dialogs`; keyboard operable
    - Deps: 4
-   - ✅ (v0.7.19 to v0.7.25; UI approved 2026-11-22)
-   - Progress (v0.7.21): `.field-align` built and applied (Add purchase, purchase dialog, Edit-menu dialogs, Budget setup week start). Waiting on: UI approval.
-8. **Supporting text under the tables** (v0.7/8) — remove the help text under each table instead of rewriting it (human, 2026-11-22), and the `aria-describedby` references to it.
-   - Source: roadmap v0.7
-   - Files: `src/screens/`, table components
-   - Verify: no dangling `aria-describedby` ids; accessible names unchanged
+6. **Misc. Breakdown threshold setting** (v0.8/6) — the review threshold becomes a setting (default 6; `0014` M4).
+   - Files: `src/storage/db.ts` (settings, Dexie version if indexed), `src/storage/repository.ts` (`cleanSettings`, restore), `src/screens/BudgetSetup.tsx`, `src/components/MiscBreakdown.tsx`; sync carries the setting (`engine.ts` settings content)
+   - Verify: build + lint; `test:import`, `test:sync`, `test:dialogs`
    - Deps: none
-   - ✅ (v0.7.27 to v0.7.39; UI approved 2026-11-22)
-   - Progress (v0.7.28): removed both help lines under the Budget tables and the table's `aria-describedby`; no dangling ids. v0.7.32: the Budget setup table's line under it (`setup-key`) removed too (human, 2026-11-22). Waiting on: UI approval.
-9. **Negative purchases as returns** (v0.7/9) — listed in the Day table as a return, formatted "(-$n.nn)" (human, 2026-11-22).
-   - Source: roadmap v0.7 (decided 2026-11-04); `0007` §9
-   - Files: `src/components/BudgetTable.tsx`
-   - Verify: refund and credit rows; totals unchanged; screen reader names
-   - Deps: none
-   - ✅ (v0.7.27 to v0.7.39; UI approved 2026-11-22)
-   - Progress (v0.7.29): a negative Day purchase is named "Return, {time}", its amount shows "(-$n.nn)" in red; Edit button, delete dialog and status say "return of $n.nn"; totals unchanged. Waiting on: UI approval.
-10. **Typed-name parsing** (v0.7/10) — spell check and common abbreviations (decided 2026-11-22):
-    - List: Misc / Misc. → Miscellaneous; Ins. → Insurance; Mtg → Mortgage; Util. / Utils → Utilities; Sub / Subs → Subscriptions; Groc. → Groceries; Med. → Medical; Ent. → Entertainment; Pmt → Payment; Acct → Account; Dept → Department; Govt → Government.
-    - Runs wherever a name is typed (new item in Add purchase, Budget setup, Rename); import is not affected.
-    - Fixes silently, except when the user edits a full name to an abbreviation: their edit is kept.
-    - Spell check: the browser's built-in spell check on name fields (no new dependency).
-    - Source: roadmap v0.7 (decided 2026-11-04)
-    - Files: `src/budget/validate.ts`, name fields
-    - Verify: abbreviation cases; import names unaffected unless chosen
-    - Deps: none
-    - ✅ (v0.7.40 to v0.7.44; UI approved 2026-11-23)
-    - Progress (v0.7.40): `expandName` in `validate.ts` runs on Add purchase new item and new subcategory, Budget setup Create, and Rename. Whole words, any case; a form listed with a dot needs it, the others may have one. Rename rule: an abbreviation is kept when the stored name had its full form as a whole word (the user shortened it); otherwise it is expanded. Spell check on, checks in `test:import`. Waiting on: UI approval.
-11. **Move subcategories and items between parents** (v0.7/11) — a subcategory moved into another becomes an item; an item moved out becomes a subcategory; a subcategory with items cannot move into another (error).
-    - Source: roadmap v0.7 (decided 2026-11-04)
-    - Files: `src/budget/setupEdits.ts`, `src/storage/repository.ts`, dialog component, `src/components/BudgetTable.tsx`
-    - Verify: keyboard-only; purchases and estimates follow the row; backup restore; sync (step 3) carries the move; tree checks
-    - Design (human, 2026-11-22; based on option C in `docs/design/images/v0.7-move-rows/`): when a row is highlighted (the highlight dialog shows it with only its child rows), the dialog shows a Move column. Up and Down buttons move a row among the highlighted rows. "Move to" is a menu listing categories and subcategories; any category may be chosen. When the user closes the highlight, the tables show the row in its new place. A row moved to a new parent becomes its last child.
-    - Purchases and the estimate move with the row.
-    - Deps: 1, 3, 11b
-    - ✅ (v0.7.40 to v0.7.44; UI approved 2026-11-23)
-    - Progress (v0.7.42): Move column in the highlight dialog (any range with actions): Up/Down for rows under the highlighted row (swap with the next shown sibling), and a "Move to" menu (ActionsMenu, `floating` so the table box does not clip it). Each move is one transaction (`categoryRepo.reorder`, `categoryRepo.moveTo`): sync-busy rule, name clash (Invalid), a row with items into a subcategory (Error), a destination with nothing under it that holds its own estimate or purchases first hands them to a new Miscellaneous row under it (as Budget setup; announced). v0.7.43: the main table opens the rows above a moved row (saved expand state). Sync (noted in `0015` §4): a never-synced default row moved on another device is matched by a unique name when linking (no duplicates). Checks in `test:dialogs` and `test:sync`. Waiting on: UI approval.
-11b. **Quarterly and Annual in every recurrence list** (v0.7/11b) — every Recurrence drop-down offers Quarterly and Annual, not only Debt, Utilities and Subscriptions (human, 2026-11-22). This also means a moved row's recurrence is always allowed in its new category (step 11).
-    - Source: human, 2026-11-22; replaces the `0007` §3 limit
-    - Files: `src/budget/` (`frequenciesFor`), `src/screens/BudgetSetup.tsx`, estimate scaling checks
-    - Verify: every Recurrence list; estimate scaling for Quarterly and Annual on the other categories; build + lint
-    - Deps: none
-    - ✅ (v0.7.40 to v0.7.44; UI approved 2026-11-23)
-    - Progress (v0.7.41): one `FREQUENCIES` list for every row; `frequenciesFor` removed; `0007` §3 note updated; scaling checks in `test:import`.
-12. **Read-only Day table under Add purchase** (v0.7/12) — a copy of the Day table below the form.
-    - Source: roadmap v0.7 (decided 2026-11-08)
-    - Files: `src/screens/AddBudget.tsx`, table component
-    - Verify: updates after a save; read-only; one live region
+7. **Chart design** (v0.8/7) — chart types, the library and the Table/Chart switch; mockups first.
+   - Source: roadmap v0.8; security v0.2 4.5, 2.5 (Trusted Types, escaped item names in labels)
+   - Files: `docs/design/` (new doc), roadmap update
+   - Verify: the human approves the design and the dependency
+   - Deps: none; needs human decision
+8. **Chart view** (v0.8/8) — Table/Chart switch and the chart types.
+   - Files: new `src/components/charts/`, `src/screens/Budget.tsx`, `src/App.css`, `package.json` (approved library)
+   - Verify: build + lint; `test:dialogs`; alt text, keyboard navigation; CSP unchanged or reviewed
+   - Deps: 7, 4
+9. **UI/UX review** (v0.8/9) — human approval, `0005` checklist, all widths.
+   - Deps: 1–8
+10. **Accessibility pass** (v0.8/10) — including chart alt text, keyboard navigation and screen reader (the v0.7 screen reader test is not recorded: include the v0.7 flows listed in `a11y-v0.7.md`).
     - Deps: 9
-    - ✅ (v0.7.27 to v0.7.39; UI approved 2026-11-22)
-    - Progress (v0.7.30): today's Day table under the form, heading "Today’s purchases" (h3, names the table with its date caption); every row open, no buttons or dialogs; updates after a save; one live region. Heading approved (human, 2026-11-22). v0.7.33: the read-only scroll box is a named region (tabindex 0, named by the heading) with a focus ring, so it scrolls by keyboard in every browser; the Budget setup Preview table gets the same. Waiting on: UI approval.
-13. **Annual Misc row and breakdown** (v0.7/13) — a Misc row under Incidentals, a Misc. Breakdown table under the Annual table, December review highlight.
-    - Source: roadmap v0.7; `0014`
-    - Files: `src/components/BudgetTable.tsx`, new table component, `src/App.css`
-    - Verify: per `0014`; table headings and names
-    - Decided 2026-11-22 (`0014`): two stacked tables (M5 A); count months, not purchases (M1); only Incidentals › Miscellaneous counts, added to the seed and presets with a migration (M3); threshold fixed at 6 (M4; a setting is in v0.8); a "Save for future" button on every breakdown row creates the item under Incidentals and moves its purchases (M2, M6).
-    - Also: the Add purchase "Use in future" checkbox is relabelled "Save for future" (human, 2026-11-22).
-    - Deps: 6
-    - ✅ (v0.7.27 to v0.7.39; UI approved 2026-11-22)
-    - Progress (v0.7.35): `MiscBreakdown` under the Annual table (heading "Misc. Breakdown", year caption); grouped by description, alphabetical, "No description" last group by name; Review icon, bold italic and hover background on rows bought in more than 6 months once the year reaches December; "Save for future" (sync-busy rule, one live region) moves every Miscellaneous purchase with that description (all years) into a new selected item. Dexie v10 makes sure Incidentals › Miscellaneous exists and is preselected. Waiting on: UI approval.
-14. **Week and Day import regression** (v0.7/14) — regression test the import of Week and Day sheets, then fill the gaps (e.g. a week sheet and a day sheet covering the same day are not cross-checked).
-    - Source: roadmap v0.7 (decided 2026-11-11)
-    - Files: `tests/import/`, `src/import/`
-    - Verify: `npm run test:import`
-    - Deps: none
-    - Progress (v0.7.66): Week and Day regression checks added (dates, marks, year, times, descriptions, credits). Gap filled (human, 2026-11-26, option A): two included sheets that cover the same days and give purchases to the same row each get a warning in the preview, nothing removed (`0013` §6). `test:import` passes (332 checks). **Step 14 ✅ (v0.7.66).**
-15. ~~**Charts** (v0.7/15)~~ — moved to v0.8 (human, 2026-11-22).
-15b. **D004 hardened-browser sign-in** (v0.7/15b) — redirect sign-in so sync works in Firefox Strict, Brave and similar (`docs/defects/D004-hardened-firefox-sign-in.md`). Does not block the alpha launch (human, 2026-11-22).
-    - Files: `src/storage/sync/googleSheets.ts`, `src/components/Sync.tsx`; an Authorized redirect URI in the Google Cloud console (human)
-    - Verify: sign-in in Firefox Strict and in Chromium
-    - Deps: 3b
-    - Progress (v0.7.64): built on branch `v0.7-redirect-sign-in` (worktree `.worktrees/v0.7-redirect-sign-in`), option A (human, 2026-11-26): after a pop-up failure the Sync dialog and wizard offer "Sign in another way", a redirect sign-in (`0015` §7.1). Build, lint and `test:sync` pass. The human added the redirect URIs and tested in Chromium and Firefox; passed (2026-11-26). One Picker error ("The API developer key is invalid") in the wizard could not be reproduced. **Step 15b ✅ (v0.7.64).**
-15c. **Phone-test defects D005 and D006** (v0.7/15c) — D005: the Google file picker lists no files (`docs/defects/D005-picker-lists-no-files.md`); D006: Edit menu items clipped on the left (`docs/defects/D006-edit-menu-items-clipped.md`). Found 2026-11-26.
-    - Files: `src/storage/sync/googleSheets.ts`, `src/storage/sync/googleConfig.ts` (and the API key restriction in the Google Cloud console, human); ActionsMenu, `src/App.css`
-    - Verify: an existing sheet is listed and linked from the phone; the menu is fully visible at 320/375/640px
-    - Deps: 3b
-    - Progress (v0.7.48, v0.7.55, v0.7.60): D005 ✅ (v0.7.55, v0.7.60): "My sheets" is the first picker tab, and the CSP now allows inline styles (`style-src 'unsafe-inline'`, `0015` §7.1), which was hiding the picker's file list; the human confirmed an existing sheet links (2026-11-26). D006 ✅ (v0.7.48): menus placed against the window; checked at 375px in `test:dialogs`; the human verified it (2026-11-26). **Step 15c ✅ (v0.7.47 to v0.7.60).**
-15d. **Tester feedback** (v0.7/15d) — the roadmap v0.7 "Tester feedback" list (2026-11-26): Add purchase (new subcategory under a category, subcategory with items → Miscellaneous, Update on the Day table), Day view removed from the Budget screen, Actions menu and Update dialog (Up/Down removed), alphabetical sort, new reward characters and animations, full-width date navigation on mobile, media query audit. Questions and guesses: `docs/review-questions/2026-11-26-tester-feedback.md`.
-    - Files: `src/components/BudgetTable.tsx`, `src/components/ui/` (ActionsMenu, EditDialogs), `src/components/PurchaseForm.tsx`, `src/screens/` (Budget, AddBudget, BudgetSetup), `src/budget/` (tree, setupEdits), `src/storage/repository.ts`, `src/rewards/`, `src/App.css`, `tests/dialogs/run.mjs`
-    - Verify: build + lint; `test:dialogs`, `test:import`, `test:sync`; 1280/640/375/320px; human phone test on the dev branch
-    - Deps: 15c (D006 shares the Actions menu)
-    - Progress (v0.7.49 to v0.7.54): all built. v0.7.49 date navigation and media queries (3 left, `0012` §2); v0.7.50 alphabetical sort, Up/Down removed; v0.7.51 Day view removed; v0.7.52 Actions menu, Update dialog, Day table Update; v0.7.53 Add purchase subcategory changes; v0.7.54 rewards. Build, lint, `test:dialogs`, `test:import`, `test:sync` pass. The human's phone test and UI approval passed (2026-11-26). **Step 15d ✅ (v0.7.49 to v0.7.54).**
-15e. **UI updates** (v0.7/15e) — human, 2026-11-26: Week/Month/Annual as a three-option Toggle; Sync control moved into the Backup dialog; Add purchase supporting text moved into info buttons beside each label.
-    - Files: `src/screens/Budget.tsx`, `src/components/Backup.tsx`, `src/components/Sync.tsx`, `src/App.tsx`, `src/components/PurchaseForm.tsx`, `src/App.css`
-    - Verify: build + lint; `test:dialogs`; 1280/640/375/320px
-    - Progress (v0.7.57 to v0.7.59): range toggle and Sync in the Backup dialog (v0.7.57); Add purchase info buttons and the version shown at the top (v0.7.58); shorter Category info text (v0.7.59). Built, tested and passed by the human (2026-11-26). **Step 15e ✅ (v0.7.57 to v0.7.59).**
-15f. **Update popup** (v0.7/15f) — human, 2026-11-26: on the first open after an update, a popup lists the changes and new known issues; every merge to `main` updates it.
-    - Source: roadmap v0.7 "Update popup"; `0016-update-popup.md`
-    - Files: `src/updates/`, `src/components/UpdatePopup.tsx`, `src/components/ui/Dialog.tsx` (`closeButton`), `src/App.tsx`, `src/App.css`, `.claude/CLAUDE.md` (merge rule), `tests/dialogs/run.mjs`
-    - Verify: build + lint; `test:dialogs`; the human reviews the Changes list before the merge
-    - Progress (v0.7.61, v0.7.62): built (mockup approved: 3px border, "Known Issues"; merge rule added; a test checks that each merge updates the popup data). Built, tested and passed by the human (2026-11-26). **Step 15f ✅ (v0.7.61, v0.7.62).**
-16. **UI/UX review** (v0.7/16) — human approval, `0005` checklist, all widths.
-    - Deps: 1–15d
-17. **Accessibility pass** (v0.7/17) — including chart alt text, keyboard navigation and screen reader.
-    - Deps: 16
-18. **Security review** (v0.7/18) — covers sync; carried items listed in step 2. On approval bump to v0.8.0.
-    - Deps: 17
+11. **Security review** (v0.8/11) — covers charts; carried items in `security-v0.7.md` (v0.2 2.5, 4.5, 4.3). On approval bump to v0.9.0.
+    - Deps: 10
 
 ### Execution
-- **A — Dialogs** (step 1; `Dialog`, `App.css`): first.
-- **F — Sync** (steps 2, 3, 3b; `src/storage/`, new adapter): right after A; step 2 needs human decisions, step 3 starts as soon as 2 is approved.
-- **A2 — Standards and layout** (steps 4, 5, 7; `App.css`, tokens): after F.
-- **B — Tables** (steps 6, 8, 9, 12, 13; `BudgetTable.tsx`, `App.css`): after A2.
-- **C — Names and moves** (steps 10, 11b, 11; `validate.ts`, `setupEdits.ts`, repository): after F; both need human decisions.
-- **D — Import** (step 14; `tests/import/`): any time.
-- **E — Charts**: moved to v0.8.
-- **D004** (step 15b) and **D005/D006** (step 15c): after F, before the reviews.
-- **T — Tester feedback** (steps 15c, 15d, 15e, 15f): built and passed 2026-11-26 (v0.7.47 to v0.7.62).
-- **Reviews** (steps 16–18): main session with the user.
-- Status: ✅ A · ✅ F · ✅ A2 · ✅ B · ✅ C · ✅ T · ✅ D · ✅ 15b (D004) · ~~E~~ · ☐ reviews
+- **A — Design** (steps 1, 3, 7; docs only): first, with the human.
+- **B — Help and Backup** (step 2; `Backup.tsx`, `Onboarding.tsx`, `App.tsx`): after step 1.
+- **C — Layout** (steps 4, 5; `App.css`, `BudgetTable.tsx`): after step 3.
+- **D — Setting** (step 6; storage, `BudgetSetup.tsx`, `MiscBreakdown.tsx`): any time.
+- **E — Charts** (step 8; new component folder): after steps 4 and 7.
+- **Reviews** (steps 9–11): main session with the user.
+- Status: ☐ A · ☐ B · ☐ C · ☐ D · ☐ E · ☐ reviews
 
 ### Session process
 Run option 1: one session per group, fresh start at each group boundary. A session starts by reading this file and the roadmap, then:
-0. **Work in a worktree** (`dev-workflow.md`): create `.claude/worktrees/v0.7-group-<x>` from the latest `main` (or from `dev/v0.7` when a session builds several groups), build there, and at the end of the group or step stop and ask the human to approve the merge. Never merge to `main` without that approval.
+0. **Work in a worktree** (`dev-workflow.md`): create `.claude/worktrees/v0.8-group-<x>` from the latest `main` (or from `dev/v0.8` when a session builds several groups), build there, and at the end of the group or step stop and ask the human to approve the merge. Never merge to `main` without that approval.
 1. **Find the start:** the first group in the order above that is not ✅ and whose dependencies are met; within it, the first step not marked ✅. Stop and ask if the status line and the step marks disagree.
 2. **Check blockers** ("needs human decision", "blocked"). Do not build a blocked step: skip it, or stop and tell the user if it is the only one left.
-3. **Build one step at a time:** re-read the latest version on `main`, build and lint, commit with the next patch version and the `Plan-Step: v0.7/N` trailer, mark the step ✅ with its version(s). Check `git diff --cached --stat` before each commit.
+3. **Build one step at a time:** re-read the latest version on `main`, build and lint, commit with the next patch version and the `Plan-Step: v0.8/N` trailer, mark the step ✅ with its version(s). Check `git diff --cached --stat` before each commit.
 4. **UI steps** pause for human approval before they are marked ✅ (`0005`).
 5. **At the end of the group:** update the Execution status line, commit in the worktree, and tell the user the group is done and waiting for merge approval. Before asking to merge to `main`, update the update popup (`src/updates/updates.json`) and have the human review its Changes list (`.claude/CLAUDE.md`, "Update popup").
-6. **Reviews** (16–18) are run in the main session with the user, not by a worker.
+6. **Reviews** (9–11) are run in the main session with the user, not by a worker.
 
 ## Rules
 - Each completed item: commit + version bump (per `.claude/CLAUDE.md` "Version numbering").

@@ -1,7 +1,7 @@
 import { db, markTx, type BudgetItem, type Category, type Settings, type SyncRecord, type SyncTab } from '../db'
 import { badTreeRows, cleanSettings, validCategory, validItem } from '../repository'
 import { cleanDescription, cleanName, slug } from '../../budget/validate'
-import type { CellWrite, StorageAdapter } from './adapter'
+import { RemoteError, type CellWrite, type StorageAdapter } from './adapter'
 import { aadOf, CHECK_TEXT, decrypt, encrypt } from './crypto'
 import { CHECK_ID, FIRST_DATA_ROW, HEADER, META_PREFIX, parseRow, SALT_ID, SETTINGS_UID, TABS, toCells } from './cells'
 
@@ -11,6 +11,8 @@ const DAY_MS = 24 * 60 * 60 * 1000
 export const TOMBSTONE_MS = TOMBSTONE_DAYS * DAY_MS
 /** Longest encrypted cell read; anything larger is not ours. */
 export const MAX_CONTENT_CHARS = 20_000
+/** Most rows read from one tab. A sheet with more is refused before any row is read (a hostile or damaged sheet must not freeze the app). */
+export const MAX_ROWS_PER_TAB = 50_000
 /** Cap on the tree-check passes (each pass drops at least one bad row). */
 const MAX_PASSES = 50
 const COLOR_RE = /^[a-z][a-z-]{0,39}$/
@@ -106,6 +108,8 @@ export async function syncOnce(adapter: StorageAdapter, key: CryptoKey, clock: C
   const now = clock()
   const notes: string[] = []
   const sheet = await adapter.read()
+  if (TABS.some(t => sheet[t].length > MAX_ROWS_PER_TAB))
+    throw new RemoteError(`The sheet has more than ${MAX_ROWS_PER_TAB.toLocaleString('en-US')} rows in one tab, which is more than Simple Budget can read. Delete the extra rows in the sheet and try again.`)
 
   // Pull: every row is untrusted. Decrypt first (outside the database transaction, which
   // can't wait on Web Crypto), then the import-style checks run inside it.

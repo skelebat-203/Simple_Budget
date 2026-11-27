@@ -5,7 +5,7 @@ import { BudgetTable } from '../components/BudgetTable'
 import { announce, useAnnounce } from '../components/ui/announcer'
 import { fireReward } from '../rewards/rewards'
 import { requestNotifications } from '../notifications'
-import { saveSetup } from '../storage/repository'
+import { SETUP_CONFLICT_TEXT, SetupConflictError, saveSetup } from '../storage/repository'
 import { dateBounds, expandName, moneyError, NAME_MAX, parseAmount, slug } from '../budget/validate'
 import type { BudgetItem, Category, DefaultRange, DueDay, Frequency, MonthBoundary } from '../storage/db'
 import {
@@ -157,9 +157,9 @@ export function BudgetSetup({ cats, items, defaultRange, calendar, rewardsEnable
     let moved = 0
     try {
       moved = await saveSetup(final, original, { defaultRange: range, weekStart, monthBoundary: boundary, rewardsEnabled: rewards, notificationsEnabled: notify })
-    } catch {
+    } catch (e) {
       setSaving(false)
-      setSaveError('Error: Your budget setup wasn’t saved, and nothing was changed. Check that your device has free storage space, then try again.')
+      setSaveError(e instanceof SetupConflictError ? SETUP_CONFLICT_TEXT : 'Error: Your budget setup wasn’t saved, and nothing was changed. Check that your device has free storage space, then try again.')
       return
     }
     onSaved(moved)

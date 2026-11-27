@@ -1,6 +1,14 @@
 {
   "releases": [
     {
+      "version": "0.8.0",
+      "changes": [
+        "Budget setup no longer saves over changes made on another device.",
+        "Sync shows a clear message when a sheet has far too many rows.",
+        "Misc. Breakdown buttons are easier to use with a screen reader."
+      ]
+    },
+    {
       "version": "0.7.67",
       "changes": [
         "Alternate signin if Google window won't open.",

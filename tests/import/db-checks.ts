@@ -2,7 +2,7 @@
 // fake-indexeddb, installed by run.mjs before Dexie loads.
 import { strToU8 } from 'fflate'
 import { db } from '../../src/storage/db'
-import { addNewItem, budgetItemRepo, categoryRepo, checkBackup, exportBackup, skipped } from '../../src/storage/repository'
+import { addNewItem, budgetItemRepo, categoryRepo, checkBackup, exportBackup, saveSetup, SetupConflictError, skipped } from '../../src/storage/repository'
 import { seedCategories } from '../../src/storage/seed'
 import { applyImport, ImportError, importSnapshot, previewImport, readImportFile, type ImportOptions } from '../../src/import'
 import { badFiles, readTestFile, SHEET_YEAR, TEST_FILES, TODAY, UNKNOWN_TOP_CSV } from './fixtures'
@@ -63,6 +63,37 @@ export async function run(check: Check) {
   raw.budgetItems = [{ id: 1, ...rawItem, description: `a${rtlOverride}b${zeroWidth}c${nul} d` }, { id: 2, ...rawItem, description: rtlOverride + zeroWidth }]
   const cleaned = checkBackup(raw).budgetItems
   check(cleaned[0].description === 'abc d' && cleaned[1].description === undefined, 'restore cleans descriptions: format and control characters removed, an empty result is dropped')
+
+  // A restored record id becomes a row id in the sync sheet: malformed or repeated ids are replaced, good ones kept (security-v0.7 3.1).
+  const goodUid = 'abc-123_XYZ', longUid = 'x'.repeat(65)
+  raw.budgetItems = [{ id: 1, ...rawItem, uid: goodUid }, { id: 2, ...rawItem, uid: goodUid }, { id: 3, ...rawItem, uid: '=cmd|x' }, { id: 4, ...rawItem, uid: longUid }, { id: 5, ...rawItem, uid: 7 }]
+  raw.categories[0].uid = 'bad id with spaces'
+  const uids = checkBackup(raw)
+  check(uids.budgetItems[0].uid === goodUid && uids.budgetItems.slice(1).every(i => i.uid === undefined), 'restore keeps a well-formed id once and drops repeated, long, odd-character and non-text ids')
+  check(uids.categories[0].uid === undefined && uids.categories.slice(1).every(c => c.uid === undefined || /^[A-Za-z0-9_-]{1,64}$/.test(c.uid)), 'restore drops a category id with odd characters')
+
+  // Budget setup and wizard saves refuse to write over a budget that changed while they were open (security-v0.5 3.2).
+  await reset(true)
+  const snap = await categoryRepo.list()
+  const kid = snap.find(c => c.parentId != null)!
+  const sib = snap.find(c => c.parentId === kid.parentId && c.id !== kid.id)!
+  const conflict = async (work: typeof snap) => { try { await saveSetup(work, snap, {}); return 'saved' } catch (e) { return e instanceof SetupConflictError ? 'conflict' : `other ${String(e)}` } }
+  check(await conflict(snap.map(c => c.id === kid.id ? { ...c, estimate: 5 } : c)) === 'saved' && (await db.categories.get(kid.id!))?.estimate === 5, 'setup save: an unchanged budget saves')
+  const snap2 = await categoryRepo.list()
+  await db.categories.update(kid.id!, { estimate: 9 })
+  const staleSave = await (async () => { try { await saveSetup(snap2.map(c => c.id === kid.id ? { ...c, estimate: 6 } : c), snap2, {}); return 'saved' } catch (e) { return e instanceof SetupConflictError ? 'conflict' : 'other' } })()
+  check(staleSave === 'conflict' && (await db.categories.get(kid.id!))?.estimate === 9, 'setup save: a row changed elsewhere is not overwritten')
+  const snap3 = await categoryRepo.list()
+  const dup = { ...sib, id: -1, name: sib.name.toUpperCase(), uid: undefined } as typeof sib
+  const before3 = (await categoryRepo.list()).length
+  const dupResult = await (async () => { try { await saveSetup([...snap3, dup], snap3, {}); return 'saved' } catch (e) { return e instanceof SetupConflictError ? 'conflict' : 'other' } })()
+  check(dupResult === 'conflict' && (await categoryRepo.list()).length === before3, 'setup save: a name already used under the same parent is refused, nothing written')
+  const gone = await categoryRepo.list()
+  const goneParent = gone.find(c => c.parentId == null)!
+  await db.categories.delete(goneParent.id!)
+  const orphan = { ...sib, id: -2, name: 'Orphaned', parentId: goneParent.id!, uid: undefined } as typeof sib
+  const orphanResult = await (async () => { try { await saveSetup([...gone, orphan], gone, {}); return 'saved' } catch (e) { return e instanceof SetupConflictError ? 'conflict' : 'other' } })()
+  check(orphanResult === 'conflict', 'setup save: a new row under a parent that was removed is refused')
 
   // Day sheet times are kept and order the Day table (Q10).
   await reset(true)

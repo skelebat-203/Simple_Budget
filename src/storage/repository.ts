@@ -1,4 +1,4 @@
-import { db, markTx, type BudgetItem, type Category, type Frequency, type DefaultRange, type MonthBoundary, type Settings } from './db'
+import { db, markTx, UID_RE, type BudgetItem, type Category, type Frequency, type DefaultRange, type MonthBoundary, type Settings } from './db'
 import { cleanDescription, cleanName, DESCRIPTION_MAX, MONEY_MAX, slug } from '../budget/validate'
 import { toV7Structure } from './structure'
 import { ImportError } from '../import/grid'
@@ -368,6 +368,15 @@ export const settingsRepo = {
 export async function saveSetup(working: Category[], original: Category[], settings: Partial<Settings>): Promise<number> {
   const before = new Map(original.map(c => [c.id, JSON.stringify(c)]))
   return db.transaction('rw', db.categories, db.budgetItems, db.settings, async () => {
+    // Another tab, or a sync, may have changed the tree while the dialog was open (security-v0.5 3.2):
+    // refuse to write over a row that changed, or under a parent that is gone.
+    const current = new Map((await db.categories.toArray()).map(c => [c.id!, c]))
+    for (const c of working) {
+      if (c.id! < 0) {
+        if (c.parentId != null && c.parentId >= 0 && !current.has(c.parentId)) throw new SetupConflictError()
+      } else if (before.get(c.id) !== JSON.stringify(c) && JSON.stringify(current.get(c.id!)) !== before.get(c.id)) throw new SetupConflictError()
+    }
+    const touched = new Set<number>()
     const real = new Map<number, number>()
     const mapId = (id: number | null) => (id != null && id < 0 ? real.get(id)! : id)
     const fresh = working.filter(c => c.id! < 0)
@@ -376,17 +385,30 @@ export async function saveSetup(working: Category[], original: Category[], setti
       if (i < 0) throw new Error('New row has no parent')
       const [c] = fresh.splice(i, 1)
       const { id, ...row } = c
-      real.set(id!, await db.categories.add({ ...row, name: cleanName(row.name), parentId: mapId(row.parentId) }))
+      const added = await db.categories.add({ ...row, name: cleanName(row.name), parentId: mapId(row.parentId) })
+      real.set(id!, added)
+      touched.add(added)
     }
     for (const c of working) {
       if (c.id! < 0 || before.get(c.id) === JSON.stringify(c)) continue
       await db.categories.put({ ...c, name: cleanName(c.name), parentId: mapId(c.parentId) })
+      touched.add(c.id!)
     }
+    // Sibling names stay unique: checked here, where it holds for the data as it is now.
+    const all = await db.categories.toArray()
+    const key = (c: Category) => `${c.parentId ?? ''}|${slug(c.name)}`
+    const count = new Map<string, number>()
+    for (const c of all) count.set(key(c), (count.get(key(c)) ?? 0) + 1)
+    if (all.some(c => touched.has(c.id!) && count.get(key(c))! > 1)) throw new SetupConflictError()
     const moved = await settleCharity()
     await settingsRepo.update(settings)
     return moved
   })
 }
+
+/** Budget setup or the wizard could not save because the budget changed while it was open (another tab or a sync). Nothing was written. */
+export class SetupConflictError extends Error {}
+export const SETUP_CONFLICT_TEXT = 'Error: The budget changed in another tab or on another device while this was open, so nothing was saved. Close this and open it again.'
 
 // ---------- backup (security-v0.2 6.2) ----------
 
@@ -430,11 +452,19 @@ export function checkBackup(data: unknown): Backup {
   // Backups made before the v7 structure (no stored order) get the same upgrade the database got.
   const cats = b.categories.some(c => c.order === undefined) ? toV7Structure(b.categories) : b.categories
   if (badTreeRows(cats).size) throw new BackupError('has categories nested in a loop or more than three levels deep. Export a new backup and try again.')
+  // A record id becomes a row id in the sync sheet, so only well-formed, unique ones are kept; any other row gets a fresh id.
+  const seenUids = new Set<string>()
+  const goodUid = (uid: unknown): uid is string => {
+    if (typeof uid !== 'string' || !UID_RE.test(uid) || seenUids.has(uid)) return false
+    seenUids.add(uid)
+    return true
+  }
+  const withUid = <T extends { uid?: string }>(r: T): T => { const { uid, ...rest } = r; return (goodUid(uid) ? { ...rest, uid } : rest) as T }
   return {
     ...b,
     // Descriptions get the same cleaning as names (control and format characters out), as when they are typed or imported.
-    budgetItems: b.budgetItems.map(({ id, uid, categoryId, amount, date, description, undated, createdAt, updatedAt }) => ({ id, ...(typeof uid === 'string' ? { uid } : {}), categoryId, amount, date, ...(description && cleanDescription(description) ? { description: cleanDescription(description) } : {}), ...(undated ? { undated } : {}), createdAt, updatedAt })),
-    categories: cats.map(c => ({ ...c, name: cleanName(c.name) })),
+    budgetItems: b.budgetItems.map(({ id, uid, categoryId, amount, date, description, undated, createdAt, updatedAt }) => ({ id, ...(goodUid(uid) ? { uid } : {}), categoryId, amount, date, ...(description && cleanDescription(description) ? { description: cleanDescription(description) } : {}), ...(undated ? { undated } : {}), createdAt, updatedAt })),
+    categories: cats.map(c => withUid({ ...c, name: cleanName(c.name) })),
     settings: b.settings.slice(0, 1).map(s => cleanSettings({ ...s, rewardsEnabled: !!s.rewardsEnabled })),
   }
 }

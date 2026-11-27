@@ -133,6 +133,8 @@ function modeOf(tx: unknown): TxMode | undefined {
   return undefined
 }
 const newUid = () => crypto.randomUUID()
+/** What a record id may look like: it becomes a row id in the sync sheet (security-v0.7 3.1). */
+export const UID_RE = /^[A-Za-z0-9_-]{1,64}$/
 
 class SimpleBudgetDB extends Dexie {
   budgetItems!: Table<BudgetItem, number>

@@ -411,7 +411,7 @@ try {
       xSize: Math.round(xr.width), titleClear: (() => { const h = d.querySelector('h2'); if (!h) return false; const r = document.createRange(); r.selectNodeContents(h); return r.getBoundingClientRect().right <= xr.left + 1 })(),
     } : null
   })
-  check('Update popup: 3px border, an X named Close at the top right, bullets and Known Issues', !!pop && pop.border === '3px' && pop.xName === 'Close' && pop.xTopRight && pop.bullets > 0 && pop.issues === 'Known Issues', JSON.stringify(pop))
+  check('Update popup: 3px border, an X named Close at the top right, bullets and Known Issues', !!pop && pop.border === '3px' && pop.xName === 'Close' && pop.xTopRight && pop.bullets > 0 && pop.issues === (readJson('src/updates/updates.json').knownIssues.length > 0 ? 'Known Issues' : ''), JSON.stringify(pop))
   check('Update popup: the title does not run under the X', !!pop && pop.titleClear, JSON.stringify(pop))
   await standard('Update popup', 'update-popup', '', { returns: false })
   await reopen('0.0.1')

@@ -5,7 +5,7 @@ import { useAnnounce } from '../components/ui/announcer'
 import { ImportSection } from '../components/import/ImportSection'
 import { WizardSync, type SyncTabId } from '../components/WizardSync'
 import { useSyncState } from '../components/useSyncState'
-import { saveSetup, settingsRepo } from '../storage/repository'
+import { SETUP_CONFLICT_TEXT, SetupConflictError, saveSetup, settingsRepo } from '../storage/repository'
 import type { Category } from '../storage/db'
 import { buildTree, flatten, isTotal, type Cat } from '../budget/tree'
 import * as edit from '../budget/setupEdits'
@@ -124,9 +124,9 @@ export function Onboarding({ cats, firstRun, onClose, onSkip, onDone, onAdvanced
     if (withCats) for (const o of options) work = edit.patch(work, Number(o.key), { selected: selected.has(o.key) })
     try {
       await saveSetup(work, original, { onboarded: true })
-    } catch {
+    } catch (e) {
       setSaving(false)
-      setError('Error: Your answers weren’t saved, and nothing was changed. Check that your device has free storage space, then try again.')
+      setError(e instanceof SetupConflictError ? SETUP_CONFLICT_TEXT : 'Error: Your answers weren’t saved, and nothing was changed. Check that your device has free storage space, then try again.')
       return
     }
     then()

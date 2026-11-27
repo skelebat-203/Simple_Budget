@@ -8,7 +8,7 @@ import { OAUTH_URL, REDIRECT_PENDING_KEY } from '../../src/storage/sync/googleCo
 import { accessToken, isSignedIn, readRedirect, signInRedirect, signOut } from '../../src/storage/sync/googleSheets'
 import { neutralize, toCells, unneutralize } from '../../src/storage/sync/cells'
 import { aadOf, decrypt, deriveKey, encrypt, newSalt } from '../../src/storage/sync/crypto'
-import { TOMBSTONE_MS } from '../../src/storage/sync/engine'
+import { MAX_ROWS_PER_TAB, TOMBSTONE_MS } from '../../src/storage/sync/engine'
 import * as sync from '../../src/storage/sync/controller'
 import { FakeSheet } from './fakeSheet'
 import { buildTree } from '../../src/budget/tree'
@@ -216,6 +216,14 @@ export async function run(check: Check) {
   check(!!charity && (r?.notes.length ?? 0) >= 7, 'each skipped row gets a note')
   for (const id of ['bad-color', 'bad-estimate', 'no-parent', 'too-deep']) sheet().tabs.Categories[sheet().rowOf('Categories', id)] = []
   for (const id of ['bad-amount', 'bad-date', 'future']) sheet().tabs.Purchases[sheet().rowOf('Purchases', id)] = []
+
+  // A sheet with far too many rows is refused before any row is read; local data is untouched.
+  const purchaseRows = sheet().tabs.Purchases.length
+  for (let i = 0; i <= MAX_ROWS_PER_TAB; i++) sheet().tabs.Purchases.push(['junk', 1, false, 'x'])
+  const itemsPre = JSON.stringify(await budgetItemRepo.list())
+  r = await syncNow()
+  check(r === null && /more than 50,000 rows/.test(sync.syncState().error ?? '') && JSON.stringify(await budgetItemRepo.list()) === itemsPre, 'a sheet with more than 50,000 rows in a tab is refused with a plain message')
+  sheet().tabs.Purchases.length = purchaseRows
 
   // ----- name clash re-check inside the transaction (v0.5 3.2) -----
   await remoteWrite('Categories', 'clash-1', now(), false, { name: 'Gas', color: 'lighter-orange', parentUid: exp.uid })
