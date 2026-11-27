@@ -1,6 +1,13 @@
 {
   "releases": [
     {
+      "version": "0.7.67",
+      "changes": [
+        "Alternate signin if Google window won't open.",
+        "Week / Day sheet compared for duplicates when imported."
+      ]
+    },
+    {
       "version": "0.7.62",
       "changes": [
         "Week, Month and Annual are now one switch.",
@@ -16,11 +23,5 @@
       ]
     }
   ],
-  "knownIssues": [
-    {
-      "id": "D004",
-      "since": "0.7.10",
-      "text": "Google sign-in does not work in some privacy-focused browsers, such as Firefox Strict."
-    }
-  ]
+  "knownIssues": []
 }
