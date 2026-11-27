@@ -4,6 +4,8 @@ import { db, markTx, type SyncTab } from '../../src/storage/db'
 import { badTreeRows, budgetItemRepo, categoryRepo, checkBackup, exportBackup, settingsRepo } from '../../src/storage/repository'
 import { seedCategories } from '../../src/storage/seed'
 import { RateLimitError } from '../../src/storage/sync/adapter'
+import { OAUTH_URL, REDIRECT_PENDING_KEY } from '../../src/storage/sync/googleConfig'
+import { accessToken, isSignedIn, readRedirect, signInRedirect, signOut } from '../../src/storage/sync/googleSheets'
 import { neutralize, toCells, unneutralize } from '../../src/storage/sync/cells'
 import { aadOf, decrypt, deriveKey, encrypt, newSalt } from '../../src/storage/sync/crypto'
 import { TOMBSTONE_MS } from '../../src/storage/sync/engine'
@@ -309,4 +311,44 @@ export async function run(check: Check) {
   // ----- unlink -----
   await sync.unlink()
   check(!(await db.syncConfig.get('cryptoKey')) && !(await db.syncConfig.get('link')) && (await categoryRepo.list()).length > 0, 'unlink removes the key and link; local data stays')
+
+  await redirectSignInChecks(check)
+}
+
+/** Redirect sign-in (D004): the page's `location`, `history` and `sessionStorage` are stand-ins. */
+async function redirectSignInChecks(check: Check) {
+  const g = globalThis as Record<string, unknown>
+  const store = new Map<string, string>()
+  const page = { origin: 'https://example.test', pathname: '/Simple_Budget/', search: '', hash: '', assigned: '' }
+  const fake = {
+    location: { ...page, assign(url: string) { page.assigned = url } },
+    history: { replaceState() { fake.location.hash = '' } },
+    sessionStorage: { getItem: (k: string) => store.get(k) ?? null, setItem: (k: string, v: string) => { store.set(k, v) }, removeItem: (k: string) => { store.delete(k) } },
+  }
+  for (const [k, v] of Object.entries({ ...fake, window: globalThis })) Object.defineProperty(g, k, { value: v, configurable: true, writable: true })
+  const scope = encodeURIComponent('https://www.googleapis.com/auth/drive.file')
+  const back = (hash: string) => { fake.location.hash = `#${hash}`; return readRedirect() }
+  const leave = (to: 'backup' | 'wizard') => { signInRedirect(to); return new URL(page.assigned).searchParams }
+
+  signOut()
+  const sent = leave('wizard')
+  const state = sent.get('state') ?? ''
+  check(page.assigned.startsWith(OAUTH_URL) && sent.get('response_type') === 'token' && sent.get('scope') === 'https://www.googleapis.com/auth/drive.file'
+    && !!sent.get('redirect_uri')?.startsWith('https://example.test/') && !sent.get('redirect_uri')?.includes('#'), 'redirect sign-in asks Google for a token with the app’s own address as the return')
+  check(!!state && !page.assigned.includes('access_token') && !store.get(REDIRECT_PENDING_KEY)?.includes('token'), 'only a random state is kept across the redirect, never a token')
+
+  const ok = back(`access_token=tok&expires_in=3599&scope=${scope}&state=${state}&token_type=Bearer`)
+  check(ok?.returnTo === 'wizard' && !ok.error && isSignedIn() && accessToken() === 'tok', 'a return with the right state signs in and says where to go back to')
+  check(fake.location.hash === '' && !store.has(REDIRECT_PENDING_KEY), 'the token is removed from the address and the pending state is cleared')
+
+  signOut()
+  leave('backup')
+  check(back(`access_token=forged&expires_in=3599&scope=${scope}&state=wrong`) === null && !isSignedIn(), 'a return with a different state is ignored')
+  check(back(`access_token=forged&state=${state}`) === null && !isSignedIn(), 'a return with no pending sign-in is ignored')
+
+  const denied = (() => { const s = leave('backup').get('state'); return back(`error=access_denied&state=${s}`) })()
+  check(denied?.returnTo === 'backup' && !!denied.error?.includes('wasn’t granted') && !isSignedIn(), 'a refusal on Google’s page gives our message and no sign-in')
+  const unticked = (() => { const s = leave('backup').get('state'); return back(`access_token=tok&expires_in=3599&scope=openid&state=${s}`) })()
+  check(!!unticked?.error?.includes('left unticked') && !isSignedIn(), 'the sync permission left unticked is reported and gives no sign-in')
+  signOut()
 }

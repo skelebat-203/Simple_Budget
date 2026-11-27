@@ -1,12 +1,13 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useSyncState } from './useSyncState'
 import { useAnnounce } from './ui/announcer'
 import { Button } from './ui'
 import * as sync from '../storage/sync/controller'
+import { PopupError } from '../storage/sync/adapter'
 import { isGoogleConfigured } from '../storage/sync/googleConfig'
-import { isSignedIn, signIn } from '../storage/sync/googleSheets'
-import { createAndLink, CREATED_TEXT, LINKED_TEXT, linkSheet, syncFailText, usePasscode } from './syncActions'
-import { PasscodeField } from './syncForms'
+import { clearRedirectResult, isSignedIn, signIn } from '../storage/sync/googleSheets'
+import { createAndLink, CREATED_TEXT, LINKED_TEXT, linkSheet, redirectNotice, syncFailText, usePasscode } from './syncActions'
+import { PasscodeField, RedirectSignIn } from './syncForms'
 
 const syncedText = (skipped: number) => `Synced.${skipped ? ` ${skipped} row${skipped === 1 ? '' : 's'} from the sheet needed attention; see the list in Sync.` : ''}`
 
@@ -20,17 +21,20 @@ export function Sync({ onboarded, pickedId, onPick }: { onboarded: boolean; pick
   const s = useSyncState()
   const [signedIn, setSignedIn] = useState(isSignedIn())
   const p = usePasscode()
-  const [status, setStatus] = useState('')
-  const [error, setError] = useState('')
+  const [arrival] = useState(() => redirectNotice('backup'))
+  const [status, setStatus] = useState(arrival.status)
+  const [error, setError] = useState(arrival.error)
   const [working, setWorking] = useState(false)
+  const [offerRedirect, setOfferRedirect] = useState(false)
   const [unlinking, setUnlinking] = useState(false)
+  useEffect(clearRedirectResult, [])
   useAnnounce(status)
   useAnnounce(error || s.error || '')
   useAnnounce(p.error)
 
   async function run(f: () => Promise<string>) {
-    setError(''); setStatus(''); setWorking(true)
-    try { setStatus(await f()) } catch (e) { setError(syncFailText(e)) } finally { setWorking(false) }
+    setError(''); setStatus(''); setOfferRedirect(false); setWorking(true)
+    try { setStatus(await f()) } catch (e) { setError(syncFailText(e)); setOfferRedirect(e instanceof PopupError) } finally { setWorking(false) }
   }
 
   const login = () => run(async () => { await signIn(); setSignedIn(true); void sync.requestSync(); return 'Signed in with Google.' })
@@ -50,6 +54,7 @@ export function Sync({ onboarded, pickedId, onPick }: { onboarded: boolean; pick
       <h4 id="sync-signin-heading" className="label">Sign in</h4>
       <p className="help">Sync keeps the same budget on several devices, using a Google Sheet in your own Google account. The app sees only sheets it created or you picked.</p>
       <div className="actions"><Button type="button" onClick={login} disabled={working}>Sign in with Google</Button></div>
+      {offerRedirect && <RedirectSignIn returnTo="backup" onError={setError} />}
     </section>
   )
   else if (!s.linked) body = pickedId ? (

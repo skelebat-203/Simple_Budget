@@ -17,6 +17,9 @@ export const isGoogleConfigured = () => !Object.values(GOOGLE_CONFIG).some(v => 
 
 /** The only scope asked for: files this app created or the user picked (0015 Q2). */
 export const DRIVE_FILE_SCOPE = 'https://www.googleapis.com/auth/drive.file'
+/** Redirect sign-in (D004). The redirect URI is the app's own address, added under Authorized redirect URIs. */
+export const OAUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth'
+export const REDIRECT_PENDING_KEY = 'sb-signin-pending'
 export const GSI_SCRIPT = 'https://accounts.google.com/gsi/client'
 export const GAPI_SCRIPT = 'https://apis.google.com/js/api.js'
 export const SHEETS_API = 'https://sheets.googleapis.com/v4/spreadsheets'

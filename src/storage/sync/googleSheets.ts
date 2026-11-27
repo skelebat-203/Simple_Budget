@@ -1,7 +1,7 @@
 import type { SyncTab } from '../db'
-import { AuthError, RateLimitError, RemoteError, type CellWrite, type RemoteSheet, type StorageAdapter } from './adapter'
+import { AuthError, PopupError, RateLimitError, RemoteError, type CellWrite, type RemoteSheet, type StorageAdapter } from './adapter'
 import { TABS } from './cells'
-import { DRIVE_FILE_SCOPE, GAPI_SCRIPT, GOOGLE_CONFIG, GSI_SCRIPT, SHEETS_API } from './googleConfig'
+import { DRIVE_FILE_SCOPE, GAPI_SCRIPT, GOOGLE_CONFIG, GSI_SCRIPT, OAUTH_URL, REDIRECT_PENDING_KEY, SHEETS_API } from './googleConfig'
 
 /** Title of a sheet the app creates. */
 export const NEW_SHEET_TITLE = 'Simple Budget sync'
@@ -88,16 +88,72 @@ export async function signIn(): Promise<void> {
       scope: DRIVE_FILE_SCOPE,
       callback: r => {
         if (!r.access_token || r.error) { reject(new AuthError(signInMessage(r.error))); return }
-        // Granular consent: the user can untick the one permission sync needs.
-        if (r.scope && !r.scope.split(' ').includes(DRIVE_FILE_SCOPE)) { reject(new AuthError(signInMessage('scope_missing'))); return }
-        token = { value: r.access_token, expires: Date.now() + (r.expires_in ?? 0) * MS_PER_S - TOKEN_MARGIN_MS }
-        resolve()
+        const problem = acceptToken(r.access_token, r.scope, r.expires_in)
+        if (problem) reject(new AuthError(problem)); else resolve()
       },
-      error_callback: e => reject(new AuthError(signInMessage(e?.type))),
+      error_callback: e => {
+        const message = signInMessage(e?.type)
+        reject(e?.type === 'popup_failed_to_open' || e?.type === 'popup_closed' ? new PopupError(message) : new AuthError(message))
+      },
     })
     client.requestAccessToken()
   })
 }
+
+/** Keeps the token in memory; returns our message when the one permission sync needs was unticked (granular consent). */
+function acceptToken(value: string, scope: string | undefined, expiresIn: number | undefined): string | null {
+  if (scope && !scope.split(' ').includes(DRIVE_FILE_SCOPE)) return signInMessage('scope_missing')
+  token = { value, expires: Date.now() + (expiresIn ?? 0) * MS_PER_S - TOKEN_MARGIN_MS }
+  return null
+}
+
+// ---------- redirect sign-in (D004): for browsers that stop the pop-up from reporting back ----------
+
+export type SignInReturn = 'backup' | 'wizard'
+export interface RedirectResult { returnTo: SignInReturn; error?: string }
+
+/** The address Google sends the user back to: this app's own page, with no fragment. */
+const redirectUri = () => `${location.origin}${import.meta.env.BASE_URL}`
+
+/** Leaves the app for Google's sign-in page. Only a random `state` and where to return to are kept (never the token). */
+export function signInRedirect(returnTo: SignInReturn) {
+  const state = crypto.randomUUID()
+  try { sessionStorage.setItem(REDIRECT_PENDING_KEY, JSON.stringify({ state, returnTo })) } catch {
+    throw new AuthError('This browser blocks the storage the other sign-in needs. Allow site data for this site and try again.')
+  }
+  const query = new URLSearchParams({
+    client_id: GOOGLE_CONFIG.clientId, redirect_uri: redirectUri(), response_type: 'token', scope: DRIVE_FILE_SCOPE, state,
+  })
+  location.assign(`${OAUTH_URL}?${query}`)
+}
+
+/** Reads a return from Google's page, if this load is one. Exported for the sync tests; the app uses `redirectResult`. */
+export function readRedirect(): RedirectResult | null {
+  let pending: { state?: unknown; returnTo?: unknown } | null
+  try {
+    pending = JSON.parse(sessionStorage.getItem(REDIRECT_PENDING_KEY) ?? 'null')
+    sessionStorage.removeItem(REDIRECT_PENDING_KEY)
+  } catch { return null }
+  const params = new URLSearchParams(location.hash.slice(1))
+  // Not a return from our sign-in (or a forged one): the `state` must be the one we made.
+  if (!pending || typeof pending.state !== 'string' || params.get('state') !== pending.state) return null
+  history.replaceState(null, '', location.pathname + location.search)
+  const returnTo: SignInReturn = pending.returnTo === 'wizard' ? 'wizard' : 'backup'
+  const accessToken = params.get('access_token')
+  const failed = params.get('error')
+  if (!accessToken || failed) return { returnTo, error: signInMessage(failed ?? undefined) }
+  const problem = acceptToken(accessToken, params.get('scope') ?? undefined, Number(params.get('expires_in')) || undefined)
+  return problem ? { returnTo, error: problem } : { returnTo }
+}
+
+let redirected: RedirectResult | null | undefined
+/** Read once per page load (safe to call again, e.g. under React Strict Mode); null when the page did not follow a redirect sign-in. */
+export function redirectResult(): RedirectResult | null {
+  if (redirected === undefined) redirected = readRedirect()
+  return redirected
+}
+/** Once the sign-in's notice has been shown, so reopening a dialog does not show it again. */
+export const clearRedirectResult = () => { redirected = null }
 
 export function signOut() {
   const t = token?.value

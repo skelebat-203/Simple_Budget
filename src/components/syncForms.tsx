@@ -1,6 +1,21 @@
-import { Input } from './ui'
+import { Button, Input } from './ui'
 import * as sync from '../storage/sync/controller'
-import type { usePasscode } from './syncActions'
+import { signInRedirect, type SignInReturn } from '../storage/sync/googleSheets'
+import { syncFailText, type usePasscode } from './syncActions'
+
+/** Offered after Google's sign-in window failed (D004): sign in on Google's page in this tab, then come back. */
+export function RedirectSignIn({ returnTo, onError }: { returnTo: SignInReturn; onError: (text: string) => void }) {
+  return (
+    <div className="field">
+      <p className="help">Google’s window didn’t finish. This other way opens Google in this tab, then brings you back here.</p>
+      <div className="actions">
+        <Button type="button" className="secondary" onClick={() => { try { signInRedirect(returnTo) } catch (e) { onError(syncFailText(e)) } }}>
+          Sign in another way
+        </Button>
+      </div>
+    </div>
+  )
+}
 
 /** Passcode field shared by the Sync dialog and the wizard's sync step. */
 export function PasscodeField({ id, isNew, p }: { id: string; isNew: boolean; p: ReturnType<typeof usePasscode> }) {

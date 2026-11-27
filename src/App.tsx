@@ -9,7 +9,7 @@ import { UpdatePopup } from './components/UpdatePopup'
 import { UPDATES, readLastSeen, whatsNew, writeLastSeen, type Updates } from './updates/updates'
 import { useSyncState } from './components/useSyncState'
 import * as sync from './storage/sync/controller'
-import { GoogleSheetsAdapter, isSignedIn, pickSpreadsheet } from './storage/sync/googleSheets'
+import { GoogleSheetsAdapter, isSignedIn, pickSpreadsheet, redirectResult } from './storage/sync/googleSheets'
 import { charityMovedText } from './budget/charity'
 import { Notices, type NoticeState } from './components/Notices'
 import { Tabs } from './components/ui'
@@ -29,7 +29,7 @@ function App() {
   const [rewardsEnabled, setRewardsEnabled] = useState(true)
   const [notificationsEnabled, setNotificationsEnabled] = useState(false)
   const [setupOpen, setSetupOpen] = useState(false)
-  const [backupOpen, setBackupOpen] = useState(false)
+  const [backupOpen, setBackupOpen] = useState(() => redirectResult()?.returnTo === 'backup') // back from the redirect sign-in (D004)
   const [pickedId, setPickedId] = useState<string | null>(null)
   const syncState = useSyncState()
   const [onboardOpen, setOnboardOpen] = useState(false)

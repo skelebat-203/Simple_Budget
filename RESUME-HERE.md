@@ -140,6 +140,7 @@ Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per complet
     - Files: `src/storage/sync/googleSheets.ts`, `src/components/Sync.tsx`; an Authorized redirect URI in the Google Cloud console (human)
     - Verify: sign-in in Firefox Strict and in Chromium
     - Deps: 3b
+    - Progress (v0.7.64): built on branch `v0.7-redirect-sign-in` (worktree `.worktrees/v0.7-redirect-sign-in`), option A (human, 2026-11-26): after a pop-up failure the Sync dialog and wizard offer "Sign in another way", a redirect sign-in (`0015` §7.1). Build, lint and `test:sync` pass. Waiting on: the human's redirect URIs in the Google Cloud console (`http://localhost:5173/`, `http://localhost:4173/`, `https://skelebat-203.github.io/Simple_Budget/`) and the test in Firefox Strict and Chromium.
 15c. **Phone-test defects D005 and D006** (v0.7/15c) — D005: the Google file picker lists no files (`docs/defects/D005-picker-lists-no-files.md`); D006: Edit menu items clipped on the left (`docs/defects/D006-edit-menu-items-clipped.md`). Found 2026-11-26.
     - Files: `src/storage/sync/googleSheets.ts`, `src/storage/sync/googleConfig.ts` (and the API key restriction in the Google Cloud console, human); ActionsMenu, `src/App.css`
     - Verify: an existing sheet is listed and linked from the phone; the menu is fully visible at 320/375/640px

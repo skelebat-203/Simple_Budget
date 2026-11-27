@@ -1,10 +1,16 @@
 import { useState } from 'react'
 import * as sync from '../storage/sync/controller'
-import { createSpreadsheet, isSignedIn, signIn } from '../storage/sync/googleSheets'
+import { createSpreadsheet, isSignedIn, redirectResult, signIn, type SignInReturn } from '../storage/sync/googleSheets'
 
 /** Shared by the Sync dialog and the wizard's sync step (0015 §6). */
 export const plainError = (e: unknown) => (e instanceof Error && e.message ? e.message : 'Something went wrong.')
 export const syncFailText = (e: unknown) => `Error: ${plainError(e)} Your data on this device is safe.`
+/** What to tell the user when the page was reached by the redirect sign-in (D004); blank otherwise. */
+export function redirectNotice(where: SignInReturn) {
+  const r = redirectResult()
+  if (r?.returnTo !== where) return { status: '', error: '' }
+  return r.error ? { status: '', error: syncFailText(new Error(r.error)) } : { status: 'Signed in with Google.', error: '' }
+}
 export const CREATED_TEXT = 'Sheet created and synced. Give the passcode to anyone you share the sheet with.'
 export const LINKED_TEXT = 'Sheet linked and synced.'
 

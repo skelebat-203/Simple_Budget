@@ -30,5 +30,7 @@ export interface StorageAdapter {
 export class RateLimitError extends Error {}
 /** Sign-in expired or was revoked: the user must sign in again. */
 export class AuthError extends Error {}
+/** Google's sign-in window was blocked or closed (D004): the redirect sign-in is offered instead. */
+export class PopupError extends AuthError {}
 /** Any other remote failure. The message is ours, never the provider's (0015 §7.1, CWE-209). */
 export class RemoteError extends Error {}

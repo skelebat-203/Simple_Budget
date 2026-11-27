@@ -1,11 +1,12 @@
-import { useRef, useState, type KeyboardEvent } from 'react'
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { Button } from './ui'
 import { useAnnounce } from './ui/announcer'
 import { useSyncState } from './useSyncState'
+import { PopupError } from '../storage/sync/adapter'
 import { isGoogleConfigured } from '../storage/sync/googleConfig'
-import { pickSpreadsheet } from '../storage/sync/googleSheets'
-import { createAndLink, CREATED_TEXT, ensureSignedIn, LINKED_TEXT, linkSheet, syncFailText, usePasscode } from './syncActions'
-import { PasscodeField } from './syncForms'
+import { clearRedirectResult, pickSpreadsheet } from '../storage/sync/googleSheets'
+import { createAndLink, CREATED_TEXT, ensureSignedIn, LINKED_TEXT, linkSheet, redirectNotice, syncFailText, usePasscode } from './syncActions'
+import { PasscodeField, RedirectSignIn } from './syncForms'
 
 export type SyncTabId = 'new' | 'existing'
 const TABS: { id: SyncTabId; label: string }[] = [
@@ -23,9 +24,12 @@ export function WizardSync({ tab, onTab, onSuspend }: { tab: SyncTabId; onTab: (
   const s = useSyncState()
   const p = usePasscode()
   const [pickedId, setPickedId] = useState<string | null>(null)
-  const [status, setStatus] = useState('')
-  const [error, setError] = useState('')
+  const [arrival] = useState(() => redirectNotice('wizard'))
+  const [status, setStatus] = useState(arrival.status)
+  const [error, setError] = useState(arrival.error)
   const [working, setWorking] = useState(false)
+  const [offerRedirect, setOfferRedirect] = useState(false)
+  useEffect(clearRedirectResult, [])
   useAnnounce(status)
   useAnnounce(error)
   useAnnounce(p.error)
@@ -45,8 +49,8 @@ export function WizardSync({ tab, onTab, onSuspend }: { tab: SyncTabId; onTab: (
   }
 
   async function run(f: () => Promise<string>) {
-    setError(''); setStatus(''); setWorking(true)
-    try { setStatus(await f()) } catch (e) { setError(syncFailText(e)) } finally { setWorking(false) }
+    setError(''); setStatus(''); setOfferRedirect(false); setWorking(true)
+    try { setStatus(await f()) } catch (e) { setError(syncFailText(e)); setOfferRedirect(e instanceof PopupError) } finally { setWorking(false) }
   }
   const create = () => { if (p.check(true)) void run(async () => { await ensureSignedIn(); await createAndLink(p.passcode); p.clear(); return CREATED_TEXT }) }
   const choose = () => run(async () => {
@@ -99,6 +103,7 @@ export function WizardSync({ tab, onTab, onSuspend }: { tab: SyncTabId; onTab: (
       <div ref={panel} id="wizard-tabpanel" role="tabpanel" aria-labelledby={`wizard-tab-${tab}`} className="wizard-tabpanel field">
         {content}
         {error && <p className="error">{error}</p>}
+        {offerRedirect && <RedirectSignIn returnTo="wizard" onError={setError} />}
         <p className="status">{status}</p>
       </div>
     </div>
