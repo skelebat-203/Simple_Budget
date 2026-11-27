@@ -48,4 +48,4 @@ Before asking to merge to `main` (the rule is also in `.claude/CLAUDE.md`):
 4. Commit it with the RESUME-HERE update (the last commit before the merge).
 5. Only then ask to merge.
 
-Checks: `npm run test:dialogs` covers the popup (opens after an update, once; the X; border; reading order).
+Checks: `npm run test:dialogs` covers the popup (opens after an update, once; the X; border; reading order). It also fails when the newest release's `version` differs from the `package.json` version, or has no changes. Every commit bumps the version, so after the last bump before a merge, set the entry's `version` to match; the test then reminds you if the entry was forgotten. It does not check the wording.

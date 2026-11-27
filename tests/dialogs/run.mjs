@@ -2,7 +2,7 @@
 // focus start, Tab trap, Escape, focus return and stacked dialogs.
 // Run: npm run build, then npm run test:dialogs. See README.md.
 import { spawn } from 'node:child_process'
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import puppeteer from 'puppeteer-core'
@@ -95,6 +95,13 @@ async function tableRules(label) {
 }
 
 try {
+  // Update popup data (0016 §4): every merge to main bumps the version, so the newest release must be for the
+  // version in package.json and have changes. A merge with no new entry fails here.
+  const readJson = path => JSON.parse(readFileSync(resolve(root, path), 'utf8'))
+  const appVersion = readJson('package.json').version
+  const newest = readJson('src/updates/updates.json').releases.sort((a, b) => b.version.localeCompare(a.version, undefined, { numeric: true }))[0]
+  check(`Update popup data: the newest release is for v${appVersion}, with changes (update src/updates/updates.json)`, newest?.version === appVersion && newest.changes.length > 0, JSON.stringify(newest?.version))
+
   await page.goto(URL, { waitUntil: 'networkidle0' })
   await settle()
 

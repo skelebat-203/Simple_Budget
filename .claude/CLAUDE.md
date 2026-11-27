@@ -43,6 +43,7 @@ data in `src/updates/updates.json`). Every merge to `main` updates it, in this o
 2. Add a `knownIssues` entry for each new open user-visible defect in `docs/defects/`; remove the ones fixed.
 3. **The human reviews the Changes list before the merge is requested.** Do not ask to merge until they approve it.
 4. Commit it with the RESUME-HERE update (the last commit before the merge).
+`npm run test:dialogs` fails if the newest release's version differs from `package.json`'s, so run it before asking to merge.
 
 ## Accessibility Overrides
 - Exception to sticky content rules - in this app allow "Save" to be sticky in mobile unless the mobile screen has been zoomed.

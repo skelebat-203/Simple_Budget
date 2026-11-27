@@ -1,7 +1,7 @@
 {
   "releases": [
     {
-      "version": "0.7.61",
+      "version": "0.7.62",
       "changes": [
         "Week, Month and Annual are now one switch.",
         "Sync now lives in the Backup window.",
