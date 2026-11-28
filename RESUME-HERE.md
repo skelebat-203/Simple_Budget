@@ -7,7 +7,7 @@ Design: `0015-sync-design.md` (sync), `0004-table-design.md` (table), `0006-prot
 v0.8.1 (v0.7 complete 2026-11-27, v0.7.0 to v0.7.67 plus the review fixes in v0.8.0; reports: `docs/audits/a11y/a11y-v0.7.md`, `docs/audits/security/security-v0.7.md`). v0.8.1 adds the human's v0.7 step 16 UI/UX review updates (built as v0.7.68 to v0.7.70 on `v0.7-ui-updates`, merged in via branch `v0.8-ui-review-updates`; accessibility re-run in the addendum of `a11y-v0.7.md`; the security review was done on v0.7.67 and these changes add no network, storage or dependency code). v0.8 has not started; the first step is a design pass (nothing is built before the human approves a mockup).
 
 ## v0.8 plan of action
-Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per completed-work commit; trailer `Plan-Step: v0.8/N`). The final step bumps to the next minor version (v0.9.0). UI steps need human approval (`0005-ui-ux-review-checklist.md`). Baseline: v0.8.0. Data: Dexie v10 (`src/storage/db.ts`). Testing: `tests/README.md`; accessibility script approach in `a11y-v0.7.md`.
+Versions follow "Version numbering" in `.claude/CLAUDE.md` (patch +1 per approved feature, in its final commit; trailer `Plan-Step: v0.8/N`). The final step bumps to the next minor version (v0.9.0). UI steps need human approval (`0005-ui-ux-review-checklist.md`). Baseline: v0.8.0. Data: Dexie v10 (`src/storage/db.ts`). Testing: `tests/README.md`; accessibility script approach in `a11y-v0.7.md`.
 
 **Run option (estimate):** single session with fresh restarts. Most steps are UI steps that need the human's approval mid-way and share `App.css`, `BudgetTable.tsx` and `Backup.tsx`, so subagents would save little.
 
@@ -70,12 +70,12 @@ Run option 1: one session per group, fresh start at each group boundary. A sessi
 0. **Work in a worktree** (`dev-workflow.md`): create `.claude/worktrees/v0.8-group-<x>` from the latest `main` (or from `dev/v0.8` when a session builds several groups), build there, and at the end of the group or step stop and ask the human to approve the merge. Never merge to `main` without that approval.
 1. **Find the start:** the first group in the order above that is not ✅ and whose dependencies are met; within it, the first step not marked ✅. Stop and ask if the status line and the step marks disagree.
 2. **Check blockers** ("needs human decision", "blocked"). Do not build a blocked step: skip it, or stop and tell the user if it is the only one left.
-3. **Build one step at a time:** re-read the latest version on `main`, build and lint, commit with the next patch version and the `Plan-Step: v0.8/N` trailer, mark the step ✅ with its version(s). Check `git diff --cached --stat` before each commit.
+3. **Build one step at a time:** build and lint; commit checkpoints when a piece builds and passes its tests (no version bump). After the human approves the step, re-read the latest version on `main` and make the final commit with the next patch version, the `Plan-Step: v0.8/N` trailer and the step marked ✅ with its version. Check `git diff --cached --stat` before each commit.
 4. **UI steps** pause for human approval before they are marked ✅ (`0005`).
-5. **At the end of the group:** update the Execution status line, commit in the worktree, and tell the user the group is done and waiting for merge approval. Before asking to merge to `main`, update the update popup (`src/updates/updates.json`) and have the human review its Changes list (`.claude/CLAUDE.md`, "Update popup").
+5. **At the end of the group:** update the Execution status line, include it in the final commit, and tell the user the group is done and waiting for merge approval. Before asking to merge to `main`, update the update popup (`src/updates/updates.json`) and have the human review its Changes list (`.claude/CLAUDE.md`, "Update popup").
 6. **Reviews** (9–11) are run in the main session with the user, not by a worker.
 
 ## Rules
-- Each completed item: commit + version bump (per `.claude/CLAUDE.md` "Version numbering").
+- Each approved feature or step: one final commit with the version bump (per `.claude/CLAUDE.md` "Version numbering history" and the global `versioning.md`). Checkpoint commits do not bump.
 - Human-facing docs in `docs/`; do not duplicate docs.
 - Stop and ask on any uncertainty.

@@ -32,17 +32,16 @@ GitHub remote: `origin`, https://github.com/skelebat-203/Simple_Budget.
 Push rules are in the global `version-control.md`.
 
 ## Version numbering history
-The per-commit patch numbering in the global `versioning.md` applies from
-v0.4.12 on (decided 2026-11-02). Earlier versions used the step-number rule.
+The per-commit patch numbering in the global `versioning.md` applies from v0.4.12 on (decided 2026-11-02). Earlier versions used the step-number rule. From v{first version under the new rule}, the patch goes up once per approved feature (decided 2026-11-28).
 
 ## Update popup (every merge to main)
 The "What's new" popup lists changes and new known issues (`docs/design/0016-update-popup.md`;
 data in `src/updates/updates.json`). Every merge to `main` updates it, in this order:
-1. Draft a new `releases` entry (version = the version the merge lands at) from `git log main..{branch}`:
+1. Draft a new `releases` entry (version = the version the merge lands at) from the feature's changes (the branch diff and what the human approved, not the checkpoint commits):
    user-visible changes only, plain words, grade 10 or lower, one short line each.
 2. Add a `knownIssues` entry for each new open user-visible defect in `docs/defects/`; remove the ones fixed.
 3. **The human reviews the Changes list before the merge is requested.** Do not ask to merge until they approve it.
-4. Commit it with the RESUME-HERE update (the last commit before the merge).
+4. Commit it in the feature's final commit, with the RESUME-HERE update and the version bump.
 `npm run test:dialogs` fails if the newest release's version differs from `package.json`'s, so run it before asking to merge.
 
 ## Accessibility Overrides
@@ -57,4 +56,5 @@ Test output costs tokens, so run only the suites a change needs. Map and tiers: 
 - A new source folder or suite gets a row in the `tests/changed.mjs` map and in `tests/README.md` in the same change.
 
 ## Git
-Use the git-broker MCP tools for git: git_status, git_diff, git_log, git_stage, git_commit, git_worktree_add, git_worktree_remove, git_merge, git_rebase. Do not run git directly; .git is read-only in the sandbox. Commits and merges to main need the user's approval.
+Use the git-broker MCP tools for git: git_status, git_diff, git_log, git_stage, git_commit, git_worktree_add, git_worktree_remove, git_merge, git_rebase. Do not run git directly; .git is read-only in the sandbox. Commit rules (checkpoints, final commit): global `version-control.md`. Commits and merges to main need the user's approval; the merge to main is a squash merge run by the user by hand.
+
